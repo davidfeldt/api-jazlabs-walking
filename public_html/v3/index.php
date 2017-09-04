@@ -151,6 +151,17 @@ function formatPhoneNumber($sPhone){
 	return($sPhone);
 }
 
+// dummy response
+
+$app->get('/', function() {
+
+	$response['success'] = true;
+	$response['message'] = 'JazLife Community Platform v3';
+
+	echoResponse(200, $response);
+
+});
+
 // login 
 
 $app->post('/login', function() use($app) {
@@ -233,14 +244,11 @@ $app->post('/users/auth', function() use($app) {
         
 $app->post('/users/password/forgot', function() use($app) {
             // check for required params
-            verifyRequiredParams(array('username'));
+            $json = $app->request->getBody();
+    		$data = json_decode($json, true); 
+    		$username = $data['username'];
  
             $response = array();
- 
-            // reading post params
-        	parse_str($app->request()->getBody(), $request_params);
-
-            $username 	= $request_params['username'];
  
             $db = new DbHandler();
             $res = $db->forgotPassword($username);

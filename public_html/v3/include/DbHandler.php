@@ -530,26 +530,26 @@ class DbHandler {
         $row = $stmt->fetch();
         
         if (isset($row) && $row) {
-            // Found user with the username
-            /* Generate new reset code */
-            $email		= $row['email'];
+          // Found user with the username
+          // Generate new reset code 
+          $email		= $row['email'];
          	$reset_code = sha1(uniqid(rand(), true));
          	date_default_timezone_set("America/Toronto");
-         	$reset_date_added = date('Y-m-d H:i:s');
+         	$reset_dt = date('Y-m-d H:i:s');
          	$reset_code_active = 1;
          	
-         	$stmt = $this->conn->prepare('UPDATE user SET reset_code = :reset_code, reset_code_active = :reset_code_active, reset_date_added = :reset_dt WHERE username = :username');
-    		$stmt->bindParam(':username',$username);
-    		$stmt->bindParam(':reset_code',$reset_code);
-    		$stmt->bindParam(':reset_code_active',$reset_code_active);
-    		$stmt->bindParam(':reset_dt',$reset_dt);
-    		$stmt->execute();
+         	$stmt = $this->conn->prepare('UPDATE user SET reset_code = :reset_code, reset_code_active = :reset_code_active, reset_dt = :reset_dt WHERE username = :username');
+    		  $stmt->bindParam(':username',$username);
+    		  $stmt->bindParam(':reset_code',$reset_code);
+    		  $stmt->bindParam(':reset_code_active',$reset_code_active);
+    		  $stmt->bindParam(':reset_dt',$reset_dt);
+    		  $stmt->execute();
       
          	$from_name 	= $this->getSetting('config_name');
          	$from_url	= $_ENV['HTTP_CATALOG'];
          	$subject 	= 'Password Reset';
-	     	$message 	= '<p>Someone just requested that the password be reset for your account at '.$from_name.'.</p><p>If this was a mistake, just ignore this email and nothing will happen.</p><p>To reset your password, click the following link:</p>
-	   <p><a href="'.$from_url.'reset.php?code='.$reset_code.'">Reset My Password</a></p>';
+	     	  $message 	= '<p>Someone just requested that the password be reset for your account at '.$from_name.'.</p><p>If this was a mistake, just ignore this email and nothing will happen.</p><p>To reset your password, click the following link:</p>
+	   <p><a href="'.$from_url.'reset?c='.$reset_code.'">Reset My Password</a></p>';
          
          	$this->sendEmail($username, $email, $subject, $message, 0);
          	return 'success';
@@ -718,10 +718,11 @@ table.list .center {
 </body>
 </html>';	
 
-  $mg = Mailgun::create($_ENV['MAILGUN_API_KEY']);
+
+  $mg = Mailgun\Mailgun::create($_ENV['MAILGUN_API_KEY']);
 
   $mg->messages()->send('jazlife.com', [
-    'from'    => 'info@myjazlife.com',
+    'from'    => 'info@jazlife.com',
     'to'      => $email,
     'subject' => $subject,
     'text'    => strip_tags(html_entity_decode($html)),
