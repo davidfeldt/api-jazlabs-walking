@@ -1396,51 +1396,59 @@ table.list .center {
     	return $images;
     }
 
-	public function addMaintenanceRequest($username, $description, $enterpermission, $urgency, $instruction, $category, $status, $date_noticed) {
+	public function addMaintenanceRequest($username, $data) {
 		date_default_timezone_set("America/Toronto");
-		$date_created	= date('Y-m-d');
+		
 		$profile 		= $this->getProfileByUsername($username);
     	$bid			= $profile['bid'];
+    	$unit 			= $profile['unit'];
+    	$date_added		= date('Y-m-d');
+    	$description	= !empty($data['description']) ? $data['description'] : '';
+    	$enterpermission= !empty($data['enterPermission']) ? $data['enterPermission'] : 0;
+    	$urgency 		= !empty($data['urgency']) ? $data['urgency'] : 'l';
+    	$instruction 	= !empty($data['instruction']) ? $data['instruction'] : '';
+    	$category_id 	= !empty($data['category_id']) ? $data['category_id'] : 0;
+    	$status 		= !empty($data['status']) ? $data['status'] : 's';
+    	$date_noticed	= !empty($data['dateNoticed']) ? date('Y-m-d', strtotime($data['dateNoticed'])) : $date_added;
 		
 		$file = '';
 		$thumbNailPathName = '';
     	
     	if (isset($_FILES['fileUpload'])) {	
-    	// upload the file if it exists
-		$file = $this->uploadMaintenanceImage();
-    	// Create a Thumbnail if an image exists
-		if ($file != "no file") {
-			$imgArr = explode('/', $file);
-			$imgNameOnly = $imgArr[sizeof($imgArr)-1];
-			$folderPath = "";
-			for ($i=0; $i<sizeof($imgArr)-1; $i++) {
-				$folderPath .=  $imgArr[$i] . "/" ;
+	    	// upload the file if it exists
+			$file = $this->uploadMaintenanceImage();
+	    	// Create a Thumbnail if an image exists
+			if ($file != "no file") {
+				$imgArr = explode('/', $file);
+				$imgNameOnly = $imgArr[sizeof($imgArr)-1];
+				$folderPath = "";
+				for ($i=0; $i<sizeof($imgArr)-1; $i++) {
+					$folderPath .=  $imgArr[$i] . "/" ;
+				}
+				$thumbNailPathName = $folderPath . "thumb_" . $imgNameOnly;
+				$imgType = getImgType($imgNameOnly);
+				// Instantiate the thumbnail
+				$tn=new Thumbnail(150,150);
+				// Load an image into a string (this could be FROM a database)
+				$image=file_get_contents($_ENV['DIR_MAINTENANCEREPORT'].$imgNameOnly);
+				// Load the image data
+				$tn->loadData($image,$imgType);
+				// Build the thumbnail and store as a file
+				$tn->buildThumb($_ENV['DIR_MAINTENANCEREPORT'].'thumb_'.$imgNameOnly);
 			}
-			$thumbNailPathName = $folderPath . "thumb_" . $imgNameOnly;
-			$imgType = getImgType($imgNameOnly);
-			// Instantiate the thumbnail
-			$tn=new Thumbnail(150,150);
-			// Load an image into a string (this could be FROM a database)
-			$image=file_get_contents($_ENV['DIR_MAINTENANCEREPORT'].$imgNameOnly);
-			// Load the image data
-			$tn->loadData($image,$imgType);
-			// Build the thumbnail and store as a file
-			$tn->buildThumb($_ENV['DIR_MAINTENANCEREPORT'].'thumb_'.$imgNameOnly);
-		}
 		}
 		
-		$stmt = $this->conn->prepare('INSERT INTO maintenance SET username = :username, bid = :bid, date_created = :date_created, description = :description, enterpermission = :enterpermission, urgency = :urgency, instruction = :instruction, category = :category, status = :status, date_noticed = :date_noticed, photo = :photo, thumb = :thumb');
+		$stmt = $this->conn->prepare("INSERT INTO maintenance SET username = :username, bid = :bid, unit = :unit, date_added = :date_added, description = :description, enterpermission = :enterpermission, urgency = :urgency, instruction = :instruction, category_id = :category_id, status = :status, date_noticed = :date_noticed, date_modified = :date_added, assigned_to = '', is_new = '1'");
     	$stmt->bindParam(':username',$username);
     	$stmt->bindParam(':date_noticed',$date_noticed);
-    	$stmt->bindParam(':date_created',$date_created);
+    	$stmt->bindParam(':date_added',$date_added);
     	$stmt->bindParam(':description',$description);
     	$stmt->bindParam(':enterpermission',$enterpermission);
     	$stmt->bindParam(':urgency',$urgency);
     	$stmt->bindParam(':instruction',$instruction);
-    	$stmt->bindParam(':category',$category);
+    	$stmt->bindParam(':category_id',$category_id);
     	$stmt->bindParam(':status',$status);
-    	$stmt->bindParam(':photo',$file);
-    	$stmt->bindParam(':thumb',$thumbNailPathName);
+    	$stmt->bindParam(':unit',$unit);
     	$stmt->bindParam(':bid',$bid);
     	
     	$result = $stmt->execute();

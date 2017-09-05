@@ -541,18 +541,22 @@ $app->post('/requests', 'authenticate', function() use($app) {
             // check for required params
             //verifyRequiredParams(array('description', 'enterpermission', 'urgency', 'instruction', 'category','date_noticed'));
  
-            $response = array();
+            $response 				= array();
+            $requestData  			= array();
+
+            $json 					= $app->request->getBody();
+            $data 					= json_decode($json, true); 
         	
-            $status				= 's';
-            $description 		= $_POST['description'];
-            $enterpermission 	= $_POST['enterpermission'];
-            $urgency 			= $_POST['urgency'];
-            $instruction 		= $_POST['instruction'];
-            $category 			= $_POST['category'];
-            $date_noticed 		= $_POST['date_noticed'];
+            $requestData['status']			= 's';
+            $requestData['description']		= $data['description'];
+            $requestData['enterPermission'] = $data['enterPermission'];
+            $requestData['urgency'] 		= $data['urgency'];
+            $requestData['instruction'] 	= $data['instruction'];
+            $requestData['category_id']		= $data['category_id'];
+            $requestData['dateNoticed']		= $data['dateNoticed'];
             
             $db = new DbHandler();
-            $res = $db->addMaintenanceRequest($app->username, $description, $enterpermission, $urgency, $instruction, $category, $status, $date_noticed);
+            $res = $db->addMaintenanceRequest($app->username, $requestData);
  			
  			$db->registerAPICall( $app->username, 'requests', 'post', $res);
  			
