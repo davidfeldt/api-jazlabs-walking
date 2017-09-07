@@ -662,35 +662,24 @@ $app->get('/requests', 'authenticate', function() use($app) {
             $db = NULL;
         });
         
-$app->get('/requests/:id', 'authenticate', function($id) use($app) {
+$app->get('/requests/comments/:id', 'authenticate', function($id) use($app) {
 			$response = array();
             $db = new DbHandler();
  
-            $result = $db->getMaintenanceRequest($id);
+            $result = $db->getMaintenanceComments($id);
  			
- 			$db->registerAPICall( $app->username, 'requests/'.$id, 'get', $result);
+ 			$db->registerAPICall($app->username, 'requests/comments/'.$id, 'get', json_encode($result));
  			
             if ($result != NULL) {
-                $response['error'] 			= false;
-                $response['id'] 			= $result['id'];
-                $response['bid'] 			= $result['bid'];
-                $response['username'] 		= $result['username'];
-                $response['date_created']	= $result['date_created'];
-                $response['description']	= $result['description'];
-                $response['enterpermission']= $result['enterpermission'];
-                $response['instruction']	= $result['instruction'];
-                $response['category']		= $result['category'];
-                $response['category_name']	= $result['cat_name'];
-                $response['status']			= $result['status'];
-                $response['date_noticed']	= $result['date_noticed'];
-                $response['photo']			= $_ENV['HTTP_SERVER'].$result['photo'];
-                $response['thumb']			= $_ENV['HTTP_SERVER'].$result['thumb'];
-                $response['comments']		= $db->getMaintenanceRequestComments($id);
+                $response['error'] 		= false;
+                $response['success'] 	= true;
+                $response['results']    = $result;
 
                 echoResponse(200, $response);
             } else {
                 $response['error'] = true;
                 $response['message'] = "The requested resource doesn't exists";
+                $response['results'] = $response;
                 echoResponse(404, $response);
             }
         }); 
@@ -716,6 +705,29 @@ $app->delete('/requests/:id', 'authenticate', function($id) use($app) {
         });
 
 // Reservations
+
+$app->get('/reservations/comments/:id', 'authenticate', function($id) use($app) {
+            $response = array();
+            $db = new DbHandler();
+ 
+            $result = $db->getReservationComments($id);
+            
+            $db->registerAPICall($app->username, 'reservations/comments/'.$id, 'get', json_encode($result));
+            
+            if ($result != NULL) {
+                $response['error']      = false;
+                $response['success']    = true;
+                $response['results']    = $result;
+
+                echoResponse(200, $response);
+            } else {
+                $response['error'] = true;
+                $response['message'] = "The requested resource doesn't exists";
+                $response['results'] = $response;
+                echoResponse(404, $response);
+            }
+        }); 
+
 
 $app->get('/reservations', 'authenticate', function() use($app) {
             $response = array();
@@ -761,7 +773,7 @@ $app->post('/reservations/comments/:id', 'authenticate', function($id) use($app)
                 $response['success'] = true;
                 $response['username'] = $app->username;
                 $response['message'] = "Comment posted successfully!";
-                $response['results'] = $db->getMaintenanceComments($id);
+                $response['results'] = $db->getReservationComments($id);
                 echoResponse(201, $response);
             } else {
                 $response['error'] = true;
@@ -896,33 +908,25 @@ $app->get('/instructions',  'authenticate' , function()  use($app) {
             $db = NULL;
         });
         
-$app->get('/instructions/:id', 'authenticate', function($id) use($app) {
+$app->get('/instructions/comments/:id', 'authenticate', function($id) use($app) {
             $response = array();
             $db = new DbHandler();
  
-            $result = $db->getFrontDeskInstruction($id);
+            $result = $db->getFrontdeskComments($id);
             
-            $db->registerAPICall( $app->username, 'instructions/'.$id, 'get', $result);
+            $db->registerAPICall( $app->username, 'instructions/comments/'.$id, 'get', json_encode($result));
             
  
             if ($result != NULL) {
                 $response['error'] 			= false;
-                $response['id'] 			= $result['id'];
-                $response['bid'] 			= $result['bid'];
-                $response['username'] 		= $result['username'];
-                $response['date_created']	= $result['date_created'];
-                $response['startdate']		= $result['startdate'];
-                $response['enddate']		= $result['enddate'];
-                $response['noenddate']		= $result['noenddate'];
-                $response['description']	= $result['description'];
-                $response['category']		= $result['category'];
-                $response['category_name']	= $result['cat_name'];
-                $response['comments']		= $db->getFrontDeskComments($id);
+                $response['success']        = true;
+                $response['results'] 		= $result;
 
                 echoResponse(200, $response);
             } else {
                 $response['error'] = true;
                 $response['message'] = "The requested front desk instruction doesn't exists";
+                $response['results'] = $response;
                 echoResponse(404, $response);
             }
         });
@@ -947,6 +951,28 @@ $app->delete('/instructions/:id', 'authenticate', function($id) use($app) {
         });
 
 // Marketplace
+
+$app->get('/items/comments/:id', 'authenticate', function($id) use($app) {
+            $response = array();
+            $db = new DbHandler();
+ 
+            $result = $db->getMarketplaceComments($id);
+            
+            $db->registerAPICall($app->username, 'marketplace/comments/'.$id, 'get', json_encode($result));
+            
+            if ($result != NULL) {
+                $response['error']      = false;
+                $response['success']    = true;
+                $response['results']    = $result;
+
+                echoResponse(200, $response);
+            } else {
+                $response['error'] = true;
+                $response['message'] = "The requested resource doesn't exists";
+                $response['results'] = $response;
+                echoResponse(404, $response);
+            }
+        }); 
 
 $app->get('/items', 'authenticate', function() use($app) {
             $response = array();
@@ -1124,33 +1150,24 @@ $app->get('/incidents',  'authenticate' , function()  use($app) {
             $db = NULL;
         });
         
-$app->get('/incidents/:id', 'authenticate', function($id) use($app) {
+$app->get('/incidents/comments/:id', 'authenticate', function($id) use($app) {
             $response = array();
             $db = new DbHandler();
  
-            $result = $db->getIncidentReport($id);
+            $result = $db->getIncidentComments($id);
             
-            $db->registerAPICall( $app->username, 'incidents/'.$id, 'get', $result);
+            $db->registerAPICall( $app->username, 'incidents/comments/'.$id, 'get', json_encode($result));
  
             if ($result != NULL) {
                 $response['error'] 			= false;
-                $response['id'] 			= $result['id'];
-                $response['bid'] 			= $result['bid'];
-                $response['username'] 		= $result['username'];
-                $response['date_created']	= $result['date_created'];
-                $response['date_noticed']	= $result['date_noticed'];
-                $response['time_noticed']	= $result['time_noticed'];
-                $response['photo']			= $_ENV['HTTP_SERVER'].$result['photo'];
-                $response['thumb']			= $_ENV['HTTP_SERVER'].$result['thumb'];
-                $response['description']	= $result['description'];
-                $response['category']		= $result['category'];
-                $response['status']			= $result['status'];
-                $response['comments']		= $db->getIncidentComments($id);
+                $response['success'] 		= true;
+                $response['results'] 		= $result;
 
                 echoResponse(200, $response);
             } else {
                 $response['error'] = true;
                 $response['message'] = "The requested incident report doesn't exists";
+                $response['results'] = $response;
                 echoResponse(404, $response);
             }
         });

@@ -1189,6 +1189,34 @@ table.list .center {
       return $comments;
     }
 
+  public function getReservation($reservation_id)  {
+      $post_data  = array();
+
+      $stmt = $this->conn->prepare("SELECT * FROM reservation WHERE reservation_id = :reservation_id");
+      $stmt->bindParam(':reservation_id',$reservation_id);
+        
+      if ($stmt->execute()) {
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        $post_data = array (
+          'id'              => (int)$row['reservation_id'],
+          'bid'             => (int)$row['bid'],
+          'username'        => $row['username'],
+          'dateAdded'       => $this->dateTimeDiff($row['date_added']),
+          'resourceName'    => $this->getResourceName($row['resource_id']),
+          'resourceCategory'=> $this->getResourceCategory($row['resource_id']),
+          'status'          => $row['resstatus'],
+          'rescode'         => $row['rescode'],
+          'timeslots'       => $this->getReservedTimeSlots($row['rescode']),
+          'description'     => $row['description'],
+          'comments'        => $this->getReservationComments($row['reservation_id'])
+          
+        );
+      }
+
+      return $post_data;
+  }
+
   public function getAllReservations($username,$page = 1)  {
     $page = (isset($page)) ? $page : 1;
       $start = ($page - 1) * $_ENV['LIMIT'];
@@ -1575,6 +1603,40 @@ table.list .center {
         }
       }
 
+  public function getMaintenanceRequest($maintenance_id)  {
+
+    $post_data  = array();
+
+    $stmt = $this->conn->prepare("SELECT * FROM maintenance WHERE maintenance_id = :maintenance_id");
+        $stmt->bindParam(':maintenance_id',$maintenance_id);
+        
+        if ($stmt->execute()) {
+          $post = $stmt->fetch(PDO::FETCH_ASSOC);
+
+          $post_data [] = array (
+            'id'              => (int)$post['maintenance_id'],
+            'bid'             => (int)$post['bid'],
+            'username'        => $post['username'],
+            'dateCreated'     => $this->dateTimeDiff($post['date_added']),
+            'description'     => $post['description'],
+            'enterPermission' => (int)$post['enterpermission'],
+            'urgency'         => $post['urgency'],
+            'displayUrgency'  => $this->displayUrgency($post['urgency']),
+            'instruction'     => $post['instruction'],
+            'category'        => (int)$post['category_id'],
+            'status'          => $post['status'],
+            'displayStatus'   => $this->displayStatus($post['status']),
+            'dateNoticed'     => $this->dateTimeDiff($post['date_noticed']),
+            'categoryName'    => $this->getCategoryName($post['category_id'],'maintenance'),
+            'images'          => $this->getMaintenanceImages($post['maintenance_id']),
+            'comments'        => $this->getMaintenanceComments($post['maintenance_id']),
+            
+          );
+
+      } 
+        
+        return $post_data;
+    }
 	
 	public function getAllMaintenanceRequests($username,$page = 1)	{
 		$page = (isset($page)) ? $page : 1;
@@ -1723,6 +1785,34 @@ table.list .center {
     } else {
       return 0;
     }
+  }
+
+  public function getFrontDeskInstruction($frontdesk_id)  {
+    $post_data  = array ();
+
+    $stmt = $this->conn->prepare("SELECT * FROM frontdesk WHERE frontdesk_id = :frontdesk_id");
+    $stmt->bindParam(':frontdesk_id', $frontdesk_id);
+    
+    if ($stmt->execute()) {
+      $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $post = $stmt->fetch();
+      $post_data = array (
+          'id'            => (int)$post['frontdesk_id'],
+          'bid'           => (int)$post['bid'],
+          'username'      => $post['username'],
+          'dateAdded'     => date('m/d/Y', strtotime($post['date_added'])),
+          'description'   => $post['description'],
+          'blurb'         => substr(strip_tags(html_entity_decode($post['description'])), 0, 50).' ...',
+          'category_id'   => (int)$post['category_id'],
+          'startDate'     => date('m/d/Y', strtotime($post['start_date'])),
+          'endDate'       => date('m/d/Y', strtotime($post['end_date'])),
+          'noEnddate'     => $post['no_enddate'],
+          'categoryName'  => $this->getCategoryName($post['category_id'],'frontdesk'),
+          'comments'      => $this->getFrontdeskComments($post['frontdesk_id'])
+      );
+    }
+
+    return $post_data;
   }
 
   public function getAllFrontDeskInstructions($username,$page = 1)  {
@@ -1962,6 +2052,36 @@ table.list .center {
         }
       }
 	
+  public function getIncidentReport($incident_id)  {
+    $post_data  = array ();
+
+    $stmt = $this->conn->prepare("SELECT * FROM incident WHERE incident_id = :incident_id");
+    $stmt->bindParam(':incident_id',$incident_id);
+    
+    if ($stmt->execute()) {
+      $post = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        $post_data  = array (
+            'id'            => (int)$post['incident_id'],
+            'bid'           => (int)$post['bid'],
+            'username'      => $post['username'],
+            'dateCreated'   => $this->dateTimeDiff($post['date_added']),
+            'description'   => $post['description'],
+            'blurb'         => substr(strip_tags(html_entity_decode($post['description'])), 0, 50).' ...',
+            'category'      => (int)$post['category_id'],
+            'status'        => $post['status'],
+            'dateNoticed'   => date('m/d/Y', strtotime($post['date_noticed'])),
+            'timeNoticed'   => $post['time_noticed'],
+            'categoryName'  => $this->getCategoryName($post['category_id'],'incident'),
+            'displayStatus' => $this->displayStatus($post['status']),
+            'images'        => $this->getIncidentImages($post['incident_id']),
+            'comments'      => $this->getIncidentComments($post['incident_id']),
+        );
+    } 
+        
+    return $post_data;
+  }
+
 	public function getAllIncidentReports($username,$page = 1)	{
 		$page = (isset($page)) ? $page : 1;
     $start = ($page - 1) * $_ENV['LIMIT'];
@@ -2113,7 +2233,7 @@ table.list .center {
       
     $people = array ();
       
-    $stmt = $this->conn->prepare("SELECT * FROM user WHERE bid = :bid AND status = :status ORDER BY fullname ASC LIMIT $start, $limit");
+    $stmt = $this->conn->prepare("SELECT * FROM user WHERE bid = :bid AND status = :status AND privacy != 's' ORDER BY fullname ASC LIMIT $start, $limit");
     $stmt->bindParam(':bid', $bid);
     $stmt->bindParam(':status', $status);
       
@@ -2126,6 +2246,7 @@ table.list .center {
             'user_id'       => (int)$row['user_id'],
             'username'	    => $row['username'],
             'fullname'      => $row['fullname'],
+            'privacy'       => $row['privacy'],
             'avatar'        => $_ENV['HTTP_SERVER'].$row['profilepic'],
             'unit'          => $row['unit'],
             'title'         => $row['title'],
