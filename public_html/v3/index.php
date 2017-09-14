@@ -310,44 +310,35 @@ $app->post('/profilephotos', 'authenticate', function() use($app) {
 // Wall Posts   
 
 $app->post('/posts/:id', 'authenticate', function($id) use($app) {
-            
-            $response = array();
+    
+    $response = array();
             
             $json = $app->request->getBody();
             $data = json_decode($json, true); 
 
             $comment = $data['comment'];
-
-            try {
-                
-                $db = new DbHandler();
-                $res = $db->addPostComment($app->username, $id, $comment) ;
-                
-                //$db->registerAPICall( $app->username, 'posts/comments', 'post', $json);
-                
-                if ($res) {
-                    $response['error'] = false;
-                    $response['success'] = true;
-                    $response['username'] = $app->username;
-                    $response['message'] = "Comment posted successfully!";
-                    $response['results'] = $db->getPostComments($id);
-                    
-                    echoResponse(201, $response);
-                } else {
-                    $response['error'] = true;
-                    $response['username'] = $app->username;
-                    $response['message'] = "An error occurred while posting comment";
-                    $response['results'] = array();
-                    echoResponse(200, $response);
-                }
-            } catch (Exception $e) {
-                // api key is missing in header
-                $response['error']   = true;
-                $response['message'] = 'Error: '.$e->getMessage();
-                echoResponse(401, $response);
-                $app->stop();
+            
+            $db = new DbHandler();
+            $res = $db->addPostComment($app->username, $id, $comment);
+            
+            $db->registerAPICall( $app->username, 'posts/comments', 'post', $json);
+            
+            if ($res) {
+                $response['error'] = false;
+                $response['success'] = true;
+                $response['username'] = $app->username;
+                $response['message'] = "Comment posted successfully!";
+                $response['results'] = $db->getPostComments($id);
+                echoResponse(201, $response);
+            } else {
+                $response['error'] = true;
+                $response['username'] = $app->username;
+                $response['message'] = "An error occurred while posting comment";
+                $response['results'] = array();
+                echoResponse(200, $response);
             }
-        });
+        });        
+            
         
 
 $app->post('/posts', 'authenticate', function() use($app) {
@@ -554,6 +545,7 @@ $app->post('/requests', 'authenticate', function() use($app) {
             $requestData['instruction'] 	= $data['instruction'];
             $requestData['category_id']		= $data['category_id'];
             $requestData['dateNoticed']		= $data['dateNoticed'];
+            $requestData['image']			= $data['image'];
             
             $db = new DbHandler();
             $res = $db->addMaintenanceRequest($app->username, $requestData);
@@ -562,6 +554,7 @@ $app->post('/requests', 'authenticate', function() use($app) {
  			
             if ($res) {
                 $response['error'] = false;
+                $response['success'] = true;
                 $response['message'] = "Maintenance request posted successfully!";
                 echoResponse(201, $response);
             } else {
@@ -1034,32 +1027,32 @@ $app->post('/items/comments/:id', 'authenticate', function($id) use($app) {
 // Incident Reports
 
 $app->post('/incidents', 'authenticate', function() use($app) {
-			
-            // check for required params
-            //verifyRequiredParams(array('description', 'date_noticed', 'time_noticed', 'category'));
-			$response = array();
- 			
-        	//parse_str($app->request()->getBody(), $request_params);
 
-            $description 		= $_POST['description'];
-            $date_noticed 		= $_POST['date_noticed'];
-            $time_noticed 		= $_POST['time_noticed'];
-            $category 			= $_POST['category'];
-            
+            $response 				= array();
+            $incidentData  			= array();
+
+            $json 					= $app->request->getBody();
+            $data 					= json_decode($json, true); 
+        	
+            $incidentData['status']			= 's';
+            $incidentData['description']	= $data['description'];
+            $incidentData['dateNoticed']	= $data['dateNoticed'];
+            $incidentData['timeNoticed'] 	= $data['timeNoticed'];
+            $incidentData['category_id']	= $data['category_id'];
+            $incidentData['image']			= $data['image'];
             
             $db = new DbHandler();
-            $res = $db->addIncidentReport($app->username, $date_noticed, $time_noticed, $description, $category);
+            $res = $db->addIncidentReport($app->username, $incidentData);
  			
  			$db->registerAPICall( $app->username, 'incidents', 'post', $res);
  			
             if ($res) {
                 $response['error'] = false;
-                $response['username'] = $app->username;
+                $response['success'] = true;
                 $response['message'] = "Incident report posted successfully!";
                 echoResponse(201, $response);
             } else {
                 $response['error'] = true;
-                $response['username'] = $app->username;
                 $response['message'] = "An error occurred while posting incident report";
                 echoResponse(200, $response);
             }
@@ -1222,10 +1215,38 @@ $app->post('/messages', 'authenticate', function() use($app) {
             }
         });
 
+// post message to user with username :id
+
+$app->post('/messages/:id', 'authenticate', function($id) use($app) {
+            // check for required params
+            $json = $app->request->getBody();
+            $data = json_decode($json, true); 
+            $userTo = $id;
+            $subject = $data['subject'];
+            $message = $data['message'];
+            
+            $db = new DbHandler();
+            $res = $db->addMessage($app->username, $userTo, $subject, $message);
+            
+            $db->registerAPICall( $app->username, 'messages/'.$id, 'post', $res);
+ 
+            if ($res) {
+                $response['error'] 		= false;
+                $response['success']    = true;
+                $response['username'] 	= $app->username;
+                $response['message'] 	= "Message posted successfully!";
+                echoResponse(201, $response);
+            } else {
+                $response['error'] 		= true;
+                $response['username'] 	= $app->username;
+                $response['message'] 	= "An error occurred while posting message";
+                echoResponse(200, $response);
+            }
+        });
 
 // Post reply to message :id
 
-$app->post('/messages/:id', 'authenticate', function($id) use($app) {
+$app->post('/messages/replies/:id', 'authenticate', function($id) use($app) {
             // check for required params
             $json = $app->request->getBody();
             $data = json_decode($json, true); 

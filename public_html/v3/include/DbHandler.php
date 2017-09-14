@@ -1169,21 +1169,33 @@ table.list .center {
 
   function getReservationComments($reservation_id) {
       $comments = array();
+      date_default_timezone_set('America/Toronto');
+      $now = date('Y-m-d H:i:s');
 
       $stmt = $this->conn->prepare("SELECT * FROM reservation_log WHERE reservation_id = :reservation_id ORDER BY log_id ASC");
         $stmt->bindParam(':reservation_id', $reservation_id);
 
         if ($stmt->execute()) {
-        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($results AS $row) {
-          $comments [] = array (
-            'id'          => (int)$row['log_id'],
-            'comment'     => $row['comment'],
-            'date_added'  => $this->dateTimeDiff($row['date_added']),
-            'fullname'    => $this->getResidentName($row['username']),
-            'avatar'      => $_ENV['HTTP_SERVER'].$this->getResidentAvatar($row['username']),
-          );
-        }
+          $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+          if ($results) {
+            foreach ($results AS $row) {
+              $comments [] = array (
+                'id'          => (int)$row['log_id'],
+                'comment'     => $row['comment'],
+                'date_added'  => $this->dateTimeDiff($row['date_added']),
+                'fullname'    => $this->getResidentName($row['username']),
+                'avatar'      => $_ENV['HTTP_SERVER'].$this->getResidentAvatar($row['username']),
+              );
+            }
+          } else {
+            $comments [] = array (
+                'id'          => 0,
+                'comment'     => 'No existing comments. Click above to add your comment.',
+                'date_added'  => $this->dateTimeDiff($now),
+                'fullname'    => $this->getResidentName(''),
+                'avatar'      => $_ENV['HTTP_SERVER'].$this->getResidentAvatar(''),
+              );
+          }
       }
 
       return $comments;
@@ -1265,24 +1277,36 @@ table.list .center {
 
 	function getMarketplaceComments($marketplace_id) {
     	$comments = array();
+      date_default_timezone_set('America/Toronto');
+      $now = date('Y-m-d H:i:s');
 
     	$stmt = $this->conn->prepare("SELECT * FROM marketplace_log WHERE marketplace_id = :marketplace_id ORDER BY log_id ASC");
         $stmt->bindParam(':marketplace_id', $marketplace_id);
 
         if ($stmt->execute()) {
-    		$results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    		foreach ($results AS $row) {
-    			$comments [] = array (
-	    			'id'			=> (int)$row['log_id'],
-	    			'comment'		=> $row['comment'],
-	    			'date_added'	=> $this->dateTimeDiff($row['date_added']),
-	    			'fullname'		=> $this->getResidentName($row['username']),
-	    			'avatar'		=> $_ENV['HTTP_SERVER'].$this->getResidentAvatar($row['username']),
-	    		);
-	    	}
-    	}
+          $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+          if ($results) {
+            foreach ($results AS $row) {
+              $comments [] = array (
+                'id'          => (int)$row['log_id'],
+                'comment'     => $row['comment'],
+                'date_added'  => $this->dateTimeDiff($row['date_added']),
+                'fullname'    => $this->getResidentName($row['username']),
+                'avatar'      => $_ENV['HTTP_SERVER'].$this->getResidentAvatar($row['username']),
+              );
+            }
+          } else {
+            $comments [] = array (
+                'id'          => 0,
+                'comment'     => 'No existing comments. Click above to add your comment.',
+                'date_added'  => $this->dateTimeDiff($now),
+                'fullname'    => $this->getResidentName(''),
+                'avatar'      => $_ENV['HTTP_SERVER'].$this->getResidentAvatar(''),
+              );
+          }
+      }
 
-    	return $comments;
+      return $comments;
     }
 
     function getMarketplaceImages($marketplace_id) {
@@ -1388,24 +1412,36 @@ table.list .center {
 
 	function getMaintenanceComments($maintenance_id) {
     	$comments = array();
+      date_default_timezone_set('America/Toronto');
+      $now = date('Y-m-d H:i:s');
 
     	$stmt = $this->conn->prepare("SELECT * FROM maintenance_log WHERE maintenance_id = :maintenance_id ORDER BY log_id ASC");
         $stmt->bindParam(':maintenance_id', $maintenance_id);
 
         if ($stmt->execute()) {
-    		$results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    		foreach ($results AS $row) {
-    			$comments [] = array (
-	    			'id'			=> (int)$row['log_id'],
-	    			'comment'		=> $row['comment'],
-	    			'date_added'	=> $this->dateTimeDiff($row['date_added']),
-	    			'fullname'		=> $this->getResidentName($row['username']),
-	    			'avatar'		=> $_ENV['HTTP_SERVER'].$this->getResidentAvatar($row['username']),
-	    		);
-	    	}
-    	}
+          $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+          if ($results) {
+            foreach ($results AS $row) {
+              $comments [] = array (
+                'id'          => (int)$row['log_id'],
+                'comment'     => $row['comment'],
+                'date_added'  => $this->dateTimeDiff($row['date_added']),
+                'fullname'    => $this->getResidentName($row['username']),
+                'avatar'      => $_ENV['HTTP_SERVER'].$this->getResidentAvatar($row['username']),
+              );
+            }
+          } else {
+            $comments [] = array (
+                'id'          => 0,
+                'comment'     => 'No existing comments. Click above to add your comment.',
+                'date_added'  => $this->dateTimeDiff($now),
+                'fullname'    => $this->getResidentName(''),
+                'avatar'      => $_ENV['HTTP_SERVER'].$this->getResidentAvatar(''),
+              );
+          }
+      }
 
-    	return $comments;
+      return $comments;
     }
 
     function getMaintenanceImages($maintenance_id) {
@@ -1424,13 +1460,29 @@ table.list .center {
     	return $images;
     }
 
+    function getMaintenanceFirstImage($maintenance_id) {
+      $image = $_ENV['HTTP_SERVER'].'img/default-placeholder-300x300.png';
+
+      $stmt = $this->conn->prepare("SELECT image FROM maintenance_image WHERE maintenance_id = :maintenance_id ");
+        $stmt->bindParam(':maintenance_id', $maintenance_id);
+
+        if ($stmt->execute()) {
+          $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+          if (!empty($results[0])) {
+            $image = $_ENV['HTTP_SERVER'].$results[0]['image'];
+          }
+        }
+
+      return $image;
+    }
+
 	public function addMaintenanceRequest($username, $data) {
 		date_default_timezone_set("America/Toronto");
 		
 		$profile 		= $this->getProfileByUsername($username);
     	$bid			= $profile['bid'];
     	$unit 			= $profile['unit'];
-    	$date_added		= date('Y-m-d');
+    	$date_added		= date('Y-m-d H:i:s');
     	$description	= !empty($data['description']) ? $data['description'] : '';
     	$enterpermission= !empty($data['enterPermission']) ? $data['enterPermission'] : 0;
     	$urgency 		= !empty($data['urgency']) ? $data['urgency'] : 'l';
@@ -1438,33 +1490,7 @@ table.list .center {
     	$category_id 	= !empty($data['category_id']) ? $data['category_id'] : 0;
     	$status 		= !empty($data['status']) ? $data['status'] : 's';
     	$date_noticed	= !empty($data['dateNoticed']) ? date('Y-m-d', strtotime($data['dateNoticed'])) : $date_added;
-		
-		$file = '';
-		$thumbNailPathName = '';
-    	
-    	if (isset($_FILES['fileUpload'])) {	
-	    	// upload the file if it exists
-			$file = $this->uploadMaintenanceImage();
-	    	// Create a Thumbnail if an image exists
-			if ($file != "no file") {
-				$imgArr = explode('/', $file);
-				$imgNameOnly = $imgArr[sizeof($imgArr)-1];
-				$folderPath = "";
-				for ($i=0; $i<sizeof($imgArr)-1; $i++) {
-					$folderPath .=  $imgArr[$i] . "/" ;
-				}
-				$thumbNailPathName = $folderPath . "thumb_" . $imgNameOnly;
-				$imgType = getImgType($imgNameOnly);
-				// Instantiate the thumbnail
-				$tn=new Thumbnail(150,150);
-				// Load an image into a string (this could be FROM a database)
-				$image=file_get_contents($_ENV['DIR_MAINTENANCEREPORT'].$imgNameOnly);
-				// Load the image data
-				$tn->loadData($image,$imgType);
-				// Build the thumbnail and store as a file
-				$tn->buildThumb($_ENV['DIR_MAINTENANCEREPORT'].'thumb_'.$imgNameOnly);
-			}
-		}
+    	$image 			= !empty($data['image']) ? $data['image'] : '';
 		
 		$stmt = $this->conn->prepare("INSERT INTO maintenance SET username = :username, bid = :bid, unit = :unit, date_added = :date_added, description = :description, enterpermission = :enterpermission, urgency = :urgency, instruction = :instruction, category_id = :category_id, status = :status, date_noticed = :date_noticed, date_modified = :date_added, assigned_to = '', is_new = '1'");
     	$stmt->bindParam(':username',$username);
@@ -1480,12 +1506,37 @@ table.list .center {
     	$stmt->bindParam(':bid',$bid);
     	
     	$result = $stmt->execute();
+
+    	$maintenance_id = $this->conn->lastInsertId();
     	
     	if ($result) {
+			// save Base 64 string as image.    	
+	    	if ($image) {
+	    		$uploadDir	= $_ENV['DIR_MAINTENANCEREPORT'];
+	    		$uploadPath = $_ENV['PATH_MAINTENANCEREPORT'];
+	    		$img 		= str_replace(' ', '+', $image);
+				$imgData 	= base64_decode($img);
+				$filename 	= $username . '_' . uniqid() . '.jpg';
+				$imgPath 	= $uploadPath . $filename;
+				$file 		= $uploadDir . $filename;
+				$success = file_put_contents($file, $imgData);
+
+				if ($success) {
+					// add to maintenance_image
+					$stmt = $this->conn->prepare("INSERT INTO maintenance_image SET maintenance_id = :maintenance_id, username = :username, image = :image, date_added = :date_added, bid = :bid ");
+					$stmt->bindParam(':maintenance_id',$maintenance_id);
+					$stmt->bindParam(':username',$username);
+			    	$stmt->bindParam(':image',$imgPath);
+			    	$stmt->bindParam(':date_added',$date_added);
+			    	$stmt->bindParam(':bid',$bid);
+			    	$result = $stmt->execute();
+				}
+	    	}
+
     		return TRUE;
-    	} else {
-    		return NULL;
-    	}
+		} else {
+			return NULL;
+		}
 	}
   
   
@@ -1629,6 +1680,7 @@ table.list .center {
             'dateNoticed'     => $this->dateTimeDiff($post['date_noticed']),
             'categoryName'    => $this->getCategoryName($post['category_id'],'maintenance'),
             'images'          => $this->getMaintenanceImages($post['maintenance_id']),
+            'image'           => $this->getMaintenanceFirstImage($post['maintenance_id']),
             'comments'        => $this->getMaintenanceComments($post['maintenance_id']),
             
           );
@@ -1671,6 +1723,7 @@ table.list .center {
       				'dateNoticed'     => $this->dateTimeDiff($post['date_noticed']),
       				'categoryName'    => $this->getCategoryName($post['category_id'],'maintenance'),
       				'images'          => $this->getMaintenanceImages($post['maintenance_id']),
+              'image'           => $this->getMaintenanceFirstImage($post['maintenance_id']),
       				'comments'        => $this->getMaintenanceComments($post['maintenance_id']),
       				
       			);
@@ -1703,25 +1756,37 @@ table.list .center {
 
 	public function getFrontdeskComments($frontdesk_id) {
   	$comments = array();
+    date_default_timezone_set('America/Toronto');
+    $now = date('Y-m-d H:i:s');
 
   	$stmt = $this->conn->prepare("SELECT * FROM frontdesk_log WHERE frontdesk_id = :frontdesk_id ORDER BY log_id ASC");
       $stmt->bindParam(':frontdesk_id', $frontdesk_id);
 
       if ($stmt->execute()) {
-  		$results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-  		foreach ($results AS $row) {
-  			$comments [] = array (
-    			'id'			=> (int)$row['log_id'],
-    			'comment'		=> $row['comment'],
-    			'date_added'	=> $this->dateTimeDiff($row['date_added']),
-    			'fullname'		=> $this->getResidentName($row['username']),
-    			'avatar'		=> $_ENV['HTTP_SERVER'].$this->getResidentAvatar($row['username']),
-    		);
-    	}
-  	}
+          $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+          if ($results) {
+            foreach ($results AS $row) {
+              $comments [] = array (
+                'id'          => (int)$row['log_id'],
+                'comment'     => $row['comment'],
+                'date_added'  => $this->dateTimeDiff($row['date_added']),
+                'fullname'    => $this->getResidentName($row['username']),
+                'avatar'      => $_ENV['HTTP_SERVER'].$this->getResidentAvatar($row['username']),
+              );
+            }
+          } else {
+            $comments [] = array (
+                'id'          => 0,
+                'comment'     => 'No existing comments. Click above to add your comment.',
+                'date_added'  => $this->dateTimeDiff($now),
+                'fullname'    => $this->getResidentName(''),
+                'avatar'      => $_ENV['HTTP_SERVER'].$this->getResidentAvatar(''),
+              );
+          }
+      }
 
-  	return $comments;
-  }
+      return $comments;
+    }
 
 	public function addFrontDeskInstruction($username, $data) {
 		
@@ -1874,24 +1939,36 @@ table.list .center {
 
 	function getIncidentComments($incident_id) {
     	$comments = array();
+      date_default_timezone_set('America/Toronto');
+      $now = date('Y-m-d H:i:s');
 
     	$stmt = $this->conn->prepare("SELECT * FROM incident_log WHERE incident_id = :incident_id ORDER BY log_id ASC");
         $stmt->bindParam(':incident_id', $incident_id);
 
         if ($stmt->execute()) {
-    		$results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    		foreach ($results AS $row) {
-    			$comments [] = array (
-	    			'id'			=> (int)$row['log_id'],
-	    			'comment'		=> $row['comment'],
-	    			'date_added'	=> $this->dateTimeDiff($row['date_added']),
-	    			'fullname'		=> $this->getResidentName($row['username']),
-	    			'avatar'		=> $_ENV['HTTP_SERVER'].$this->getResidentAvatar($row['username']),
-	    		);
-	    	}
-    	}
+          $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+          if ($results) {
+            foreach ($results AS $row) {
+              $comments [] = array (
+                'id'          => (int)$row['log_id'],
+                'comment'     => $row['comment'],
+                'date_added'  => $this->dateTimeDiff($row['date_added']),
+                'fullname'    => $this->getResidentName($row['username']),
+                'avatar'      => $_ENV['HTTP_SERVER'].$this->getResidentAvatar($row['username']),
+              );
+            }
+          } else {
+            $comments [] = array (
+                'id'          => 0,
+                'comment'     => 'No existing comments. Click above to add your comment.',
+                'date_added'  => $this->dateTimeDiff($now),
+                'fullname'    => $this->getResidentName(''),
+                'avatar'      => $_ENV['HTTP_SERVER'].$this->getResidentAvatar(''),
+              );
+          }
+      }
 
-    	return $comments;
+      return $comments;
     }
 
     function getIncidentImages($incident_id) {
@@ -1910,62 +1987,77 @@ table.list .center {
     	return $images;
     }
 
+    function getIncidentFirstImage($incident_id) {
+      $image = $_ENV['HTTP_SERVER'].'img/default-placeholder-300x300.png';
+
+      $stmt = $this->conn->prepare("SELECT image FROM incident_image WHERE incident_id = :incident_id ");
+        $stmt->bindParam(':incident_id', $incident_id);
+
+        if ($stmt->execute()) {
+          $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+          if (!empty($results[0])) {
+            $image = $_ENV['HTTP_SERVER'].$results[0]['image'];
+          }
+        }
+
+      return $image;
+    }
+
 	public function addIncidentReport($username, $data) {
 		date_default_timezone_set("America/Toronto");
-		$date_created	= date('Y-m-d');
+		
 		$profile 		= $this->getProfileByUsername($username);
-    $bid			= $profile['bid'];
-    	
-		$status = 's'; // sent
+    	$bid			= $profile['bid'];
+    	$date_added		= date('Y-m-d H:i:s');
+    	$description	= !empty($data['description']) ? $data['description'] : '';
+    	$date_noticed	= !empty($data['dateNoticed']) ? date('Y-m-d', strtotime($data['dateNoticed'])) : $date_added;
+    	$time_noticed	= !empty($data['timeNoticed']) ? $data['timeNoticed'] : '';
+    	$category_id 	= !empty($data['category_id']) ? $data['category_id'] : 0;
+    	$status 		= !empty($data['status']) ? $data['status'] : 's';
+    	$image 			= !empty($data['image']) ? $data['image'] : '';
 		
-		$file = '';
-		$thumbNailPathName = '';
-    	
-    	if (isset($_FILES['fileUpload'])) {	
-    	// upload the file if it exists
-		$file = $this->uploadIncidentImage();
-    	// Create a Thumbnail if an image exists
-		if ($file != "no file") {
-			$imgArr = explode('/', $file);
-			$imgNameOnly = $imgArr[sizeof($imgArr)-1];
-			$folderPath = "";
-			for ($i=0; $i<sizeof($imgArr)-1; $i++) {
-				$folderPath .=  $imgArr[$i] . "/" ;
-			}
-			$thumbNailPathName = $folderPath . "thumb_" . $imgNameOnly;
-			$imgType = getImgType($imgNameOnly);
-			// Instantiate the thumbnail
-			$tn=new Thumbnail(150,150);
-			// Load an image into a string (this could be FROM a database)
-			$image=file_get_contents($_ENV['DIR_INCIDENTREPORT'].$imgNameOnly);
-			// Load the image data
-			$tn->loadData($image,$imgType);
-			// Build the thumbnail and store as a file
-			$tn->buildThumb($_ENV['DIR_INCIDENTREPORT'].'thumb_'.$imgNameOnly);
-		}
-		}
-		
-		$stmt = $this->conn->prepare('INSERT INTO incident SET username = :username, bid = :bid, date_created = :date_created, date_noticed = :date_noticed, time_noticed = :time_noticed, description = :description, 
-		category = :category, status = :status, photo = :photo, thumb = :thumb');
+		$stmt = $this->conn->prepare("INSERT INTO incident SET username = :username, bid = :bid, date_added = :date_added, description = :description, category_id = :category_id, status = :status, date_noticed = :date_noticed, time_noticed = :time_noticed, date_modified = :date_added, adminid = '0', is_new = '1'");
     	$stmt->bindParam(':username',$username);
+    	$stmt->bindParam(':bid',$bid);
+    	$stmt->bindParam(':date_added',$date_added);
+    	$stmt->bindParam(':description',$description);
+    	$stmt->bindParam(':category_id',$category_id);
     	$stmt->bindParam(':date_noticed',$date_noticed);
     	$stmt->bindParam(':time_noticed',$time_noticed);
-    	$stmt->bindParam(':date_created',$date_created);
-    	$stmt->bindParam(':description',$description);
-    	$stmt->bindParam(':category',$category);
     	$stmt->bindParam(':status',$status);
-    	$stmt->bindParam(':photo',$file);
-    	$stmt->bindParam(':thumb',$thumbNailPathName);
-    	$stmt->bindParam(':bid',$bid);
     	
     	$result = $stmt->execute();
-    	
+
+    	$incident_id = $this->conn->lastInsertId();
     	
     	if ($result) {
+			// save Base 64 string as image.    	
+	    	if ($image) {
+	    		$uploadDir	= $_ENV['DIR_INCIDENTREPORT'];
+	    		$uploadPath = $_ENV['PATH_INCIDENTREPORT'];
+	    		$img 		= str_replace(' ', '+', $image);
+				$imgData 	= base64_decode($img);
+				$filename 	= $username . '_' . uniqid() . '.jpg';
+				$imgPath 	= $uploadPath . $filename;
+				$file 		= $uploadDir . $filename;
+				$success = file_put_contents($file, $imgData);
+
+				if ($success) {
+					// add to maintenance_image
+					$stmt = $this->conn->prepare("INSERT INTO incident_image SET incident_id = :incident_id, username = :username, image = :image, date_added = :date_added, bid = :bid ");
+					$stmt->bindParam(':incident_id',$incident_id);
+					$stmt->bindParam(':username',$username);
+			    	$stmt->bindParam(':image',$imgPath);
+			    	$stmt->bindParam(':date_added',$date_added);
+			    	$stmt->bindParam(':bid',$bid);
+			    	$stmt->execute();
+				}
+	    	}
+
     		return TRUE;
-    	} else {
-    		return NULL;
-    	}
+		} else {
+			return NULL;
+		}
 	}
 	
 	
@@ -2075,6 +2167,7 @@ table.list .center {
             'categoryName'  => $this->getCategoryName($post['category_id'],'incident'),
             'displayStatus' => $this->displayStatus($post['status']),
             'images'        => $this->getIncidentImages($post['incident_id']),
+            'image'         => $this->getIncidentFirstImage($post['incident_id']),
             'comments'      => $this->getIncidentComments($post['incident_id']),
         );
     } 
@@ -2112,6 +2205,7 @@ table.list .center {
     				'categoryName'	=> $this->getCategoryName($post['category_id'],'incident'),
     				'displayStatus'	=> $this->displayStatus($post['status']),
     				'images'		    => $this->getIncidentImages($post['incident_id']),
+            'image'         => $this->getIncidentFirstImage($post['incident_id']),
     				'comments'      => $this->getIncidentComments($post['incident_id']),
     		);
     	}
@@ -2198,7 +2292,7 @@ table.list .center {
     }
 
     $lastCount = $start + $limit;
-    $maxCount  = $this->numberOfPeople($bid);
+    $maxCount  = $this->numberOfNews($bid);
     $nextPage  = ($lastCount < $maxCount) ? $page + 1 : null;
       
     return array(
@@ -2212,7 +2306,7 @@ table.list .center {
 
   private function numberOfPeople($bid) {
         $status = 1;
-        $stmt     = $this->conn->prepare('SELECT COUNT(*) AS total FROM marketplace WHERE status = :status AND bid = :bid');
+        $stmt     = $this->conn->prepare('SELECT COUNT(*) AS total FROM user WHERE status = :status AND bid = :bid');
         $stmt->bindParam(':status', $status);
         $stmt->bindParam(':bid', $bid);
         $post_data = array();
@@ -2233,7 +2327,7 @@ table.list .center {
       
     $people = array ();
       
-    $stmt = $this->conn->prepare("SELECT * FROM user WHERE bid = :bid AND status = :status AND privacy != 's' ORDER BY fullname ASC LIMIT $start, $limit");
+    $stmt = $this->conn->prepare("SELECT * FROM user WHERE bid = :bid AND status = :status AND privacy != 's' ORDER BY firstname ASC LIMIT $start, $limit");
     $stmt->bindParam(':bid', $bid);
     $stmt->bindParam(':status', $status);
       
@@ -2245,7 +2339,7 @@ table.list .center {
           
             'user_id'       => (int)$row['user_id'],
             'username'	    => $row['username'],
-            'fullname'      => $row['fullname'],
+            'fullname'      => trim($row['fullname']),
             'privacy'       => $row['privacy'],
             'avatar'        => $_ENV['HTTP_SERVER'].$row['profilepic'],
             'unit'          => $row['unit'],
