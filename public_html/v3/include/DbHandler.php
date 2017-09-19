@@ -2622,28 +2622,28 @@ table.list .center {
     	return $images;
     }
     
-    public function addPost($username, $message = '') {
+    public function addPost($username, $message = '', $image = '') {
     	date_default_timezone_set("America/Toronto");
-	 	  $profile 	   = $this->getProfileByUsername($username);
+	 	$profile 	   = $this->getProfileByUsername($username);
     	
-      $bid         = $profile['bid'];
-      $fullname    = $profile['fullname'];
+      	$bid         = $profile['bid'];
+      	$fullname    = $profile['fullname'];
     	$type        = 'posts';
     	$date_added  = date('Y-m-d H:i:s');
-      $type_id     = '0';
-      $group_id    = '0';
-      $parent_id   = '0';
-      $abuse       = '0';
-      $markabuse   = '0';
-      $comments    = '0';
-      $pin         = '0';
-      $pin_expiry  = $date_added;
-      $love        = '0';
+      	$type_id     = '0';
+      	$group_id    = '0';
+      	$parent_id   = '0';
+      	$abuse       = '0';
+      	$markabuse   = '0';
+      	$comments    = '0';
+      	$pin         = '0';
+      	$pin_expiry  = $date_added;
+      	$love        = '0';
 
-      $result      = NULL;
+      	$result      = NULL;
     	$images     = array();
 
-      $sql = "INSERT INTO `wall` SET username = :username, bid = :bid, fullname = :fullname, message = :message, type = :type, date_added = :date_added, type_id = :type_id, group_id = :group_id, parent_id = :parent_id, abuse = :abuse, markabuse = :markabuse, comments = :comments, pin = :pin, pin_expiry = :pin_expiry, love = :love";
+      	$sql = "INSERT INTO `wall` SET username = :username, bid = :bid, fullname = :fullname, message = :message, type = :type, date_added = :date_added, type_id = :type_id, group_id = :group_id, parent_id = :parent_id, abuse = :abuse, markabuse = :markabuse, comments = :comments, pin = :pin, pin_expiry = :pin_expiry, love = :love";
 
       try {
   		
@@ -2666,11 +2666,36 @@ table.list .center {
       	
         $result = $stmt->execute();
 
+        $post_id = $this->conn->lastInsertId();
+
         if ($result) {
-          return $this->conn->lastInsertId();
-        } else {
-          return null;
-        }
+			// save Base 64 string as image.    	
+	    	if ($image) {
+	    		$uploadDir	= $_ENV['DIR_WALLPOST'];
+	    		$uploadPath = $_ENV['PATH_WALLPOST'];
+	    		$img 		= str_replace(' ', '+', $image);
+				$imgData 	= base64_decode($img);
+				$filename 	= $username . '_' . uniqid() . '.jpg';
+				$imgPath 	= $uploadPath . $filename;
+				$file 		= $uploadDir . $filename;
+				$success = file_put_contents($file, $imgData);
+
+				if ($success) {
+					// add to maintenance_image
+					$stmt = $this->conn->prepare("INSERT INTO wall_image SET post_id = :post_id, username = :username, image = :image, date_added = :date_added, bid = :bid ");
+					$stmt->bindParam(':post_id',$post_id);
+					$stmt->bindParam(':username',$username);
+			    	$stmt->bindParam(':image',$imgPath);
+			    	$stmt->bindParam(':date_added',$date_added);
+			    	$stmt->bindParam(':bid',$bid);
+			    	$result = $stmt->execute();
+				}
+	    	}
+
+    		return TRUE;
+		} else {
+			return NULL;
+		}
 
       }
       catch (PDOException $e) {

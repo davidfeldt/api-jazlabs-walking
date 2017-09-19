@@ -350,10 +350,11 @@ $app->post('/posts', 'authenticate', function() use($app) {
             $json = $app->request->getBody();
             $data = json_decode($json, true); 
             $message = $data['message'];
+            $image   = $data['image'];
             
             $db = new DbHandler();
             
-            $res = $db->addPost($app->username, $message);
+            $res = $db->addPost($app->username, $message, $image);
             
             // $db->registerAPICall( $app->username, 'posts', 'post', $res);
  
