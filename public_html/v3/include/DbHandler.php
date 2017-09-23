@@ -1325,6 +1325,22 @@ table.list .center {
     	return $images;
     }
 
+    function getMarketplaceFirstImage($marketplace_id) {
+      $image = $_ENV['HTTP_SERVER'].'img/default-placeholder-300x300.png';
+
+      $stmt = $this->conn->prepare("SELECT image FROM marketplace_image WHERE marketplace_id = :marketplace_id ");
+        $stmt->bindParam(':marketplace_id', $marketplace_id);
+
+        if ($stmt->execute()) {
+          $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+          if (!empty($results[0])) {
+            $image = $_ENV['HTTP_SERVER'].$results[0]['image'];
+          }
+        }
+
+      return $image;
+    }
+
     private function numberOfMarketplaceItems($bid) {
         $isAvailable = 1;
         $stmt     = $this->conn->prepare('SELECT COUNT(*) AS total FROM marketplace WHERE isAvailable = :isAvailable AND bid = :bid');
@@ -1371,16 +1387,17 @@ table.list .center {
   				'blurb'         => substr(strip_tags(html_entity_decode($post['description'])), 0, 50).' ...',
   				'category'		=> (int)$post['category_id'],
   				'categoryName'  => $this->getCategoryName($post['category_id'],'marketplace'),
+  				'image'         => $this->getMarketplaceFirstImage($post['marketplace_id']),
   				'images'		=> $this->getMarketplaceImages($post['marketplace_id']),
   				'comments'		=> $this->getMarketplaceComments($post['marketplace_id']),
-					'title' 		=> $post['title'],
-					'price'			=> $price,
-					'type'			=> $type,
-					'views'			=> $post['views'],
-					'is_new'		=> $post['is_new'],
-					'fullname'		=> $this->getResidentName($post['username'])
-    				
-    			);
+				'title' 		=> $post['title'],
+				'price'			=> $price,
+				'type'			=> $type,
+				'views'			=> $post['views'],
+				'is_new'		=> $post['is_new'],
+				'fullname'		=> $this->getResidentName($post['username'])
+				
+			);
     		}
       } 
 
@@ -1723,7 +1740,7 @@ table.list .center {
       				'dateNoticed'     => $this->dateTimeDiff($post['date_noticed']),
       				'categoryName'    => $this->getCategoryName($post['category_id'],'maintenance'),
       				'images'          => $this->getMaintenanceImages($post['maintenance_id']),
-              'image'           => $this->getMaintenanceFirstImage($post['maintenance_id']),
+              		'image'           => $this->getMaintenanceFirstImage($post['maintenance_id']),
       				'comments'        => $this->getMaintenanceComments($post['maintenance_id']),
       				
       			);
@@ -1905,8 +1922,8 @@ table.list .center {
             'blurb'         => substr(strip_tags(html_entity_decode($post['description'])), 0, 50).' ...',
             'category_id'   => (int)$post['category_id'],
             'startDate'    	=> date('m/d/Y', strtotime($post['start_date'])),
-            'endDate'       => date('m/d/Y', strtotime($post['end_date'])),
-            'noEnddate'    	=> $post['no_enddate'],
+            'endDate'       => $post['end_date'] !== '0000-00-00' ? date('m/d/Y', strtotime($post['end_date'])) : 'No end date',
+            'noEnddate'    	=> (int)$post['no_enddate'],
             'categoryName'	=> $this->getCategoryName($post['category_id'],'frontdesk'),
             'comments'      => $this->getFrontdeskComments($post['frontdesk_id'])
         );
@@ -2221,12 +2238,12 @@ table.list .center {
     );
 	}
 	
-	public function deleteIncidentReport($username, $id) {
-		$stmt = $this->conn->prepare('DELETE FROM incident WHERE id = :id AND username = :username');
-        $stmt->bindParam(':id', $id);
+	public function deleteIncidentReport($username, $incident_id) {
+		$stmt = $this->conn->prepare('DELETE FROM incident WHERE incident_id = :incident_id AND username = :username');
+        $stmt->bindParam(':incident_id', $incident_id);
         $stmt->bindParam(':username', $username);
         if ($stmt->execute()) {
-            return TRUE;
+            return $this->getAllIncidentReports($username);
         } else {
             return NULL;
         }
