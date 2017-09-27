@@ -1356,6 +1356,49 @@ table.list .center {
         }
       }
 
+    public function getMarketplaceItem($marketplace_id)	{
+    	$post_data	= array();
+
+		$stmt = $this->conn->prepare("SELECT * FROM marketplace WHERE marketplace_id = :marketplace_id ");
+        $stmt->bindParam(':marketplace_id',$marketplace_id);
+        
+        if ($stmt->execute()) {
+    		$stmt->setFetchMode(PDO::FETCH_ASSOC);
+        	$post = $stmt->fetch();
+
+    		if ($post['type'] == 's') {
+				$price = (is_numeric($post['price']) && $post['price']) ? '$'.number_format($post['price'],2) : 'Contact for price';
+			} else {
+				$price = '';
+			}
+			
+			$type = ($post['type'] == 's') ? 'For Sale' : 'Wanted';
+
+  			$post_data = array (
+  				'id'			=> (int)$post['marketplace_id'],
+  				'bid'			=> (int)$post['bid'],
+  				'username'		=> $post['username'],
+  				'dateAdded'		=> $this->dateTimeDiff($post['date_added']),
+  				'description'	=> $post['description'],
+  				'blurb'         => substr(strip_tags(html_entity_decode($post['description'])), 0, 50).' ...',
+  				'category'		=> (int)$post['category_id'],
+  				'categoryName'  => $this->getCategoryName($post['category_id'],'marketplace'),
+  				'image'         => $this->getMarketplaceFirstImage($post['marketplace_id']),
+  				'images'		=> $this->getMarketplaceImages($post['marketplace_id']),
+  				'comments'		=> $this->getMarketplaceComments($post['marketplace_id']),
+				'title' 		=> $post['title'],
+				'price'			=> $price,
+				'type'			=> $type,
+				'views'			=> $post['views'],
+				'is_new'		=> $post['is_new'],
+				'fullname'		=> $this->getResidentName($post['username'])
+				
+			);
+      } 
+
+      return $post_data;
+    }
+
     public function getAllMarketplaceItems($bid,$page = 1)	{
 		  $page = (isset($page)) ? $page : 1;
     	$start = ($page - 1) * $_ENV['LIMIT'];
@@ -1364,7 +1407,7 @@ table.list .center {
 
     	$post_data	= array();
 
-		  $stmt = $this->conn->prepare("SELECT * FROM marketplace WHERE bid = :bid AND isAvailable = :isAvailable ORDER BY date_added DESC ");
+		  $stmt = $this->conn->prepare("SELECT * FROM marketplace WHERE bid = :bid AND isAvailable = :isAvailable ORDER BY type, date_added DESC ");
         $stmt->bindParam(':bid',$bid);
         $stmt->bindParam(':isAvailable',$isAvailable);
         
@@ -1412,6 +1455,69 @@ table.list .center {
         
 
    	}
+
+   	public function addMarketplaceItem($username, $data) {
+		date_default_timezone_set("America/Toronto");
+		
+		$profile 		= $this->getProfileByUsername($username);
+    	$bid			= $profile['bid'];
+    	$email 			= $profile['email'];
+    	$date_added		= date('Y-m-d H:i:s');
+    	$description	= !empty($data['description']) ? $data['description'] : '';
+    	$title 			= !empty($data['title']) ? $data['title'] : '';
+    	$price 			= !empty($data['price']) ? $data['price'] : 0;
+    	$type 			= !empty($data['type']) ? $data['type'] : 's';
+    	$category_id 	= !empty($data['category_id']) ? $data['category_id'] : 0;
+    	$isAvailable	= !empty($data['isAvailable']) ? $data['isAvailable'] : 0;
+    	$image 			= !empty($data['image']) ? $data['image'] : '';
+    	$ip 			= $_SERVER['REMOTE_ADDR'];
+		
+		$stmt = $this->conn->prepare("INSERT INTO marketplace SET username = :username, bid = :bid, email = :email, date_added = :date_added, price = :price, ip = :ip, description = :description, title = :title, isAvailable = :isAvailable, category_id = :category_id, date_modified = :date_added, views = '0', isConfirmed = '1', confirmPassword = '', is_new = '1'");
+    	$stmt->bindParam(':username',$username);
+    	$stmt->bindParam(':email',$email);
+    	$stmt->bindParam(':ip',$ip);
+    	$stmt->bindParam(':price',$price);
+    	$stmt->bindParam(':date_added',$date_added);
+    	$stmt->bindParam(':description',$description);
+    	$stmt->bindParam(':title',$title);
+    	$stmt->bindParam(':isAvailable',$isAvailable);
+    	$stmt->bindParam(':type',$type);
+    	$stmt->bindParam(':category_id',$category_id);
+    	$stmt->bindParam(':bid',$bid);
+    	
+    	$result = $stmt->execute();
+
+    	$marketplace_id = $this->conn->lastInsertId();
+    	
+    	if ($result) {
+			// save Base 64 string as image.    	
+	    	if ($image) {
+	    		$uploadDir	= $_ENV['DIR_MARKETPLACITEM'];
+	    		$uploadPath = $_ENV['PATH_MARKETPLACEITEM'];
+	    		$img 		= str_replace(' ', '+', $image);
+				$imgData 	= base64_decode($img);
+				$filename 	= $username . '_' . uniqid() . '.jpg';
+				$imgPath 	= $uploadPath . $filename;
+				$file 		= $uploadDir . $filename;
+				$success 	= file_put_contents($file, $imgData);
+
+				if ($success) {
+					// add to maintenance_image
+					$stmt = $this->conn->prepare("INSERT INTO marketplace_image SET marketplace_id = :marketplace_id, username = :username, image = :image, date_added = :date_added, bid = :bid ");
+					$stmt->bindParam(':marketplace_id',$marketplace_id);
+					$stmt->bindParam(':username',$username);
+			    	$stmt->bindParam(':image',$imgPath);
+			    	$stmt->bindParam(':date_added',$date_added);
+			    	$stmt->bindParam(':bid',$bid);
+			    	$result = $stmt->execute();
+				}
+	    	}
+
+    		return $this->getMarketplaceItem($marketplace_id);
+		} else {
+			return NULL;
+		}
+	}
 	
 	public function deleteMarketplaceItem($username, $id) {
 		$stmt = $this->conn->prepare('DELETE FROM marketplace WHERE marketplace_id = :id AND username = :username');
@@ -1806,29 +1912,34 @@ table.list .center {
     }
 
 	public function addFrontDeskInstruction($username, $data) {
+		date_default_timezone_set('America/Toronto');
+    	$now = date('Y-m-d H:i:s');
 		
-		$profile 	= $this->getProfileByUsername($username);
-    	$bid		= $profile['bid'];
+		$profile 		= $this->getProfileByUsername($username);
+    	$bid			= $profile['bid'];
+    	$description	= !empty($data['description']) ? $data['description'] : '';
+    	$no_enddate 	= !empty($data['endDate']) ? 0 : 1;
+    	$start_date		= !empty($data['startDate']) ? $data['startDate'] : date('Y-m-d');
+    	$end_date 		= !empty($data['endDate']) ? $data['endDate'] : null;
+    	$category_id 	= !empty($data['category_id']) ? $data['category_id'] : 0;
     	
-		$stmt = $this->conn->prepare('INSERT INTO frontdesk SET username = :username, bid = :bid, date_created = :date_created, description = :description, startdate = :startdate, enddate = :enddate, 
-		noenddate = :noenddate, category = :category');
+		$stmt = $this->conn->prepare("INSERT INTO frontdesk SET username = :username, bid = :bid, date_added = :date_added, date_modified = :date_added, description = :description, start_date = :start_date, end_date = :end_date, no_enddate = :no_enddate, category_id = :category_id, is_new = '1', admin_id = '0'");
     	$stmt->bindParam(':username',$username);
-    	$stmt->bindParam(':date_created',$date_created);
+    	$stmt->bindParam(':date_added',$now);
     	$stmt->bindParam(':description',$description);
-    	$stmt->bindParam(':startdate',$startdate);
-    	$stmt->bindParam(':enddate',$enddate);
-    	$stmt->bindParam(':noenddate',$noenddate);
-    	$stmt->bindParam(':category',$category);
+    	$stmt->bindParam(':start_date',$start_date);
+    	$stmt->bindParam(':end_date',$end_date);
+    	$stmt->bindParam(':no_enddate',$no_enddate);
+    	$stmt->bindParam(':category_id',$category_id);
     	$stmt->bindParam(':bid',$bid);
     	
     	$result = $stmt->execute();
     	
-    	
-    	if ($result) {
-    		return TRUE;
-    	} else {
-    		return NULL;
-    	}
+		if ($result) {
+			return TRUE;
+		} else {
+			return NULL;
+		}
 	}
 	
 	public function updateFrontDeskInstruction($id, $username, $date_created, $description, $startdate, $enddate, $noenddate, $category) {
@@ -2335,6 +2446,30 @@ table.list .center {
           return 0;
         }
       }
+
+    public function getAllPeopleAutoComplete($bid = 1) {
+	    $status = 1;
+	      
+	    $people = array ();
+	      
+	    $stmt = $this->conn->prepare("SELECT username, fullname FROM user WHERE bid = :bid AND status = :status AND privacy != 's' ORDER BY firstname ");
+	    $stmt->bindParam(':bid', $bid);
+	    $stmt->bindParam(':status', $status);
+	      
+	    if ($stmt->execute()) {
+	      $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+	      foreach ($posts AS $row) {
+	      
+	        $people [] = array (
+	          
+	            'username'	    => $row['username'],
+	            'fullname'      => trim($row['fullname']),
+	          );
+	      }
+	    }
+
+	    return $people;
+  	}
 
   public function getAllPeople($bid = 1,$page = 1) {
     $page = (isset($page)) ? $page : 1;
@@ -3128,7 +3263,7 @@ table.list .center {
         $cats = $stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach ($cats AS $cat) {
           $categories[] = array (
-            'id'    => (int)$cat['category_id'],
+            'category_id'    => $cat['category_id'],
             'name'  => $cat['category_name']
           );
         }

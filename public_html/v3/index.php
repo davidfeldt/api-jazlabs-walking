@@ -782,34 +782,28 @@ $app->post('/reservations/comments/:id', 'authenticate', function($id) use($app)
 
 $app->post('/instructions', 'authenticate', function() use($app) {
 
-            // check for required params
-            verifyRequiredParams(array('description', 'startdate', 'enddate', 'noenddate', 'category'));
-			$response = array();
+            $response               = array();
 
-        	parse_str($app->request()->getBody(), $request_params);
+            $json                   = $app->request->getBody();
+            $data                   = json_decode($json, true);
 
-            $date_created 		= date('Y-m-d');
-            $description 		= $request_params['description'];
-            $startdate 			= $request_params['startdate'];
-            $enddate 			= $request_params['enddate'];
-            $noenddate 			= $request_params['noenddate'];
-            $category 			= $request_params['category'];
+            $db  = new DbHandler();
+            $res = $db->addFrontdeskInstruction($app->username, $data);
 
-
-            $db = new DbHandler();
-            $res = $db->addFrontDeskInstruction($app->username, $date_created, $description, $startdate, $enddate, $noenddate, $category);
-
- 			$db->registerAPICall( $app->username, 'instructions', 'post', $res);
+            $db->registerAPICall( $app->username, 'instructions', 'post', json_encode($res));
 
             if ($res) {
-                $response['error'] = false;
-                $response['username'] = $app->username;
-                $response['message'] = "Front desk instruction posted successfully!";
+                $response['error']  = false;
+                $response['success'] = true;
+                $response['message'] = "Frontdesk instruction added successfully!";
+                $response['request'] = $data;
+                $response['results'] = $res;
                 echoResponse(201, $response);
             } else {
                 $response['error'] = true;
-                $response['username'] = $app->username;
-                $response['message'] = "An error occurred while posting front desk instruction";
+                $response['message'] = "An error occurred while adding frontdesk instruction";
+                $response['request'] = $data;
+                $response['results'] = $res;
                 echoResponse(200, $response);
             }
         });
@@ -993,6 +987,33 @@ $app->get('/items', 'authenticate', function() use($app) {
 
             $db = NULL;
         });
+
+$app->post('/items', 'authenticate', function() use($app) {
+
+            $response               = array();
+
+            $json                   = $app->request->getBody();
+            $data                   = json_decode($json, true);
+
+            $db  = new DbHandler();
+            $res = $db->addMarketplaceItem($app->username, $data);
+
+            $db->registerAPICall( $app->username, 'items', 'post', json_encode($res));
+
+            if ($res) {
+                $response['error']  = false;
+                $response['success'] = true;
+                $response['message'] = "Marketplace item added successfully!";
+                $response['request'] = $data;
+                $response['results'] = $res;
+                echoResponse(201, $response);
+            } else {
+                $response['error'] = true;
+                $response['message'] = "An error occurred while adding marketplace items";
+                echoResponse(200, $response);
+            }
+        });
+
 
 $app->post('/items/comments/:id', 'authenticate', function($id) use($app) {
 
@@ -1401,6 +1422,29 @@ $app->get('/people', 'authenticate', function() use($app) {
         } else {
             $response['error'] = true;
             $response['results'] = array();
+            $response['message'] = 'No people found!';
+        }
+
+        $db->registerAPICall( $app->username, 'people', 'get', '1');
+
+        echoResponse(200, $response);
+
+        $db = NULL;
+    });
+
+$app->get('/people/all', 'authenticate', function() use($app) {
+        $response = array();
+        $db = new DbHandler();
+
+        $results   = $db->getAllPeopleAutoComplete($app->bid);
+
+        if ($results) {
+            $response['success']    = true;
+            $response['username'] = $app->username;
+            $response['people']  = $results;
+        } else {
+            $response['error'] = true;
+            $response['people'] = array();
             $response['message'] = 'No people found!';
         }
 
