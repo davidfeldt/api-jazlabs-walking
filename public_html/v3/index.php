@@ -1702,6 +1702,29 @@ $app->get('/people/managers',  'authenticate', function() use($app) {
 
 // list of categories (front desk instructions, maintenance requests, incident reports)
 
+$app->get('/facilities',  'authenticate', function() use($app) {
+			$response = array();
+            $db = new DbHandler();
+
+            $results = $db->getFacilities($app->bid);
+
+            if ($results) {
+                $response['success'] = true;
+                $response['facilities'] = $results;
+            } else {
+                $response['error'] = true;
+                $response['message'] = "No facilities found";
+            }
+
+
+			$db->registerAPICall($app->username, 'facilities', 'get', '1');
+
+            echoResponse(200, $response);
+
+            $db = NULL;
+        });
+
+
 $app->get('/categories/:type',  'authenticate', function($type) use($app) {
 			$response = array();
             $db = new DbHandler();

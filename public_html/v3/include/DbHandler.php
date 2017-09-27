@@ -3226,6 +3226,27 @@ table.list .center {
 	
 	}
 	
+// RESERVATION Facilities
+
+	public function getFacilities($bid) {
+		$facilities = array();
+
+		$stmt = $this->conn->prepare("SELECT * FROM facility WHERE bid = :bid ORDER BY name ASC");
+      	$stmt->bindParam(':bid',$bid);
+    	
+    	if ($stmt->execute()) {
+        	$cats = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        	foreach ($cats AS $cat) {
+          		$facilities[] = array (
+	            	'facility_id'   => $cat['facility_id'],
+	            	'name'  		=> $cat['name']
+          		);
+        	}
+    	} 
+    
+    	return $facilities;
+		
+	}
 
 // Get categories for front desk instructions, maintenance requests and incident reports
 
