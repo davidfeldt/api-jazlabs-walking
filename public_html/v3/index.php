@@ -1724,6 +1724,27 @@ $app->get('/facilities',  'authenticate', function() use($app) {
             $db = NULL;
         });
 
+$app->get('/resources/:id',  'authenticate', function($id) use($app) {
+			$response = array();
+            $db = new DbHandler();
+
+            $results = $db->getResources($app->bid, $id);
+
+            if ($results) {
+                $response['success'] = true;
+                $response['resources'] = $results;
+            } else {
+                $response['error'] = true;
+                $response['message'] = "No facilities found";
+            }
+
+
+			$db->registerAPICall($app->username, 'resources/'.$id, 'get', '1');
+
+            echoResponse(200, $response);
+
+            $db = NULL;
+        });
 
 $app->get('/categories/:type',  'authenticate', function($type) use($app) {
 			$response = array();

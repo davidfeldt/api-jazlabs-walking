@@ -3248,6 +3248,27 @@ table.list .center {
 		
 	}
 
+	public function getResources($bid, $facility_id) {
+		$resources = array();
+
+		$stmt = $this->conn->prepare("SELECT * FROM reservation_resources WHERE bid = :bid AND facility_id = :facility_id ORDER BY name ASC");
+      	$stmt->bindParam(':bid',$bid);
+      	$stmt->bindParam(':facility_id',$facility_id);
+    	
+    	if ($stmt->execute()) {
+        	$cats = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        	foreach ($cats AS $cat) {
+          		$resources[] = array (
+	            	'resource_id'   => $cat['resource_id'],
+	            	'name'  		=> $cat['name']
+          		);
+        	}
+    	} 
+    
+    	return $resources;
+		
+	}
+
 // Get categories for front desk instructions, maintenance requests and incident reports
 
 	public function getCategories($username,$type)	{
