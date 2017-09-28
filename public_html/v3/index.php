@@ -725,8 +725,6 @@ $app->get('/reservations/comments/:id', 'authenticate', function($id) use($app) 
 $app->post('/reservations/timeslots', 'authenticate', function() use($app) {
             $response = array();
 
-            $response = array();
-
             $json = $app->request->getBody();
             $data = json_decode($json, true);
 

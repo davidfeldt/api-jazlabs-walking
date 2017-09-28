@@ -1292,8 +1292,8 @@ table.list .center {
     $carcolor   = !empty($data['carcolor']) ? ucfirst($data['carcolor']) : '';
     $carlicense = !empty($data['carlicense']) ? strtoupper($data['carlicense']) : '';
     $carmake    = !empty($data['carmake']) ? ucfirst($data['carmake']) : '';
+    $carmodel   = !empty($data['carmodel']) ? ucfirst($data['carmodel']) : '';
     $visitorname= !empty($data['visitorname']) ? ucwords($data['visitorname']) : '';
-
     $facility_id= !empty($data['facility_id']) ? $data['facility_id'] : 0;
     $resource_id= !empty($data['resource_id']) ? $data['resource_id'] : 0;
     $startDate  = !empty($data['startDate']) ? date('m/d/Y', strtotime($data['startDate'])) : '';
@@ -1305,15 +1305,16 @@ table.list .center {
     	$description= htmlspecialchars($startDate." - ".$endDate, ENT_QUOTES);
     }
 
-    $timeslots  = !empty($data['timeslots']) ? $data['timeslots'] : array();
+    $timeslots  = !empty($data['selectedTimeSlots']) ? $data['selectedTimeSlots'] : array();
 
     $rescode    = $this->randomString(8);
 
-    $stmt = $this->conn->prepare("INSERT INTO reservation SET description = :description, carcolor = :carcolor, carlicense = :carlicense, carmake = :carmake,  visitorname = :visitorname,  facility_id = :facility_id, resource_id = :resource_id, rescode = :rescode, is_new = '1', date_added = NOW(), username = :username, bid = :bid");
+    $stmt = $this->conn->prepare("INSERT INTO reservation SET description = :description, carcolor = :carcolor, carlicense = :carlicense, carmake = :carmake,  carmodel = :carmodel, visitorname = :visitorname,  facility_id = :facility_id, resource_id = :resource_id, rescode = :rescode, notes = '', is_new = '1', resstatus = 'booked', date_added = NOW(), username = :username, bid = :bid");
     $stmt->bindParam(':description',$description);
     $stmt->bindParam(':carcolor',$carcolor);
     $stmt->bindParam(':carlicense',$carlicense);
     $stmt->bindParam(':carmake',$carmake);
+    $stmt->bindParam(':carmodel',$carmodel);
     $stmt->bindParam(':visitorname',$visitorname);
     $stmt->bindParam(':facility_id',$facility_id);
     $stmt->bindParam(':resource_id',$resource_id);
@@ -1403,14 +1404,10 @@ table.list .center {
       $i    = 0;
       while ($alef <= $taf) {
         
-      $timeslots[] = array(
-        'dateDisplay' => date('F d, Y', $alef),
-        'date'      => date('Y-m-d', $alef),
-        'slots'     => $this->getTimeSlotsForResource($resource, date('Y-m-d',$alef))
-        );
-      $alef = strtotime("+1 days", $alef);
-      $i++;
-    }
+        $timeslots = $this->getTimeSlotsForResource($resource, date('Y-m-d',$alef));
+        $alef = strtotime("+1 days", $alef);
+        $i++;
+      }
 
     return $timeslots;
 
@@ -1442,7 +1439,8 @@ table.list .center {
         $label = "".date('h:ia',strtotime($resource['first']))."-".date('h:ia',strtotime($resource['last']));
         if ($this->isTimeSlotAvailable($resource['resource_id'], $date, $label)) {
           $timeslots = array(
-            'label' => $label,
+            'label' => " ".date('m/d/Y', strtotime($date))." : ".$label,
+            'value' => $date."|".$label
           );
         }
         break;
@@ -1450,13 +1448,15 @@ table.list .center {
         $label = "".date('h:ia',strtotime($resource['s1']))."-".date('h:ia',strtotime($resource['e1']));
         if ($this->isTimeSlotAvailable($resource['resource_id'], $date, $label)) {
           $timeslots[] = array(
-            'label' => $label
+            'label' => " ".date('m/d/Y', strtotime($date))." : ".$label,
+            'value' => $date."|".$label
           );
         }
         $label = "".date('h:ia',strtotime($resource['s2']))."-".date('h:ia',strtotime($resource['e2']));
         if ($this->isTimeSlotAvailable($resource['resource_id'], $date, $label)) {
           $timeslots[] = array(
-            'label' => $label
+            'label' => " ".date('m/d/Y', strtotime($date))." : ".$label,
+            'value' => $date."|".$label
           );
         }
         break;
@@ -1468,7 +1468,8 @@ table.list .center {
           $label = "".date('h:ia',$alef)."-".date('h:ia',strtotime('+ 1 hours ',$alef));
           if ($this->isTimeSlotAvailable($resource['resource_id'], $date, $label)) {
             $timeslots[] = array(
-              'label' => $label
+              'label' => " ".date('m/d/Y', strtotime($date))." : ".$label,
+            'value' => $date."|".$label
             );
           }
 
