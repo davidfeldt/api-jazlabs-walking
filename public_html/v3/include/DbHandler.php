@@ -1128,11 +1128,6 @@ table.list .center {
         }
     }
 
-  public function getAvailableTimeSlots($bid, $data) {
-    $results = array();
-
-    return $results;
-  }
 
   private function getReservedTimeSlots($rescode) {
     $post_data = array();
@@ -1349,6 +1344,146 @@ table.list .center {
     return $reservation_id;
   
   }
+
+  private function getResource($resource_id) {
+      $stmt     = $this->conn->prepare("SELECT r.resource_id, r.name, r.description, r.facility_id, c.name, c.commodity, c.timeslot_type, c.first, c.last, c.s1, c.s2, c.e1, c.e2, c.autobook, c.maxdays FROM reservation_resources r LEFT JOIN facility c ON r.facility_id = c.facility_id WHERE r.resource_id = :resource_id");
+      $stmt->bindParam(':resource_id', $resource_id);
+
+      if ($stmt->execute()) {
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch();
+
+        $resource = array();
+
+        if (isset($row) AND $row) {
+          $resource = array(
+            'resource_id'   => $row['resource_id'],
+            'resource_name' => $row['name'],
+            'description'   => $row['description'],
+            'facility_id'   => $row['facility_id'],
+            'name'          => $row['name'],
+            'timeslot_type' => $row['timeslot_type'],
+            'first'         => $row['first'],
+            'last'          => $row['last'],
+            's1'            => $row['s1'],
+            'e1'            => $row['e1'],
+            's2'            => $row['s2'],
+            'e2'            => $row['e2'],
+            'autobook'      => $row['autobook'],
+            'maxdays'       => $row['maxdays']
+          );
+        } 
+      }
+      
+      return $resource;
+
+    }
+
+  public function getAvailableTimeSlots($bid, $data)  {
+      date_default_timezone_set('America/Toronto');
+
+      $timeslots = array();
+
+      $resource = $this->getResource($data['resource_id']);
+
+      $startDate  = $data['startDate'];
+      $endDate  = $data['endDate'];
+
+      if ($endDate < $startDate) {
+        $start  = $endDate;
+        $end  = $startDate;
+      } else {
+        $start  = $startDate;
+        $end  = $endDate;
+      }
+
+      $alef = strtotime($start);
+      $taf  = strtotime($end);
+
+      $i    = 0;
+      while ($alef <= $taf) {
+        
+      $timeslots[] = array(
+        'dateDisplay' => date('F d, Y', $alef),
+        'date'      => date('Y-m-d', $alef),
+        'slots'     => $this->getTimeSlotsForResource($resource, date('Y-m-d',$alef))
+        );
+      $alef = strtotime("+1 days", $alef);
+      $i++;
+    }
+
+    return $timeslots;
+
+  }
+
+    function isTimeSlotAvailable($resource_id, $date, $label) {
+      $sql = "SELECT COUNT(*) AS total FROM reservation_timeslot WHERE resource_id = :resource_id AND date = :date AND label = :label ";
+      $stmt     = $this->conn->prepare($sql);
+      $stmt->bindParam(':resource_id', $resource_id);
+      $stmt->bindParam(':date', $date);
+      $stmt->bindParam(':label', $label);
+
+      if ($stmt->execute()) {
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch();
+        return (int)$row['total'] == 0;
+      } else {
+        return 1;
+      }
+  }
+
+  private function getTimeSlotsForResource($resource, $date) {
+    date_default_timezone_set('America/Toronto');
+
+    $timeslots = array();
+
+    switch ($resource['timeslot_type']) {
+      case 'd':
+        $label = "".date('h:ia',strtotime($resource['first']))."-".date('h:ia',strtotime($resource['last']));
+        if ($this->isTimeSlotAvailable($resource['resource_id'], $date, $label)) {
+          $timeslots = array(
+            'label' => $label,
+          );
+        }
+        break;
+      case 'hd':
+        $label = "".date('h:ia',strtotime($resource['s1']))."-".date('h:ia',strtotime($resource['e1']));
+        if ($this->isTimeSlotAvailable($resource['resource_id'], $date, $label)) {
+          $timeslots[] = array(
+            'label' => $label
+          );
+        }
+        $label = "".date('h:ia',strtotime($resource['s2']))."-".date('h:ia',strtotime($resource['e2']));
+        if ($this->isTimeSlotAvailable($resource['resource_id'], $date, $label)) {
+          $timeslots[] = array(
+            'label' => $label
+          );
+        }
+        break;
+      case 'h':
+        $alef = strtotime($resource['first']);
+        $taf  = strtotime($resource['last']);
+
+        while ($alef < $taf) {
+          $label = "".date('h:ia',$alef)."-".date('h:ia',strtotime('+ 1 hours ',$alef));
+          if ($this->isTimeSlotAvailable($resource['resource_id'], $date, $label)) {
+            $timeslots[] = array(
+              'label' => $label
+            );
+          }
+
+          $alef = strtotime("+1 hours", $alef);
+        }
+        # code...
+        break;
+      default:
+        $timeslots = array();
+        break;
+    }
+
+    return $timeslots;
+  }
+
 
 // Marketplace
 
