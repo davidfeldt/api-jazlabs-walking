@@ -1128,6 +1128,12 @@ table.list .center {
         }
     }
 
+  public function getAvailableTimeSlots($bid, $data) {
+    $results = array();
+
+    return $results;
+  }
+
   private function getReservedTimeSlots($rescode) {
     $post_data = array();
     $stmt = $this->conn->prepare("SELECT * FROM reservation_timeslot WHERE rescode = :rescode ORDER BY timeslot_id ASC");
@@ -1271,6 +1277,77 @@ table.list .center {
         'nextPage'  => $nextPage,
         'reservations'  => $post_data,
       );
+  }
+
+  private function randomString($length = 8) {
+    $str = "";
+    $characters = array_merge(range('A','Z'), range('a','z'), range('0','9'));
+    $max = count($characters) - 1;
+    for ($i = 0; $i < $length; $i++) {
+      $rand = mt_rand(0, $max);
+      $str .= $characters[$rand];
+    }
+    return $str;
+  }
+
+  public function addReservation ($username, $data) {
+    date_default_timezone_set('America/Toronto');
+    $profile    = $this->getProfileByUsername($username);
+    $bid        = $profile['bid'];
+    $carcolor   = !empty($data['carcolor']) ? ucfirst($data['carcolor']) : '';
+    $carlicense = !empty($data['carlicense']) ? strtoupper($data['carlicense']) : '';
+    $carmake    = !empty($data['carmake']) ? ucfirst($data['carmake']) : '';
+    $visitorname= !empty($data['visitorname']) ? ucwords($data['visitorname']) : '';
+
+    $facility_id= !empty($data['facility_id']) ? $data['facility_id'] : 0;
+    $resource_id= !empty($data['resource_id']) ? $data['resource_id'] : 0;
+    $startDate  = !empty($data['startDate']) ? date('m/d/Y', strtotime($data['startDate'])) : '';
+    $endDate 	= !empty($data['endDate']) ? date('m/d/Y', strtotime($data['endDate'])) : '';
+
+    if ($startDate == $endDate) {
+    	$description= htmlspecialchars($startDate, ENT_QUOTES);
+    } else {
+    	$description= htmlspecialchars($startDate." - ".$endDate, ENT_QUOTES);
+    }
+
+    $timeslots  = !empty($data['timeslots']) ? $data['timeslots'] : array();
+
+    $rescode    = $this->randomString(8);
+
+    $stmt = $this->conn->prepare("INSERT INTO reservation SET description = :description, carcolor = :carcolor, carlicense = :carlicense, carmake = :carmake,  visitorname = :visitorname,  facility_id = :facility_id, resource_id = :resource_id, rescode = :rescode, is_new = '1', date_added = NOW(), username = :username, bid = :bid");
+    $stmt->bindParam(':description',$description);
+    $stmt->bindParam(':carcolor',$carcolor);
+    $stmt->bindParam(':carlicense',$carlicense);
+    $stmt->bindParam(':carmake',$carmake);
+    $stmt->bindParam(':visitorname',$visitorname);
+    $stmt->bindParam(':facility_id',$facility_id);
+    $stmt->bindParam(':resource_id',$resource_id);
+    $stmt->bindParam(':rescode',$rescode);
+    $stmt->bindParam(':username',$username);
+    $stmt->bindParam(':bid',$bid);
+
+    $stmt->execute();
+
+    $reservation_id = $this->conn->lastInsertId();
+
+    foreach ($timeslots AS $timeslot) {
+      $t = explode("|",$timeslot);
+      $date   = $t[0];
+      $label  = $t[1];
+
+      $sql = "INSERT INTO reservation_timeslot SET resource_id = :resource_id, label = :label, date = :date, rescode = :rescode, date_added = NOW() , reservation_id = :reservation_id";
+      $stmt = $this->conn->prepare($sql);
+      $stmt->bindParam(':resource_id', $resource_id);
+      $stmt->bindParam(':label', $label);
+      $stmt->bindParam(':date', $date);
+      $stmt->bindParam(':rescode', $rescode);
+      $stmt->bindParam(':reservation_id', $reservation_id);
+      $stmt->execute();
+
+    }
+    
+    return $reservation_id;
+  
   }
 
 // Marketplace

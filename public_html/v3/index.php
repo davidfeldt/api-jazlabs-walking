@@ -722,6 +722,34 @@ $app->get('/reservations/comments/:id', 'authenticate', function($id) use($app) 
             }
         });
 
+$app->post('/reservations/timeslots', 'authenticate', function() use($app) {
+            $response = array();
+
+            $response = array();
+
+            $json = $app->request->getBody();
+            $data = json_decode($json, true);
+
+            $db = new DbHandler();
+
+            $result = $db->getAvailableTimeSlots($app->bid, $data);
+
+            $db->registerAPICall($app->username, 'reservations/timeslots/', 'get', $json);
+
+            if ($result != NULL) {
+                $response['error']      = false;
+                $response['success']    = true;
+                $response['timeslots']  = $result;
+
+                echoResponse(200, $response);
+            } else {
+                $response['error']      = true;
+                $response['message']    = "No available timeslots found. Choose alternative dates.";
+                $response['results']    = $response;
+                echoResponse(404, $response);
+            }
+        });
+
 
 $app->get('/reservations', 'authenticate', function() use($app) {
             $response = array();
@@ -746,6 +774,35 @@ $app->get('/reservations', 'authenticate', function() use($app) {
             echoResponse(200, $response);
 
             $db = NULL;
+        });
+
+$app->post('/reservations', 'authenticate', function() use($app) {
+
+            $response = array();
+
+            $json = $app->request->getBody();
+            $data = json_decode($json, true);
+
+            // facility_id, resource_id, startDate, endDate, timeslots, all car data if parking
+
+            $db = new DbHandler();
+            $res = $db->addReservation($app->username, $data);
+
+            $db->registerAPICall( $app->username, 'reservations', 'post', $json);
+
+            if ($res) {
+                $response['error'] = false;
+                $response['success'] = true;
+                $response['username'] = $app->username;
+                $response['message'] = "Reservation added successfully!";
+                echoResponse(201, $response);
+            } else {
+                $response['error'] = true;
+                $response['username'] = $app->username;
+                $response['message'] = "An error occurred while adding reservation";
+                $response['results'] = array();
+                echoResponse(200, $response);
+            }
         });
 
 $app->post('/reservations/comments/:id', 'authenticate', function($id) use($app) {
