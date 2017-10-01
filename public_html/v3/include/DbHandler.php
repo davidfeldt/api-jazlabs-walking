@@ -1230,6 +1230,20 @@ table.list .center {
       return $post_data;
   }
 
+  private function getResStatusForFacility($facility_id) {
+  	$stmt = $this->conn->prepare("SELECT autobook FROM facility WHERE facility_id = :facility_id");
+  	$stmt->bindParam(':facility_id', $facility_id);
+
+  	$autobook = 0;
+
+  	if ($stmt->execute()) {
+  		$row = $stmt->fetch(PDO::FETCH_ASSOC);
+  		$autobook = $row['autobook'];
+  	} 
+
+  	return $autobook ? 'booked' : 'pending';
+  }
+
   public function getAllReservations($username,$page = 1)  {
     $page = (isset($page)) ? $page : 1;
       $start = ($page - 1) * $_ENV['LIMIT'];
@@ -1256,6 +1270,7 @@ table.list .center {
             'resourceCategory'=> $this->getResourceCategory($row['resource_id']),
             'status'          => $row['resstatus'],
             'rescode'         => $row['rescode'],
+            'resstatus'       => ucfirst($row['resstatus']),
             'timeslots'       => $this->getReservedTimeSlots($row['rescode']),
             'description'     => $row['description'],
             'comments'        => $this->getReservationComments($row['reservation_id'])
@@ -1265,7 +1280,7 @@ table.list .center {
       } 
       
       $lastCount = $start + $limit;
-      $maxCount  = $this->numberOfMaintenanceRequests($username);
+      $maxCount  = $this->numberOfReservations($username);
       $nextPage  = ($lastCount < $maxCount) ? $page + 1 : null;
       
       return array(
@@ -1298,6 +1313,13 @@ table.list .center {
     $resource_id= !empty($data['resource_id']) ? $data['resource_id'] : 0;
     $startDate  = !empty($data['startDate']) ? date('m/d/Y', strtotime($data['startDate'])) : '';
     $endDate 	= !empty($data['endDate']) ? date('m/d/Y', strtotime($data['endDate'])) : '';
+    $timeslots  = !empty($data['selectedTimeSlots']) ? $data['selectedTimeSlots'] : array();
+
+    if (!$facility_id || !$resource_id || !$startDate || !$endDate || !$timeslots) {
+    	return false;
+    }
+
+    $resstatus 	= $this->getResStatusForFacility($facility_id);
 
     if ($startDate == $endDate) {
     	$description= htmlspecialchars($startDate, ENT_QUOTES);
@@ -1305,11 +1327,11 @@ table.list .center {
     	$description= htmlspecialchars($startDate." - ".$endDate, ENT_QUOTES);
     }
 
-    $timeslots  = !empty($data['selectedTimeSlots']) ? $data['selectedTimeSlots'] : array();
+    
 
     $rescode    = $this->randomString(8);
 
-    $stmt = $this->conn->prepare("INSERT INTO reservation SET description = :description, carcolor = :carcolor, carlicense = :carlicense, carmake = :carmake,  carmodel = :carmodel, visitorname = :visitorname,  facility_id = :facility_id, resource_id = :resource_id, rescode = :rescode, notes = '', is_new = '1', resstatus = 'booked', date_added = NOW(), username = :username, bid = :bid");
+    $stmt = $this->conn->prepare("INSERT INTO reservation SET description = :description, carcolor = :carcolor, carlicense = :carlicense, carmake = :carmake,  carmodel = :carmodel, visitorname = :visitorname,  facility_id = :facility_id, resource_id = :resource_id, rescode = :rescode, notes = '', is_new = '1', resstatus = :resstatus, date_added = NOW(), username = :username, bid = :bid");
     $stmt->bindParam(':description',$description);
     $stmt->bindParam(':carcolor',$carcolor);
     $stmt->bindParam(':carlicense',$carlicense);
@@ -1319,6 +1341,7 @@ table.list .center {
     $stmt->bindParam(':facility_id',$facility_id);
     $stmt->bindParam(':resource_id',$resource_id);
     $stmt->bindParam(':rescode',$rescode);
+    $stmt->bindParam(':resstatus',$resstatus);
     $stmt->bindParam(':username',$username);
     $stmt->bindParam(':bid',$bid);
 
@@ -1531,7 +1554,7 @@ table.list .center {
         if ($stmt->execute()) {
     		$results = $stmt->fetchAll(PDO::FETCH_ASSOC);
     		foreach ($results AS $row) {
-    			array_push($images, $_ENV['HTTP_SERVER'].$row['image']);
+    			array_push($images, $_ENV['HTTP_SERVER'].'image.php/image-name.jpg?width=400&height=300&cropratio=4:3&image=/'.$row['image']);
 	    	}
     	}
 
@@ -1789,7 +1812,7 @@ table.list .center {
         if ($stmt->execute()) {
     		$results = $stmt->fetchAll(PDO::FETCH_ASSOC);
     		foreach ($results AS $row) {
-    			array_push($images, $_ENV['HTTP_SERVER'].$row['image']);
+    			array_push($images, $_ENV['HTTP_SERVER'].'image.php/image-name.jpg?width=400&height=300&cropratio=4:3&image=/'.$row['image']);
 	    	}
     	}
 
@@ -2321,7 +2344,7 @@ table.list .center {
         if ($stmt->execute()) {
     		$results = $stmt->fetchAll(PDO::FETCH_ASSOC);
     		foreach ($results AS $row) {
-    			array_push($images, $_ENV['HTTP_SERVER'].$row['image']);
+    			array_push($images, $_ENV['HTTP_SERVER'].'image.php/image-name.jpg?width=400&height=300&cropratio=4:3&image=/'.$row['image']);
 	    	}
     	}
 
@@ -2647,7 +2670,7 @@ table.list .center {
 
   private function numberOfPeople($bid) {
         $status = 1;
-        $stmt     = $this->conn->prepare('SELECT COUNT(*) AS total FROM user WHERE status = :status AND bid = :bid');
+        $stmt     = $this->conn->prepare("SELECT COUNT(*) AS total FROM user WHERE status = :status AND bid = :bid AND propertymanager = 'n'");
         $stmt->bindParam(':status', $status);
         $stmt->bindParam(':bid', $bid);
         $post_data = array();
@@ -2660,6 +2683,35 @@ table.list .center {
         }
       }
 
+  private function numberOfBoardMembers($bid) {
+        $status = 1;
+        $stmt     = $this->conn->prepare("SELECT COUNT(*) AS total FROM user WHERE status = :status AND bid = :bid AND boardmember = 'y'");
+        $stmt->bindParam(':status', $status);
+        $stmt->bindParam(':bid', $bid);
+        $post_data = array();
+        if ($stmt->execute()) {
+          $stmt->setFetchMode(PDO::FETCH_ASSOC);
+          $row = $stmt->fetch();
+          return (int)$row['total'];
+        } else {
+          return 0;
+        }
+      }
+
+  private function numberOfPropertyManagers($bid) {
+        $status = 1;
+        $stmt     = $this->conn->prepare("SELECT COUNT(*) AS total FROM user WHERE status = :status AND bid = :bid AND propertymanager = 'y'");
+        $stmt->bindParam(':status', $status);
+        $stmt->bindParam(':bid', $bid);
+        $post_data = array();
+        if ($stmt->execute()) {
+          $stmt->setFetchMode(PDO::FETCH_ASSOC);
+          $row = $stmt->fetch();
+          return (int)$row['total'];
+        } else {
+          return 0;
+        }
+      }
     public function getAllPeopleAutoComplete($bid = 1) {
 	    $status = 1;
 	      
@@ -2692,7 +2744,7 @@ table.list .center {
       
     $people = array ();
       
-    $stmt = $this->conn->prepare("SELECT * FROM user WHERE bid = :bid AND status = :status AND privacy != 's' ORDER BY firstname ASC LIMIT $start, $limit");
+    $stmt = $this->conn->prepare("SELECT * FROM user WHERE bid = :bid AND status = :status AND privacy != 's' AND propertymanager = 'n' ORDER BY firstname ASC LIMIT $start, $limit");
     $stmt->bindParam(':bid', $bid);
     $stmt->bindParam(':status', $status);
       
@@ -2731,6 +2783,100 @@ table.list .center {
 
   }
 	
+
+  public function getAllPropertyManagers($bid = 1,$page = 1) {
+    $page = (isset($page)) ? $page : 1;
+    $start = ($page - 1) * $_ENV['LIMIT'];
+    $limit = $_ENV['LIMIT'];
+    $status = 1;
+      
+    $people = array ();
+      
+    $stmt = $this->conn->prepare("SELECT * FROM user WHERE bid = :bid AND status = :status AND privacy != 's' AND propertymanager = 'y' ORDER BY firstname ASC LIMIT $start, $limit");
+    $stmt->bindParam(':bid', $bid);
+    $stmt->bindParam(':status', $status);
+      
+    if ($stmt->execute()) {
+      $msgs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+      foreach ($msgs AS $row) {
+      
+        $people [] = array (
+          
+            'user_id'       => (int)$row['user_id'],
+            'username'      => $row['username'],
+            'fullname'      => trim($row['fullname']),
+            'privacy'       => $row['privacy'],
+            'avatar'        => $_ENV['HTTP_SERVER'].$row['profilepic'],
+            'unit'          => $row['unit'],
+            'title'         => $row['title'],
+            'phone'         => $row['phone'],
+            'phone'         => $row['phone'],
+            'mobilephone'   => $row['mobilephone'],
+            'bio'           => $row['bio'],
+            'twitter'       => $row['twitter'],
+            'facebook'      => $row['facebook'],
+            'linkedin'      => $row['linkedin'],
+          );
+      }
+    }
+
+    $lastCount = $start + $limit;
+    $maxCount  = $this->numberOfPropertyManagers($bid);
+    $nextPage  = ($lastCount < $maxCount) ? $page + 1 : null;
+      
+    return array(
+      'nextPage'  => $nextPage,
+      'people'     => $people,
+    );
+
+  }
+
+  public function getAllBoardMembers($bid = 1,$page = 1) {
+    $page = (isset($page)) ? $page : 1;
+    $start = ($page - 1) * $_ENV['LIMIT'];
+    $limit = $_ENV['LIMIT'];
+    $status = 1;
+      
+    $people = array ();
+      
+    $stmt = $this->conn->prepare("SELECT * FROM user WHERE bid = :bid AND status = :status AND boardmember = 'y' AND privacy != 's' ORDER BY firstname ASC LIMIT $start, $limit");
+    $stmt->bindParam(':bid', $bid);
+    $stmt->bindParam(':status', $status);
+      
+    if ($stmt->execute()) {
+      $msgs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+      foreach ($msgs AS $row) {
+      
+        $people [] = array (
+          
+            'user_id'       => (int)$row['user_id'],
+            'username'      => $row['username'],
+            'fullname'      => trim($row['fullname']),
+            'privacy'       => $row['privacy'],
+            'avatar'        => $_ENV['HTTP_SERVER'].$row['profilepic'],
+            'unit'          => $row['unit'],
+            'title'         => $row['title'],
+            'phone'         => $row['phone'],
+            'phone'         => $row['phone'],
+            'mobilephone'   => $row['mobilephone'],
+            'bio'           => $row['bio'],
+            'twitter'       => $row['twitter'],
+            'facebook'      => $row['facebook'],
+            'linkedin'      => $row['linkedin'],
+          );
+      }
+    }
+
+    $lastCount = $start + $limit;
+    $maxCount  = $this->numberOfBoardMembers($bid);
+    $nextPage  = ($lastCount < $maxCount) ? $page + 1 : null;
+      
+    return array(
+      'nextPage'  => $nextPage,
+      'people'     => $people,
+    );
+
+  }
 // Messaging / mail
 
 	public function addMessage($username, $userTo, $subject, $message) {
@@ -2980,7 +3126,7 @@ table.list .center {
         if ($stmt->execute()) {
     		$results = $stmt->fetchAll(PDO::FETCH_ASSOC);
     		foreach ($results AS $row) {
-    			array_push($images, $_ENV['HTTP_SERVER'].$row['image']);
+    			array_push($images, $_ENV['HTTP_SERVER'].'image.php/image-name.jpg?width=400&height=300&cropratio=4:3&image=/'.$row['image']);
 	    	}
     	}
 
@@ -3301,7 +3447,7 @@ table.list .center {
     				'bid'			    => (int)$post['bid'],
     				'username'		=> $post['username'],
     				'fullname'    => $this->getResidentName($post['username']),
-            'avatar'      => $_ENV['HTTP_SERVER'].$this->getResidentAvatar($post['username']),
+            		'avatar'      => $_ENV['HTTP_SERVER'].$this->getResidentAvatar($post['username']),
     				'date_added'	=> $this->dateTimeDiff($post['date_added']),
     				'message'		  => $post['message']
     			);

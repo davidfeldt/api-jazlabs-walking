@@ -225,10 +225,15 @@ $app->post('/users/auth', function() use($app) {
                 // get the user by username
 
                 $app->username = $username;
+                $profile        = $db->getProfileByUsername($username);
 
                 $response = array (
                 	'success'		=> true,
-                	'token'			=> generateJWT($username)
+                	'token'			=> generateJWT($username),
+                    'username'      => $username,
+                    'avatar'        => $_ENV['HTTP_SERVER'].$profile['profilepic'],
+                    'fullname'      => $profile['fullname']
+
                 );
 
             }
@@ -1487,6 +1492,60 @@ $app->get('/people', 'authenticate', function() use($app) {
         $db = NULL;
     });
 
+$app->get('/propertymanagers', 'authenticate', function() use($app) {
+        $response = array();
+        $db = new DbHandler();
+
+        $page = $app->request()->get('page');
+
+        if (!isset($page) || $page < 1) { $page = 1;}
+
+        $results   = $db->getAllPropertyManagers($app->bid, $page);
+
+        if ($results) {
+            $response['success']    = true;
+            $response['username'] = $app->username;
+            $response['results']  = $results;
+        } else {
+            $response['error'] = true;
+            $response['results'] = array();
+            $response['message'] = 'No property managers found!';
+        }
+
+        $db->registerAPICall( $app->username, 'propertymanagers', 'get', '1');
+
+        echoResponse(200, $response);
+
+        $db = NULL;
+    });
+
+$app->get('/people/boardmembers', 'authenticate', function() use($app) {
+        $response = array();
+        $db = new DbHandler();
+
+        $page = $app->request()->get('page');
+
+        if (!isset($page) || $page < 1) { $page = 1;}
+
+        $results   = $db->getAllBoardMembers($app->bid, $page);
+
+        if ($results) {
+            $response['success']    = true;
+            $response['username'] = $app->username;
+            $response['results']  = $results;
+        } else {
+            $response['error'] = true;
+            $response['results'] = array();
+            $response['message'] = 'No boardmembers found!';
+        }
+
+        $db->registerAPICall( $app->username, 'people/boardmembers', 'get', '1');
+
+        echoResponse(200, $response);
+
+        $db = NULL;
+    });
+
 $app->get('/people/all', 'authenticate', function() use($app) {
         $response = array();
         $db = new DbHandler();
@@ -1733,27 +1792,6 @@ $app->get('/notifications/:id', 'authenticate', function($id) use($app) {
             }
         });
 
-// list of building managers
-
-$app->get('/people/managers',  'authenticate', function() use($app) {
-			$response = array();
-            $db = new DbHandler();
-
-            $page = $app->request()->get('page');
-
-            if (!isset($page) || $page < 1) { $page = 1;}
-
-            $error = false;
-            $response['error'] 		= false;
-            $response['username'] 	= $app->username;
-            $response['managers'] 	= $db->getAllManagers($app->username, $page);
-
-			$db->registerAPICall($app->username, 'managers', 'get', '1');
-
-            echoResponse(200, $response);
-
-            $db = NULL;
-        });
 
 // list of categories (front desk instructions, maintenance requests, incident reports)
 
