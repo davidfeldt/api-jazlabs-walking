@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "94e029e770bd8b029fe7244a6d660fd8",
-    "content-hash": "92f7c37d588cb0b700e9e54da101ceb8",
+    "hash": "15e94d475979760be197f4a66bf4503c",
+    "content-hash": "5133acb6d238ede04580a0f2f8e63a70",
     "packages": [
         {
             "name": "clue/stream-filter",
@@ -828,6 +828,52 @@
                 "options"
             ],
             "time": "2017-04-12 14:14:56"
+        },
+        {
+            "name": "twilio/sdk",
+            "version": "5.15.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/twilio/twilio-php.git",
+                "reference": "bb76b575d9024b267de92994665234a344068ffb"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/twilio/twilio-php/zipball/bb76b575d9024b267de92994665234a344068ffb",
+                "reference": "bb76b575d9024b267de92994665234a344068ffb",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.0"
+            },
+            "require-dev": {
+                "apigen/apigen": "^4.1",
+                "phpunit/phpunit": "4.5.*"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Twilio\\": "Twilio/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Twilio API Team",
+                    "email": "api@twilio.com"
+                }
+            ],
+            "description": "A PHP wrapper for Twilio's API",
+            "homepage": "http://github.com/twilio/twilio-php",
+            "keywords": [
+                "api",
+                "sms",
+                "twilio"
+            ],
+            "time": "2017-09-28 21:51:47"
         },
         {
             "name": "vlucas/phpdotenv",

@@ -520,9 +520,9 @@ class DbHandler {
         }
 	}
 	
-	public function forgotPassword($username){
-      
-      	$stmt = $this->conn->prepare('SELECT username, email FROM user WHERE username = :username');
+	public function forgotPassword($username) {
+    date_default_timezone_set('America/Toronto');
+      	$stmt = $this->conn->prepare('SELECT username, email, mobilephone FROM user WHERE username = :username');
  
         $stmt->bindParam(':username', $username);
         $stmt->execute();
@@ -530,34 +530,87 @@ class DbHandler {
         $row = $stmt->fetch();
         
         if (isset($row) && $row) {
-          // Found user with the username
-          // Generate new reset code 
-          $email		= $row['email'];
-         	$reset_code = sha1(uniqid(rand(), true));
-         	date_default_timezone_set("America/Toronto");
-         	$reset_dt = date('Y-m-d H:i:s');
-         	$reset_code_active = 1;
-         	
-         	$stmt = $this->conn->prepare('UPDATE user SET reset_code = :reset_code, reset_code_active = :reset_code_active, reset_dt = :reset_dt WHERE username = :username');
-    		  $stmt->bindParam(':username',$username);
-    		  $stmt->bindParam(':reset_code',$reset_code);
-    		  $stmt->bindParam(':reset_code_active',$reset_code_active);
-    		  $stmt->bindParam(':reset_dt',$reset_dt);
-    		  $stmt->execute();
-      
-         	$from_name 	= $this->getSetting('config_name');
-         	$from_url	= $_ENV['HTTP_CATALOG'];
-         	$subject 	= 'Password Reset';
-	     	  $message 	= '<p>Someone just requested that the password be reset for your account at '.$from_name.'.</p><p>If this was a mistake, just ignore this email and nothing will happen.</p><p>To reset your password, click the following link:</p>
+          	// Found user with the username
+          	// Generate new reset code 
+          	$email		         = $row['email'];
+          	$mobilephone       = $row['mobilephone'];
+
+            $reset_code_short  = mt_rand(100000,999999);
+            $reset_code = sha1(uniqid(rand(), true));
+            date_default_timezone_set("America/Toronto");
+            $reset_dt = date('Y-m-d H:i:s');
+            $reset_code_active = 1;
+
+            $stmt = $this->conn->prepare('UPDATE user SET reset_code = :reset_code, reset_code_short = :reset_code_short, reset_code_active = :reset_code_active, reset_dt = :reset_dt, date_modified = NOW() WHERE username = :username');
+            $stmt->bindParam(':username',$username);
+            $stmt->bindParam(':reset_code',$reset_code);
+            $stmt->bindParam(':reset_code_short',$reset_code_short);
+            $stmt->bindParam(':reset_code_active',$reset_code_active);
+            $stmt->bindParam(':reset_dt',$reset_dt);
+            $stmt->execute();
+
+            $from_name 	= $this->getSetting('config_name');
+            $from_url	= $_ENV['HTTP_CATALOG'];
+	     	    $subject 	= 'Password Reset';
+	     	    $message 	= '<p>Someone just requested that the password be reset for your account at '.$from_name.'.</p><p>If this was a mistake, just ignore this email and nothing will happen.</p><p>To reset your password, click the following link:</p>
 	   <p><a href="'.$from_url.'reset?c='.$reset_code.'">Reset My Password</a></p>';
-         
-         	$this->sendEmail($username, $email, $subject, $message, 0);
-         	return 'success';
+	           
+            if ($mobilephone) {
+              $this->sendSMS($mobilephone, 'Reset code is: '.$reset_code_short);
+              return 'mobile';
+            } else if ($email) {
+              $this->sendEmail($username, $email, $subject, $message, 0);
+              return 'email';
+            } else {
+              return false;
+            }
+
         } else {
             // user not existed with the email
             return 'not_username';
         }      
    }
+
+   private function getUsernameFromResetCode($reset_code) {
+    date_default_timezone_set('America/Toronto');
+    $sql = "SELECT username FROM user WHERE (reset_code = :reset_code OR reset_code_short = :reset_code) AND reset_code_active = '1' AND reset_dt >= DATE_SUB(NOW(), INTERVAL 30 MINUTE)";
+    $stmt = $this->conn->prepare($sql);
+
+    $stmt->bindParam(':reset_code', $reset_code);
+    if ($stmt->execute()) {
+      $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      return $row['username'];
+    } else {
+      return false;
+    }
+
+   }
+
+  public function resetPassword($reset_code, $password) {
+    date_default_timezone_set('America/Toronto');
+
+    $username = $this->getUsernameFromResetCode($reset_code);
+
+    if ($username) {
+      $password_hash = $this->create_hash($password);
+
+      $stmt = $this->conn->prepare("UPDATE user SET password = :password, reset_code = '', reset_code_short = '', reset_code_active = '0', date_modified = NOW() WHERE username = :username");
+ 
+      $stmt->bindParam(':username', $username);
+      $stmt->bindParam(':password', $password_hash);
+      if ($stmt->execute()) {
+        return true;
+      } else {
+        return false;
+      }
+
+    } else {
+      return false;
+
+    }
+          
+  }
    
    public function sendEmail($username, $email,$subject,$message, $id = 0) {
 		$resident_info	= $this->getUserByUsername($username);
@@ -732,6 +785,36 @@ table.list .center {
 	return TRUE;
 
 }
+
+	public function sendSMS($number, $message) {
+
+		// Your Account SID and Auth Token from twilio.com/console
+		$sid = $_ENV['TWILIO_SID'];
+		$token = $_ENV['TWILIO_TOKEN'];
+		$fromNumber = $_ENV['TWILIO_NUMBER'];
+		
+    $client = new Twilio\Rest\Client($sid, $token);
+
+		$toNumber = trim($number," ()-");
+
+		if (strlen($toNumber) === 10) {
+			$toNumber = '+1'.$toNumber;
+		}
+
+		$client->messages->create(
+		    $toNumber,
+		    array(
+		        'from' => $fromNumber,
+		        'body' => $message
+		    )
+		);
+
+    return array(
+      'from'    => $fromNumber,
+      'to'      => $toNumber,
+      'message' => $message
+    );
+	}
 	
    
    	public function addProspect($building, $management) {

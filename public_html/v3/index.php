@@ -262,14 +262,52 @@ $app->post('/users/password/forgot', function() use($app) {
             if ($res == 'not_username') {
                 $response['error'] = true;
                 $response['message'] = 'No such username: '.$username;
-            } else if ($res == 'success') {
+            } else {
                 $response['error'] = false;
-                $response['message'] = 'Please click on the reset password link in the email we just sent you to reset your password';
+                $response['success'] = true;
+                $response['type'] = $res;
+                if ($res == 'mobile') {
+                    $message = 'Please enter short code we just sent via SMS';
+                } 
+
+                if ($res == 'email') {
+                    $message = 'Please click on the reset password link in the email we just sent you to reset your password';
+                }
+                $response['message'] = $message;
             }
 
             $db = NULL;
             echoResponse(200, $response);
         });
+
+
+$app->post('/users/password/reset', function() use($app) {
+            // check for required params
+            $json = $app->request->getBody();
+            $data = json_decode($json, true);
+            $resetcode = $data['resetcode'];
+            $password = $data['password'];
+
+            $response = array();
+
+            $db = new DbHandler();
+            $res = $db->resetPassword($resetcode, $password);
+
+            if ($res) {
+                $response['error'] = false;
+                $response['success'] = true;
+                $response['message'] = "Password reset successfully. You can now login in with your new password!";
+                echoResponse(201, $response);
+            } else {
+                $response['error'] = true;
+                $response['message'] = "An error occurred while resetting password";
+                echoResponse(200, $response);
+            }
+
+            $db = NULL;
+            echoResponse(200, $response);
+        });
+
 
 // Calls that require authentication
 
@@ -583,7 +621,7 @@ $app->post('/requests/comments/:id', 'authenticate', function($id) use($app) {
             $db = new DbHandler();
             $res = $db->addComment($app->username, $id, $comment, 'maintenance');
 
-            $db->registerAPICall( $app->username, 'maintenance/comments', 'post', $json);
+            $db->registerAPICall( $app->username, 'requests/comments', 'post', $json);
 
             if ($res) {
                 $response['error'] = false;
