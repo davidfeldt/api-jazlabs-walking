@@ -296,16 +296,15 @@ $app->post('/users/password/reset', function() use($app) {
             if ($res) {
                 $response['error'] = false;
                 $response['success'] = true;
-                $response['message'] = "Password reset successfully. You can now login in with your new password!";
+                $response['message'] = 'Password reset successfully. You can now login in with your new password!';
                 echoResponse(201, $response);
             } else {
                 $response['error'] = true;
-                $response['message'] = "An error occurred while resetting password";
+                $response['message'] = 'An error occurred while resetting password';
                 echoResponse(200, $response);
             }
 
             $db = NULL;
-            echoResponse(200, $response);
         });
 
 
@@ -1086,32 +1085,47 @@ $app->get('/items', 'authenticate', function() use($app) {
             $db = NULL;
         });
 
+
+
 $app->post('/items', 'authenticate', function() use($app) {
 
+            // check for required params
+            //verifyRequiredParams(array('description', 'enterpermission', 'urgency', 'instruction', 'category','date_noticed'));
+
             $response               = array();
+            $requestData            = array();
 
             $json                   = $app->request->getBody();
             $data                   = json_decode($json, true);
 
-            $db  = new DbHandler();
-            $res = $db->addMarketplaceItem($app->username, $data);
+            $requestData['image']           = $data['image'];
+            $requestData['title']           = $data['title'];
+            $requestData['description']     = $data['description'];
+            $requestData['price']           = $data['price'];
+            $requestData['type']            = $data['type'];
+            $requestData['isAvailable']     = $data['isAvailable'];
+            $requestData['category_id']     = $data['category_id'];
 
-            $db->registerAPICall( $app->username, 'items', 'post', json_encode($res));
+            $db = new DbHandler();
+            $res = $db->addMarketplaceItem($app->username, $requestData);
+
+            $db->registerAPICall( $app->username, 'items', 'post', 1);
 
             if ($res) {
-                $response['error']  = false;
+                $response['error'] = false;
                 $response['success'] = true;
                 $response['message'] = "Marketplace item added successfully!";
-                $response['request'] = $data;
-                $response['results'] = $res;
+                $response['request'] = $requestData;
+                $response['response'] =  $res;
                 echoResponse(201, $response);
             } else {
                 $response['error'] = true;
-                $response['message'] = "An error occurred while adding marketplace items";
+                $response['message'] = "An error occurred while adding marketplace item";
+                $response['request'] = $requestData;
+                $response['response'] =  $res;
                 echoResponse(200, $response);
             }
         });
-
 
 $app->post('/items/comments/:id', 'authenticate', function($id) use($app) {
 

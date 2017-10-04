@@ -1726,7 +1726,7 @@ table.list .center {
 
     	$post_data	= array();
 
-		  $stmt = $this->conn->prepare("SELECT * FROM marketplace WHERE bid = :bid AND isAvailable = :isAvailable ORDER BY type, date_added DESC ");
+		  $stmt = $this->conn->prepare("SELECT * FROM marketplace WHERE bid = :bid AND isAvailable = :isAvailable ORDER BY date_added DESC ");
         $stmt->bindParam(':bid',$bid);
         $stmt->bindParam(':isAvailable',$isAvailable);
         
@@ -1776,22 +1776,22 @@ table.list .center {
    	}
 
    	public function addMarketplaceItem($username, $data) {
-		date_default_timezone_set("America/Toronto");
+		  date_default_timezone_set("America/Toronto");
 		
-		$profile 		= $this->getProfileByUsername($username);
-    	$bid			= $profile['bid'];
-    	$email 			= $profile['email'];
+		  $profile 		  = $this->getProfileByUsername($username);
+    	$bid			    = $profile['bid'];
+    	$email 			  = $profile['email'];
     	$date_added		= date('Y-m-d H:i:s');
     	$description	= !empty($data['description']) ? $data['description'] : '';
-    	$title 			= !empty($data['title']) ? $data['title'] : '';
-    	$price 			= !empty($data['price']) ? $data['price'] : 0;
-    	$type 			= !empty($data['type']) ? $data['type'] : 's';
+    	$title 			  = !empty($data['title']) ? $data['title'] : '';
+    	$price 			  = !empty($data['price']) ? $data['price'] : 0;
+    	$type 			  = !empty($data['type']) ? $data['type'] : 's';
     	$category_id 	= !empty($data['category_id']) ? $data['category_id'] : 0;
     	$isAvailable	= !empty($data['isAvailable']) ? $data['isAvailable'] : 0;
-    	$image 			= !empty($data['image']) ? $data['image'] : '';
-    	$ip 			= $_SERVER['REMOTE_ADDR'];
+    	$image 			  = !empty($data['image']) ? $data['image'] : '';
+    	$ip 			    = $_SERVER['REMOTE_ADDR'];
 		
-		$stmt = $this->conn->prepare("INSERT INTO marketplace SET username = :username, bid = :bid, email = :email, date_added = :date_added, price = :price, ip = :ip, description = :description, title = :title, isAvailable = :isAvailable, category_id = :category_id, date_modified = :date_added, views = '0', isConfirmed = '1', confirmPassword = '', is_new = '1'");
+		  $stmt = $this->conn->prepare("INSERT INTO marketplace SET username = :username, bid = :bid, email = :email, date_added = :date_added, price = :price, ip = :ip, description = :description, title = :title, isAvailable = :isAvailable, category_id = :category_id, date_modified = :date_added, views = '0', isConfirmed = '1', confirmPassword = '', is_new = '1'");
     	$stmt->bindParam(':username',$username);
     	$stmt->bindParam(':email',$email);
     	$stmt->bindParam(':ip',$ip);
@@ -1806,37 +1806,35 @@ table.list .center {
     	
     	$result = $stmt->execute();
 
-    	$marketplace_id = $this->conn->lastInsertId();
-    	
-    	if ($result) {
-			// save Base 64 string as image.    	
-	    	if ($image) {
-	    		$uploadDir	= $_ENV['DIR_MARKETPLACITEM'];
-	    		$uploadPath = $_ENV['PATH_MARKETPLACEITEM'];
-	    		$img 		= str_replace(' ', '+', $image);
-				$imgData 	= base64_decode($img);
-				$filename 	= $username . '_' . uniqid() . '.jpg';
-				$imgPath 	= $uploadPath . $filename;
-				$file 		= $uploadDir . $filename;
-				$success 	= file_put_contents($file, $imgData);
+      $marketplace_id = $this->conn->lastInsertId();
+      
+      if ($result) {
+      // save Base 64 string as image.      
+        if ($image) {
+          $uploadDir  = $_ENV['DIR_MARKETPLACEITEM'];
+          $uploadPath = $_ENV['PATH_MARKETPLACEITEM'];
+          $img    = str_replace(' ', '+', $image);
+          $imgData  = base64_decode($img);
+          $filename   = $username . '_' . uniqid() . '.jpg';
+          $imgPath  = $uploadPath . $filename;
+          $file     = $uploadDir . $filename;
+          $success = file_put_contents($file, $imgData);
 
-				if ($success) {
-					// add to maintenance_image
-					$stmt = $this->conn->prepare("INSERT INTO marketplace_image SET marketplace_id = :marketplace_id, username = :username, image = :image, date_added = :date_added, bid = :bid ");
-					$stmt->bindParam(':marketplace_id',$marketplace_id);
-					$stmt->bindParam(':username',$username);
-			    	$stmt->bindParam(':image',$imgPath);
-			    	$stmt->bindParam(':date_added',$date_added);
-			    	$stmt->bindParam(':bid',$bid);
-			    	$result = $stmt->execute();
-				}
-	    	}
+          // add to marketplace_image
+          $stmt = $this->conn->prepare("INSERT INTO marketplace_image SET marketplace_id = :marketplace_id, username = :username, image = :image, date_added = :date_added, bid = :bid ");
+          $stmt->bindParam(':marketplace_id',$marketplace_id);
+          $stmt->bindParam(':username',$username);
+            $stmt->bindParam(':image',$imgPath);
+            $stmt->bindParam(':date_added',$date_added);
+            $stmt->bindParam(':bid',$bid);
+            $stmt->execute();
+        }
 
-    		return $this->getMarketplaceItem($marketplace_id);
-		} else {
-			return NULL;
-		}
-	}
+        return $this->getMarketplaceItem($marketplace_id);
+    } else {
+      return NULL;
+    }
+  }
 	
 	public function deleteMarketplaceItem($username, $id) {
 		$stmt = $this->conn->prepare('DELETE FROM marketplace WHERE marketplace_id = :id AND username = :username');
