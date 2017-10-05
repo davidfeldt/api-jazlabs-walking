@@ -1726,7 +1726,7 @@ table.list .center {
 
     	$post_data	= array();
 
-		  $stmt = $this->conn->prepare("SELECT * FROM marketplace WHERE bid = :bid AND isAvailable = :isAvailable ORDER BY date_added DESC ");
+		  $stmt = $this->conn->prepare("SELECT * FROM marketplace WHERE bid = :bid AND isAvailable = :isAvailable ORDER BY marketplace_id DESC ");
         $stmt->bindParam(':bid',$bid);
         $stmt->bindParam(':isAvailable',$isAvailable);
         
@@ -1821,13 +1821,16 @@ table.list .center {
           $success = file_put_contents($file, $imgData);
 
           // add to marketplace_image
-          $stmt = $this->conn->prepare("INSERT INTO marketplace_image SET marketplace_id = :marketplace_id, username = :username, image = :image, date_added = :date_added, bid = :bid ");
-          $stmt->bindParam(':marketplace_id',$marketplace_id);
-          $stmt->bindParam(':username',$username);
-            $stmt->bindParam(':image',$imgPath);
-            $stmt->bindParam(':date_added',$date_added);
-            $stmt->bindParam(':bid',$bid);
-            $stmt->execute();
+          if ($success) {
+          // add to maintenance_image
+            $stmt = $this->conn->prepare("INSERT INTO marketplace_image SET marketplace_id = :marketplace_id, username = :username, image = :image, date_added = :date_added, bid = :bid ");
+            $stmt->bindParam(':marketplace_id',$marketplace_id);
+            $stmt->bindParam(':username',$username);
+              $stmt->bindParam(':image',$imgPath);
+              $stmt->bindParam(':date_added',$date_added);
+              $stmt->bindParam(':bid',$bid);
+              $result = $stmt->execute();
+          }
         }
 
         return $this->getMarketplaceItem($marketplace_id);
@@ -2117,7 +2120,7 @@ table.list .center {
             'category'        => (int)$post['category_id'],
             'status'          => $post['status'],
             'displayStatus'   => $this->displayStatus($post['status']),
-            'dateNoticed'     => $this->dateTimeDiff($post['date_noticed']),
+            'dateNoticed'     => date('m/d/Y', strtotime($post['date_noticed'])),
             'categoryName'    => $this->getCategoryName($post['category_id'],'maintenance'),
             'images'          => $this->getMaintenanceImages($post['maintenance_id']),
             'image'           => $this->getMaintenanceFirstImage($post['maintenance_id']),
@@ -2160,7 +2163,7 @@ table.list .center {
       				'category'        => (int)$post['category_id'],
       				'status'          => $post['status'],
       				'displayStatus'		=> $this->displayStatus($post['status']),
-      				'dateNoticed'     => $this->dateTimeDiff($post['date_noticed']),
+      				'dateNoticed'     => date('m/d/Y', strtotime($post['date_noticed'])),
       				'categoryName'    => $this->getCategoryName($post['category_id'],'maintenance'),
       				'images'          => $this->getMaintenanceImages($post['maintenance_id']),
               		'image'           => $this->getMaintenanceFirstImage($post['maintenance_id']),
