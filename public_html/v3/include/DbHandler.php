@@ -1234,6 +1234,32 @@ table.list .center {
     return $post_data;
   }
 
+  public function deleteReservation($username, $reservation_id) {
+
+  	$reservation = $this->getReservation($reservation_id);
+  	$rescode 	 = $reservation['rescode'];
+
+	$stmt = $this->conn->prepare('DELETE FROM reservation WHERE reservation_id = :reservation_id AND username = :username');
+    $stmt->bindParam(':reservation_id', $reservation_id);
+    $stmt->bindParam(':username',$username);
+    if ($stmt->execute()) {
+    	// delete comments
+    	$stmt = $this->conn->prepare('DELETE FROM reservation_log WHERE reservation_id = :reservation_id');
+    	$stmt->bindParam(':reservation_id', $reservation_id);
+    	$stmt->execute();
+    	
+    	// delete timeslots
+    	$stmt = $this->conn->prepare('DELETE FROM reservation_timeslot WHERE rescode = :rescode ');
+    	$stmt->bindParam(':rescode', $rescode);
+    	$stmt->execute();
+
+        return TRUE;
+    } else {
+        return NULL;
+    }
+
+}
+
   private function numberOfReservations($username) {
         $profile  = $this->getProfileByUsername($username);
         $bid      = $profile['bid'];
@@ -1844,6 +1870,16 @@ table.list .center {
         $stmt->bindParam(':id', $id);
         $stmt->bindParam(':username',$username);
         if ($stmt->execute()) {
+
+        	// delete comments
+        	$stmt = $this->conn->prepare('DELETE FROM marketplace_log WHERE marketplace_id = :marketplace_id');
+        	$stmt->bindParam(':marketplace_id', $marketplace_id);
+        	$stmt->execute();
+        	// delete images
+        	$stmt = $this->conn->prepare('DELETE FROM marketplace_image WHERE marketplace_id = :marketplace_id');
+        	$stmt->bindParam(':marketplace_id', $marketplace_id);
+        	$stmt->execute();
+
             return TRUE;
         } else {
             return NULL;
@@ -2183,11 +2219,20 @@ table.list .center {
         );
    	}
 	
-	public function deleteMaintenanceRequest($username, $id) {
-		$stmt = $this->conn->prepare('DELETE FROM maintenance WHERE id = :id AND username = :username');
-        $stmt->bindParam(':id', $id);
+	public function deleteMaintenanceRequest($username, $maintenance_id) {
+		$stmt = $this->conn->prepare('DELETE FROM maintenance WHERE maintenance_id = :maintenance_id AND username = :username');
+        $stmt->bindParam(':maintenance_id', $maintenance_id);
         $stmt->bindParam(':username',$username);
         if ($stmt->execute()) {
+        	// delete comments
+        	$stmt = $this->conn->prepare('DELETE FROM maintenance_log WHERE maintenance_id = :maintenance_id');
+        	$stmt->bindParam(':maintenance_id', $maintenance_id);
+        	$stmt->execute();
+        	// delete images
+        	$stmt = $this->conn->prepare('DELETE FROM maintenance_image WHERE maintenance_id = :maintenance_id');
+        	$stmt->bindParam(':maintenance_id', $maintenance_id);
+        	$stmt->execute();
+
             return TRUE;
         } else {
             return NULL;
@@ -2376,6 +2421,12 @@ table.list .center {
         $stmt->bindParam(':frontdesk_id', $frontdesk_id);
         $stmt->bindParam(':username', $username);
         if ($stmt->execute()) {
+
+        	// delete comments
+        	$stmt = $this->conn->prepare('DELETE FROM frontdesk_log WHERE frontdesk_id = :frontdesk_id');
+        	$stmt->bindParam(':frontdesk_id', $frontdesk_id);
+        	$stmt->execute();
+
             return TRUE;
         } else {
             return NULL;
@@ -2674,6 +2725,16 @@ table.list .center {
         $stmt->bindParam(':incident_id', $incident_id);
         $stmt->bindParam(':username', $username);
         if ($stmt->execute()) {
+
+        	// delete comments
+        	$stmt = $this->conn->prepare('DELETE FROM incident_log WHERE incident_id = :incident_id');
+        	$stmt->bindParam(':incident_id', $incident_id);
+        	$stmt->execute();
+        	// delete images
+        	$stmt = $this->conn->prepare('DELETE FROM incident_image WHERE incident_id = :incident_id');
+        	$stmt->bindParam(':incident_id', $incident_id);
+        	$stmt->execute();
+
             return $this->getAllIncidentReports($username);
         } else {
             return NULL;

@@ -554,12 +554,12 @@ $app->delete('/posts/:id', 'authenticate', function($id) use($app) {
             $response = array();
             $result = $db->deletePost($app->username, $id);
 
-            $db->registerAPICall( $app->username, 'posts/'.$id, 'delete', $result);
+            $db->registerAPICall( $app->username, 'posts/'.$id, 'delete', 1);
 
             if ($result) {
-                // task deleted successfully
-                $response["error"] = false;
-                $response["message"] = "Post deleted successfully";
+                $response['error'] = false;
+                $response['success'] = true;
+                $response['message'] = "Post deleted successfully";
             } else {
                 // task failed to delete
                 $response["error"] = true;
@@ -726,16 +726,17 @@ $app->delete('/requests/:id', 'authenticate', function($id) use($app) {
             $response = array();
             $result = $db->deleteMaintenanceRequest($app->username, $id);
 
-            $db->registerAPICall( $app->username, 'requests/'.$id, 'delete', $result);
+            $db->registerAPICall( $app->username, 'requests/'.$id, 'delete', 1);
 
             if ($result) {
                 // task deleted successfully
-                $response["error"] = false;
-                $response["message"] = "Task deleted successfully";
+                $response['error'] = false;
+                $response['success'] = true;
+                $response['message'] = "Maintenance request deleted successfully";
             } else {
                 // task failed to delete
                 $response["error"] = true;
-                $response["message"] = "Task failed to delete. Please try again!";
+                $response["message"] = "Maintenance request failed to delete. Please try again!";
             }
             echoResponse(200, $response);
         });
@@ -874,6 +875,28 @@ $app->post('/reservations/comments/:id', 'authenticate', function($id) use($app)
                 echoResponse(200, $response);
             }
         });
+
+$app->delete('/reservations/:id', 'authenticate', function($id) use($app) {
+
+            $db = new DbHandler();
+            $response = array();
+            $result = $db->deleteReservation($app->username, $id);
+
+            $db->registerAPICall( $app->username, 'reservations/'.$id, 'delete', 1);
+
+            if ($result) {
+                // task deleted successfully
+                $response['error'] = false;
+                $response['success'] = true;
+                $response['message'] = "Reservation deleted successfully";
+            } else {
+                // task failed to delete
+                $response["error"] = true;
+                $response["message"] = "Reservation failed to delete. Please try again!";
+            }
+            echoResponse(200, $response);
+        });
+
 
 // Front Desk Instructions
 
@@ -1021,16 +1044,17 @@ $app->delete('/instructions/:id', 'authenticate', function($id) use($app) {
             $response = array();
             $result = $db->deleteFrontDeskInstruction($app->username, $id);
 
-            $db->registerAPICall( $app->username, 'instructions/'.$id, 'delete', $res);
+            $db->registerAPICall( $app->username, 'instructions/'.$id, 'delete', 1);
 
             if ($result) {
                 // task deleted successfully
-                $response["error"] = false;
-                $response["message"] = "Front desk instruction deleted successfully";
+                $response['error'] = false;
+                $response['success'] = true;
+                $response['message'] = "Front desk instruction deleted successfully";
             } else {
                 // task failed to delete
-                $response["error"] = true;
-                $response["message"] = "Front desk instruction failed to delete. Please try again!";
+                $response['error'] = true;
+                $response['message'] = "Front desk instruction failed to delete. Please try again!";
             }
             echoResponse(200, $response);
         });
@@ -1304,18 +1328,18 @@ $app->delete('/incidents/:id', 'authenticate', function($id) use($app) {
             $response = array();
             $result = $db->deleteIncidentReport($app->username, $id);
 
-            $db->registerAPICall( $app->username, 'incidents/'.$id, 'delete', $result);
+            $db->registerAPICall( $app->username, 'incidents/'.$id, 'delete', 1);
 
             if ($result) {
                 // task deleted successfully
-                $response["error"] = false;
+                $response['error'] = false;
                 $response['success'] = true;
                 $response['results'] = $result;
-                $response["message"] = "Incident report deleted successfully";
+                $response['message'] = "Incident report deleted successfully";
             } else {
                 // task failed to delete
-                $response["error"] = true;
-                $response["message"] = "Incident report failed to delete. Please try again!";
+                $response['error'] = true;
+                $response['message'] = "Incident report failed to delete. Please try again!";
             }
             echoResponse(200, $response);
         });
@@ -1470,13 +1494,14 @@ $app->delete('/messages/:id', 'authenticate', function($id) use($app) {
             $response = array();
             $result = $db->deleteMessage($app->username, $id);
 
-            $db->registerAPICall( $app->username, 'messages/'.$id, 'delete', $result);
+            $db->registerAPICall( $app->username, 'messages/'.$id, 'delete', 1);
 
             if ($result) {
                 // task deleted successfully
-                $response["error"] 		= false;
+                $response['error'] = false;
+                $response['success'] = true;
+                $response['message'] = "Message deleted successfully";
                 $response['username'] 	= $app->username;
-                $response["message"] 	= "Message deleted successfully";
             } else {
                 // task failed to delete
                 $response["error"] 		= true;
