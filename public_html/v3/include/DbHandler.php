@@ -3201,11 +3201,14 @@ table.list .center {
     	$page = (isset($page)) ? $page : 1;
     	$start = ($page - 1) * $_ENV['LIMIT'];
     	$limit = $_ENV['LIMIT'];
+
     	date_default_timezone_set('America/Toronto');
+      $now   = date('Y-m-d');
     	
     	$post_data = array();
-        $stmt = $this->conn->prepare("SELECT a.id, a.bid, a.who AS username, u.fullname,u.profilepic, a.date AS date_added, a.title, a.message FROM announcement a LEFT JOIN user u ON a.who = u.username WHERE a.bid = :bid ORDER BY a.date DESC LIMIT $start, $limit");
+        $stmt = $this->conn->prepare("SELECT a.id, a.bid, a.who AS username, u.fullname,u.profilepic, a.date AS date_added, a.title, a.message FROM announcement a LEFT JOIN user u ON a.who = u.username WHERE a.bid = :bid AND a.date_start <= :now AND a.date_end >= :now ORDER BY a.date DESC LIMIT $start, $limit");
         $stmt->bindParam(':bid',$bid);
+        $stmt->bindParam(':now',$now);
         
         if ($stmt->execute()) {
       		$posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
