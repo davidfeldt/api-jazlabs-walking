@@ -1,4 +1,4 @@
-<?php
+getResidentName<?php
 
 // These constants may be changed without breaking existing hashes.
 	define("PBKDF2_HASH_ALGORITHM", "sha256");
@@ -3530,7 +3530,7 @@ table.list .center {
           if (!empty($row['username'])) {
             $who[] = array(
               'username'    => $row['username'],
-              'fullname'    => $this->getFullName($row['username']),
+              'fullname'    => $this->getResidentName($row['username']),
               'avatar'      => $_ENV['HTTP_SERVER'].$this->getResidentAvatar($row['username']),
               'date_added'  => $this->dateTimeDiff($row['date_added']),
               );
