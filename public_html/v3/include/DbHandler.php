@@ -11,11 +11,11 @@
 	define("HASH_ITERATION_INDEX", 1);
 	define("HASH_SALT_INDEX", 2);
 	define("HASH_PBKDF2_INDEX", 3);
- 
+
 class DbHandler {
- 
+
     private $conn;
- 
+
     function __construct() {
         require_once 'DbConnect.php';
         require_once 'Thumbnail.php';
@@ -23,11 +23,11 @@ class DbHandler {
         $db = new DbConnect();
         $this->conn = $db->connect();
     }
-    
+
     public function create_hash($password) {
     	// format: algorithm:iterations:salt:hash
 		$salt = base64_encode(mcrypt_create_iv(PBKDF2_SALT_BYTE_SIZE, MCRYPT_DEV_URANDOM));
-		return PBKDF2_HASH_ALGORITHM . ":" . PBKDF2_ITERATIONS . ":" .  $salt . ":" . 
+		return PBKDF2_HASH_ALGORITHM . ":" . PBKDF2_ITERATIONS . ":" .  $salt . ":" .
         	base64_encode($this->pbkdf2(
             	PBKDF2_HASH_ALGORITHM,
 				$password,
@@ -37,11 +37,11 @@ class DbHandler {
 				true
 			));
 	}
-	
+
 	public function validate_password($password, $correct_hash) {
     	$params = explode(":", $correct_hash);
 		if(count($params) < HASH_SECTIONS)
-			return false; 
+			return false;
 		$pbkdf2 = base64_decode($params[HASH_PBKDF2_INDEX]);
 		return $this->slow_equals(
         		$pbkdf2,
@@ -61,7 +61,7 @@ class DbHandler {
 		for($i = 0; $i < strlen($a) && $i < strlen($b); $i++) {
         	$diff |= ord($a[$i]) ^ ord($b[$i]);
 		}
-		return $diff === 0; 
+		return $diff === 0;
 	}
 
 	/*
@@ -121,31 +121,31 @@ class DbHandler {
     date_default_timezone_set("America/Toronto");
     $date_added  = date('Y-m-d H:i:s');
     $ip          = $_SERVER['REMOTE_ADDR'];
-    
+
     $stmt = $this->conn->prepare("INSERT INTO debug SET endpoint = :endpoint, request = :request, response = :response, date_added = :date_added, ip = :ip");
       $stmt->bindParam(':endpoint',$username);
       $stmt->bindParam(':request',$endpoint);
       $stmt->bindParam(':response',$status);
       $stmt->bindParam(':ip',$ip);
       $stmt->bindParam(':date_added',$dt);
-      
+
       $result = $stmt->execute();
-      
+
       if ($result) {
         return TRUE;
       } else {
         return NULL;
       }
-   
+
    }
-	 
+
 	 public function registerAPICall($username, $endpoint, $type, $status) {
 	 	date_default_timezone_set("America/Toronto");
 	 	$date_added  = date('Y-m-d H:i:s');
 	 	$ip          = $_SERVER['REMOTE_ADDR'];
 	 	$profile 		 = $this->getProfileByUsername($username);
     $bid			   = $profile['bid'];
-	 	
+
 	 	$stmt = $this->conn->prepare('INSERT INTO apiCalls SET username = :username, date_added = :date_added, ip = :ip, bid = :bid, endpoint = :endpoint, type = :type, status = :status');
     	$stmt->bindParam(':username',$username);
     	$stmt->bindParam(':endpoint',$endpoint);
@@ -154,24 +154,24 @@ class DbHandler {
     	$stmt->bindParam(':ip',$ip);
     	$stmt->bindParam(':date_added',$dt);
     	$stmt->bindParam(':bid',$bid);
-    	
+
     	$result = $stmt->execute();
-    	
+
     	if ($result) {
     		return TRUE;
     	} else {
     		return NULL;
     	}
-	 
+
 	 }
-	
+
 	private function dateDiff($start, $end) {
   		$start_ts = strtotime($start);
   		$end_ts = strtotime($end);
   		$diff = $end_ts - $start_ts;
   		return round($diff / 86400);
 	}
-	
+
   public function dateTimeDiff($dt) {
     date_default_timezone_set('America/Toronto');
     $now = date('Y-m-d H:i:s');
@@ -222,11 +222,11 @@ class DbHandler {
 
   }
 
-		 
-	 private function uploadMaintenanceImage(){
-		$upload_dir = $_ENV['DIR_MAINTENANCEREPORT'];   
 
-		$size_bytes = 10194304; // File Size in bytes 
+	 private function uploadMaintenanceImage(){
+		$upload_dir = $_ENV['DIR_MAINTENANCEREPORT'];
+
+		$size_bytes = 10194304; // File Size in bytes
 
 		$extlimit = "yes"; //Do you want to limit the extensions of files uploaded (yes/no)
 		$limitedext = array(".jpg",".png",".jpeg",".JPG", ".PNG", ".gif", ".GIF"); //Extensions you want files uploaded limited to.
@@ -277,7 +277,7 @@ class DbHandler {
                   //tell the user that the file has been uploaded and make him alink.
 
 						return $_ENV['PATH_MAINTENANCEREPORT'].$filename;
-						
+
                   //exit();
 
               }
@@ -289,11 +289,11 @@ class DbHandler {
                   return $msg;
               }
 	}
-	
-	private function uploadIncidentImage(){
-		$upload_dir = $_ENV['DIR_INCIDENTREPORT'];   
 
-		$size_bytes = 10194304; // File Size in bytes 
+	private function uploadIncidentImage(){
+		$upload_dir = $_ENV['DIR_INCIDENTREPORT'];
+
+		$size_bytes = 10194304; // File Size in bytes
 
 		$extlimit = "yes"; //Do you want to limit the extensions of files uploaded (yes/no)
 		$limitedext = array(".jpg",".png",".jpeg",".JPG",".JPEG",".PNG", ".gif", ".GIF"); //Extensions you want files uploaded limited to.
@@ -344,7 +344,7 @@ class DbHandler {
                   //tell the user that the file has been uploaded and make him alink.
 
 						return $_ENV['PATH_INCIDENTREPORT'].$filename;
-						
+
                   //exit();
 
               }
@@ -356,9 +356,9 @@ class DbHandler {
                   return $msg;
               }
 	}
-	
+
 	private function uploadWallImages(){
-		$upload_dir = $_ENV['DIR_WALLPOST'];   
+		$upload_dir = $_ENV['DIR_WALLPOST'];
 		$extlimit = "yes"; //Do you want to limit the extensions of files uploaded (yes/no)
 		$limitedext = array(".jpg",".png",".jpeg",".JPEG",".JPG", ".PNG", ".gif", ".GIF"); //Extensions you want files uploaded limited to.
 
@@ -402,11 +402,11 @@ class DbHandler {
                   return NULL;
           }
 	}
-	
-	public function addProfilePhoto($username){
-		$upload_dir = $_ENV['DIR_PROFILE'];   
 
-		$size_bytes = 10240000; // File Size in bytes 
+	public function addProfilePhoto($username){
+		$upload_dir = $_ENV['DIR_PROFILE'];
+
+		$size_bytes = 10240000; // File Size in bytes
 
 		$extlimit = "yes"; //Do you want to limit the extensions of files uploaded (yes/no)
 		$limitedext = array(".jpg",".png",".jpeg",".JPG", ".PNG", ".JPEG",".gif", ".GIF"); //Extensions you want files uploaded limited to.
@@ -415,7 +415,7 @@ class DbHandler {
           if (!is_dir("$upload_dir")) {
     		mkdir("$upload_dir", 0777, true);
 		  }
-	    
+
           //check if the directory is writable.
           if (!is_writeable("$upload_dir")){
              die ("The directory $upload_dir is NOT writable, Please CHMOD (777)");
@@ -425,7 +425,7 @@ class DbHandler {
           if (!is_uploaded_file($_FILES['fileUpload']['tmp_name'])) {
                      return "no file";
 		  }
-              
+
           //check file extension
 			$extCheck = $ext;
             $extCheck = strrchr($_FILES['fileUpload']['name'],'.');
@@ -446,10 +446,10 @@ class DbHandler {
             //move_uploaded_file('filename','destination') Moves afile to a new location.
             if (move_uploaded_file($_FILES['fileUpload']['tmp_name'], $upload_dir.$filename)) {
 				chmod($upload_dir.$filename, 0604);
-				
+
                 //tell the user that the file has been uploaded and make him alink.
 				return $this->updateProfilePhoto($username,$filename);
-						
+
 
             } else {
                 // Photo not uploaded
@@ -459,31 +459,31 @@ class DbHandler {
 
   public function updateUserPreferences($username, $preferences) {
     date_default_timezone_set('America/Toronto');
-    
+
     $settings = '';
     $updates = array();
 
-    if (!empty($preferences) && is_array($preferences)) { 
+    if (!empty($preferences) && is_array($preferences)) {
       foreach ($preferences as $key => $value) {
         $updates[$key] = ($value) ? 'yes' : 'no';
       }
-       
+
       $settings = serialize($updates);
     }
-       
+
     $stmt = $this->conn->prepare('UPDATE user_preference SET settings = :settings, date_modified = NOW() WHERE username = :username ');
     $stmt->bindParam(':settings', $settings);
     $stmt->bindParam(':username', $username);
 
     $result = $stmt->execute();
-    
+
     if ($result) {
       return TRUE;
     } else {
       return NULL;
     }
   }
-    
+
   public function getUserPreferences($username) {
         $stmt = $this->conn->prepare('SELECT settings FROM user_preference WHERE username = :username');
         $stmt->bindParam(':username', $username);
@@ -498,40 +498,40 @@ class DbHandler {
               $prefs[$key] = $value;
             }
           }
-    
+
           return $prefs;
         } else {
             return NULL;
         }
     }
-	
+
 	public function getSetting($key) {
 		$stmt = $this->conn->prepare('SELECT setting_value FROM setting WHERE setting_key = :key');
- 
+
         $stmt->bindParam(':key', $key);
         $stmt->execute();
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
         $row = $stmt->fetch();
-        
+
         if (isset($row) && $row) {
         	return $row['setting_value'];
         } else {
         	return NULL;
         }
 	}
-	
+
 	public function forgotPassword($username) {
     date_default_timezone_set('America/Toronto');
       	$stmt = $this->conn->prepare('SELECT username, email, mobilephone FROM user WHERE username = :username');
- 
+
         $stmt->bindParam(':username', $username);
         $stmt->execute();
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
         $row = $stmt->fetch();
-        
+
         if (isset($row) && $row) {
           	// Found user with the username
-          	// Generate new reset code 
+          	// Generate new reset code
           	$email		         = $row['email'];
           	$mobilephone       = $row['mobilephone'];
 
@@ -554,7 +554,7 @@ class DbHandler {
 	     	    $subject 	= 'Password Reset';
 	     	    $message 	= '<p>Someone just requested that the password be reset for your account at '.$from_name.'.</p><p>If this was a mistake, just ignore this email and nothing will happen.</p><p>To reset your password, click the following link:</p>
 	   <p><a href="'.$from_url.'reset?c='.$reset_code.'">Reset My Password</a></p>';
-	           
+
             if ($mobilephone) {
               $this->sendSMS($mobilephone, 'Reset code is: '.$reset_code_short);
               return 'mobile';
@@ -568,7 +568,7 @@ class DbHandler {
         } else {
             // user not existed with the email
             return 'not_username';
-        }      
+        }
    }
 
    private function getUsernameFromResetCode($reset_code) {
@@ -596,7 +596,7 @@ class DbHandler {
       $password_hash = $this->create_hash($password);
 
       $stmt = $this->conn->prepare("UPDATE user SET password = :password, reset_code = '', reset_code_short = '', reset_code_active = '0', date_modified = NOW() WHERE username = :username");
- 
+
       $stmt->bindParam(':username', $username);
       $stmt->bindParam(':password', $password_hash);
       if ($stmt->execute()) {
@@ -609,13 +609,13 @@ class DbHandler {
       return false;
 
     }
-          
+
   }
-   
+
    public function sendEmail($username, $email,$subject,$message, $id = 0) {
 		$resident_info	= $this->getUserByUsername($username);
 		$building_info	= $this->getBuildingInfo($resident_info['bid']);
-		
+
 		if (isset($building_info) && $building_info) {
 			$from_name		= $building_info['name'];
 			$from_email		= $building_info['email'];
@@ -631,9 +631,9 @@ class DbHandler {
 			$from_url		= $_ENV['HTTP_CATALOG'];
 			$from_address	= str_replace(",",",<br/>",$this->getSetting('config_address'));
 		}
-		
+
 		$tracker 		= $from_url.'/track.php?log=true&campaign_id='.$id.'&date='.date('Y-m-d').'&email=' . urlencode( $email );
-		
+
 		$fullname		= isset($resident_info['fullname']) ? $resident_info['fullname'] : 'Resident';
 
 		$html = '
@@ -642,7 +642,7 @@ class DbHandler {
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <title>'.$subject.'</title>
-        
+
         <!--[if gte mso 6]>
         <style>
             table.mcnFollowContent {width:100% !important;}
@@ -742,7 +742,7 @@ table.list .center {
 <div id="container">
   <img border="0" src="'.$tracker.'" width="1" height="1" />
   <table class="list">
-    
+
     <tbody>
       <tr>
         <td class="center" style="background-color: #EFEFEF;" width="77"><img src="'.$logo_href.'"></td>
@@ -754,22 +754,22 @@ table.list .center {
       		</tr>
     		</thead>
         </table>';
-        
-	  
+
+
 	    $html .= '<br/><p>Dear '.$fullname.',</p><p>'.html_entity_decode($message, ENT_QUOTES, 'UTF-8').'</p>
-	       
+
 	    <br/>
 <div class="footer"><hr><i>Copyright &copy; '.date('Y').' '.$from_name. ', All rights reserved.</i><br/><br/>Private and Confidential: This email was sent to '.$fullname.' at '.$email.' who is a registered resident/owner at '.$from_name.'<br/><br/>Our mailing address is:<br/>'.$from_address.'
-<br/><br/>   
+<br/><br/>
 	    </div>
-	        
+
         </td>
       </tr>
     </tbody>
     </table>
-    
+
 </body>
-</html>';	
+</html>';
 
 
   $mg = Mailgun\Mailgun::create($_ENV['MAILGUN_API_KEY']);
@@ -781,7 +781,7 @@ table.list .center {
     'text'    => strip_tags(html_entity_decode($html)),
     'html'    => $html
   ]);
-	
+
 	return TRUE;
 
 }
@@ -792,7 +792,7 @@ table.list .center {
 		$sid = $_ENV['TWILIO_SID'];
 		$token = $_ENV['TWILIO_TOKEN'];
 		$fromNumber = $_ENV['TWILIO_NUMBER'];
-		
+
     $client = new Twilio\Rest\Client($sid, $token);
 
 		$toNumber = trim($number," ()-");
@@ -815,24 +815,24 @@ table.list .center {
       'message' => $message
     );
 	}
-	
-   
+
+
    	public function addProspect($building, $management) {
    		$response = array();
-   		
+
    		if (!isset($building) || $building == '') {
    			return 'not_building';
    		} elseif (!isset($management) || $management == '') {
    			return 'not_management';
    		} else {
-   			
+
    			$building 	= ucfirst($building);
    			$management	= ucfirst($management);
    			date_default_timezone_set("America/Toronto");
 	 		$date_added = date('Y-m-d H:i:s');
 	 		$ip 		= $_SERVER['REMOTE_ADDR'];
 	 		$source		= 'iPhone App';
-   			
+
    			// insert query
             $stmt = $this->conn->prepare('INSERT INTO prospects SET building = :building, management = :management, date_added = :date_added, ip = :ip, source = :source');
             $stmt->bindParam(':management',$management);
@@ -840,9 +840,9 @@ table.list .center {
             $stmt->bindParam(':ip',$ip);
             $stmt->bindParam(':date_added',$date_added);
             $stmt->bindParam(':source',$source);
- 
+
             $result = $stmt->execute();
- 
+
             // Check for successful insertion
             if ($result) {
                 // Prospect successfully inserted
@@ -860,25 +860,25 @@ table.list .center {
 
 	public function createUser($firstname, $lastname, $email, $password) {
         $response = array();
- 
+
         // First check if user already existed in db
         if (!$this->isUserExists($email)) {
-        
+
         	$username = strtolower($email);
-        	
+
             // Generating password hash
             $password_hash = $this->create_hash($password);
- 
+
             // Generating API key
             $api_key = $this->generateApiKey();
-            
+
             // Create fullname
             $firstname 	= ucfirst($firstname);
             $lastname	= ucfirst($lastname);
             $fullname	= $firstname." ".$lastname;
             date_default_timezone_set("America/Toronto");
             $date_added	= date('Y-m-d');
- 			
+
             // insert query
             $stmt = $this->conn->prepare('INSERT INTO user SET username = :username, firstname = :firstname, lastname = :lastname, fullname = :fullname, email = :email, password = :password, apiKey = :apiKey, status = 0, date_added = :date_added');
             $stmt->bindParam(':username',$username);
@@ -889,9 +889,9 @@ table.list .center {
             $stmt->bindParam(':password',$password_hash);
             $stmt->bindParam(':apiKey',$api_key);
             $stmt->bindParam(':date_added',$date_added);
- 
+
             $result = $stmt->execute();
- 
+
             // Check for successful insertion
             if ($result) {
                 // User successfully inserted
@@ -904,32 +904,32 @@ table.list .center {
             // User with same email already existed in the db
             return $_ENV['USER_ALREADY_EXISTED'];
         }
- 
+
         return $response;
     }
-    
+
     public function changePassword($username, $current_password, $new_password) {
         $response = array();
- 
+
        	  if ($this->checkLogin($username,$current_password) != 'valid') {
        	  	return 'not_password';
        	  } else {
-        	
+
             // Generating password hash
             $password_hash = $this->create_hash($new_password);
- 
+
             // Generating new API key
             //$api_key = $this->generateApiKey();
-            
- 			
+
+
             // insert query
             $stmt = $this->conn->prepare('UPDATE user SET password = :password WHERE username = :username');
             $stmt->bindParam(':username',$username);
             $stmt->bindParam(':password',$password_hash);
             //$stmt->bindParam(':apiKey',$api_key);
- 
+
             $result = $stmt->execute();
- 
+
             // Check for successful insertion
             if ($result) {
                 // User successfully inserted
@@ -938,23 +938,23 @@ table.list .center {
                 // Failed to create user
                 return 'not_done';
             }
-        } 
+        }
     }
- 
+
 
     public function checkLogin($username, $password) {
         // fetching user by username
         $stmt = $this->conn->prepare("SELECT username, password FROM user WHERE username = :username AND status = '1'");
- 
+
         $stmt->bindParam(':username', $username);
         $stmt->execute();
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
         $row = $stmt->fetch();
-        
+
         if (isset($row) && $row) {
             // Found user with the username
             // Now verify the password
-            
+
             if ($this->validate_password($password, $row['password'])) {
                 // User password is correct
                 return 'valid';
@@ -967,7 +967,7 @@ table.list .center {
             return 'not_username';
         }
     }
- 
+
 
     private function isUserExists($email) {
         $stmt = $this->conn->prepare('SELECT username FROM user WHERE email = :email');
@@ -977,7 +977,7 @@ table.list .center {
         if ($row) { return TRUE; } else { return FALSE; }
 
     }
-    
+
     private function isUserNameTaken($username) {
         $stmt = $this->conn->prepare('SELECT username FROM user WHERE LOWER(username) = :username');
         $stmt->bindParam(':username', $username);
@@ -985,7 +985,7 @@ table.list .center {
         $row = $stmt->fetch();
         if ($row) { return TRUE; } else { return FALSE; }
     }
-    
+
     private function createUserName($username,$x = '') {
     	if (!$this->isUserNameTaken($username)) {
     		return $username;
@@ -993,9 +993,9 @@ table.list .center {
     		if (!$x) { $x = 1;} else { $x++; }
     		$this->createUserName($username,$x);
     	}
-    
+
     }
- 
+
 
     public function getUserByUsername($username) {
         $stmt = $this->conn->prepare('SELECT u.username, u.bid, u.firstname, u.lastname, u.fullname, u.email, u.apiKey, u.status, u.phone, u.mobilephone, u.resident_type, u.privacy, u.date_added, u.profilepic, u.unit, b.name FROM user u LEFT JOIN building b ON u.bid = b.bid WHERE u.username = :username');
@@ -1003,14 +1003,14 @@ table.list .center {
         if ($stmt->execute()) {
             $stmt->setFetchMode(PDO::FETCH_ASSOC);
             $row = $stmt->fetch();
-            
+
             return $row;
         } else {
             return NULL;
         }
     }
 
-        
+
     public function getProfileByUsername($username) {
         $stmt = $this->conn->prepare('SELECT username, bid, firstname, lastname, fullname, email, phone, mobilephone, profilepic, resident_type, privacy, unit, bio, twitter, facebook, linkedin FROM user WHERE username = :username');
         $stmt->bindParam(':username', $username);
@@ -1022,7 +1022,7 @@ table.list .center {
             return NULL;
         }
     }
-    
+
     public function getBuildingInfo($bid) {
         $stmt = $this->conn->prepare('SELECT * FROM building WHERE bid = :bid');
         $stmt->bindParam(':bid', $bid);
@@ -1034,8 +1034,8 @@ table.list .center {
             return NULL;
         }
     }
-    
-    
+
+
     public function updateProfile($username, $data) {
       date_default_timezone_set('America/Toronto');
 
@@ -1085,7 +1085,7 @@ table.list .center {
 
       return true;
     }
-    
+
     public function updateProfilePhoto($username, $profilepic) {
     	$stmt = $this->conn->prepare('UPDATE user SET profilepic = :profilepic WHERE username = :username');
     	$stmt->bindParam(':username',$username);
@@ -1096,7 +1096,7 @@ table.list .center {
             return NULL;
         }
     }
-    
+
     public function getPermissionsByUsername($username) {
         $stmt = $this->conn->prepare('SELECT settings FROM user_preference WHERE username = :username');
         $stmt->bindParam(':username', $username);
@@ -1111,14 +1111,14 @@ table.list .center {
               $prefs[$key] = $value;
             }
           }
-    
+
           return $prefs;
         } else {
             return NULL;
         }
     }
- 
- 	
+
+
 
     public function getResidentName($username) {
         $stmt = $this->conn->prepare('SELECT fullname FROM user WHERE username = :username');
@@ -1131,7 +1131,7 @@ table.list .center {
             return NULL;
         }
     }
-  
+
     public function getResidentAvatar($username) {
         $stmt = $this->conn->prepare('SELECT profilepic FROM user WHERE username = :username');
         $stmt->bindParam(':username', $username);
@@ -1215,9 +1215,9 @@ table.list .center {
   private function getReservedTimeSlots($rescode) {
     $post_data = array();
     $stmt = $this->conn->prepare("SELECT * FROM reservation_timeslot WHERE rescode = :rescode ORDER BY timeslot_id ASC");
-    
+
     $stmt->bindParam(':rescode', $rescode);
-      
+
     if ($stmt->execute()) {
       $slots = $stmt->fetchAll(PDO::FETCH_ASSOC);
       foreach ($slots AS $row) {
@@ -1247,7 +1247,7 @@ table.list .center {
     	$stmt = $this->conn->prepare('DELETE FROM reservation_log WHERE reservation_id = :reservation_id');
     	$stmt->bindParam(':reservation_id', $reservation_id);
     	$stmt->execute();
-    	
+
     	// delete timeslots
     	$stmt = $this->conn->prepare('DELETE FROM reservation_timeslot WHERE rescode = :rescode ');
     	$stmt->bindParam(':rescode', $rescode);
@@ -1316,7 +1316,7 @@ table.list .center {
 
       $stmt = $this->conn->prepare("SELECT * FROM reservation WHERE reservation_id = :reservation_id");
       $stmt->bindParam(':reservation_id',$reservation_id);
-        
+
       if ($stmt->execute()) {
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -1332,7 +1332,7 @@ table.list .center {
           'timeslots'       => $this->getReservedTimeSlots($row['rescode']),
           'description'     => $row['description'],
           'comments'        => $this->getReservationComments($row['reservation_id'])
-          
+
         );
       }
 
@@ -1348,7 +1348,7 @@ table.list .center {
   	if ($stmt->execute()) {
   		$row = $stmt->fetch(PDO::FETCH_ASSOC);
   		$autobook = $row['autobook'];
-  	} 
+  	}
 
   	return $autobook ? 'booked' : 'pending';
   }
@@ -1357,16 +1357,16 @@ table.list .center {
     $page = (isset($page)) ? $page : 1;
       $start = ($page - 1) * $_ENV['LIMIT'];
       $limit = $_ENV['LIMIT'];
-    
+
       $profile  = $this->getProfileByUsername($username);
       $bid    = $profile['bid'];
       $post_data  = array();
 
       $stmt = $this->conn->prepare("SELECT * FROM reservation WHERE username = :username AND bid = :bid ORDER BY date_added DESC LIMIT $start, $limit");
-    
+
       $stmt->bindParam(':username', $username);
       $stmt->bindParam(':bid',$bid);
-        
+
       if ($stmt->execute()) {
         $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach ($reservations AS $row) {
@@ -1383,15 +1383,15 @@ table.list .center {
             'timeslots'       => $this->getReservedTimeSlots($row['rescode']),
             'description'     => $row['description'],
             'comments'        => $this->getReservationComments($row['reservation_id'])
-            
+
           );
         }
-      } 
-      
+      }
+
       $lastCount = $start + $limit;
       $maxCount  = $this->numberOfReservations($username);
       $nextPage  = ($lastCount < $maxCount) ? $page + 1 : null;
-      
+
       return array(
         'nextPage'  => $nextPage,
         'reservations'  => $post_data,
@@ -1436,7 +1436,7 @@ table.list .center {
     	$description= htmlspecialchars($startDate." - ".$endDate, ENT_QUOTES);
     }
 
-    
+
 
     $rescode    = $this->randomString(8);
 
@@ -1473,9 +1473,9 @@ table.list .center {
       $stmt->execute();
 
     }
-    
+
     return $reservation_id;
-  
+
   }
 
   private function getResource($resource_id) {
@@ -1505,9 +1505,9 @@ table.list .center {
             'autobook'      => $row['autobook'],
             'maxdays'       => $row['maxdays']
           );
-        } 
+        }
       }
-      
+
       return $resource;
 
     }
@@ -1535,7 +1535,7 @@ table.list .center {
 
       $i    = 0;
       while ($alef <= $taf) {
-        
+
         $timeslots = $this->getTimeSlotsForResource($resource, date('Y-m-d',$alef));
         $alef = strtotime("+1 days", $alef);
         $i++;
@@ -1706,7 +1706,7 @@ table.list .center {
 
 		$stmt = $this->conn->prepare("SELECT * FROM marketplace WHERE marketplace_id = :marketplace_id ");
         $stmt->bindParam(':marketplace_id',$marketplace_id);
-        
+
         if ($stmt->execute()) {
     		$stmt->setFetchMode(PDO::FETCH_ASSOC);
         	$post = $stmt->fetch();
@@ -1716,7 +1716,7 @@ table.list .center {
 			} else {
 				$price = '';
 			}
-			
+
 			$type = ($post['type'] == 's') ? 'For Sale' : 'Wanted';
 
   			$post_data = array (
@@ -1737,9 +1737,9 @@ table.list .center {
 				'views'			=> $post['views'],
 				'is_new'		=> $post['is_new'],
 				'fullname'		=> $this->getResidentName($post['username'])
-				
+
 			);
-      } 
+      }
 
       return $post_data;
     }
@@ -1755,7 +1755,7 @@ table.list .center {
 		  $stmt = $this->conn->prepare("SELECT * FROM marketplace WHERE bid = :bid AND isAvailable = :isAvailable ORDER BY marketplace_id DESC ");
         $stmt->bindParam(':bid',$bid);
         $stmt->bindParam(':isAvailable',$isAvailable);
-        
+
         if ($stmt->execute()) {
     		$posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
     		foreach ($posts AS $post) {
@@ -1784,26 +1784,26 @@ table.list .center {
 				'views'			=> $post['views'],
 				'is_new'		=> $post['is_new'],
 				'fullname'		=> $this->getResidentName($post['username'])
-				
+
 			);
     		}
-      } 
+      }
 
       $lastCount = $start + $limit;
       $maxCount  = $this->numberOfMarketplaceItems($bid);
       $nextPage  = ($lastCount < $maxCount) ? $page + 1 : null;
-      
+
       return array(
         'nextPage'  => $nextPage,
         'items'     => $post_data,
       );
-        
+
 
    	}
 
    	public function addMarketplaceItem($username, $data) {
 		  date_default_timezone_set("America/Toronto");
-		
+
 		  $profile 		  = $this->getProfileByUsername($username);
     	$bid			    = $profile['bid'];
     	$email 			  = $profile['email'];
@@ -1816,7 +1816,7 @@ table.list .center {
     	$isAvailable	= !empty($data['isAvailable']) ? $data['isAvailable'] : 0;
     	$image 			  = !empty($data['image']) ? $data['image'] : '';
     	$ip 			    = $_SERVER['REMOTE_ADDR'];
-		
+
 		  $stmt = $this->conn->prepare("INSERT INTO marketplace SET username = :username, bid = :bid, email = :email, date_added = :date_added, price = :price, ip = :ip, description = :description, title = :title, isAvailable = :isAvailable, category_id = :category_id, date_modified = :date_added, views = '0', isConfirmed = '1', confirmPassword = '', is_new = '1'");
     	$stmt->bindParam(':username',$username);
     	$stmt->bindParam(':email',$email);
@@ -1829,13 +1829,13 @@ table.list .center {
     	$stmt->bindParam(':type',$type);
     	$stmt->bindParam(':category_id',$category_id);
     	$stmt->bindParam(':bid',$bid);
-    	
+
     	$result = $stmt->execute();
 
       $marketplace_id = $this->conn->lastInsertId();
-      
+
       if ($result) {
-      // save Base 64 string as image.      
+      // save Base 64 string as image.
         if ($image) {
           $uploadDir  = $_ENV['DIR_MARKETPLACEITEM'];
           $uploadPath = $_ENV['PATH_MARKETPLACEITEM'];
@@ -1864,7 +1864,7 @@ table.list .center {
       return NULL;
     }
   }
-	
+
 	public function deleteMarketplaceItem($username, $id) {
 		$stmt = $this->conn->prepare('DELETE FROM marketplace WHERE marketplace_id = :id AND username = :username');
         $stmt->bindParam(':id', $id);
@@ -1884,7 +1884,7 @@ table.list .center {
         } else {
             return NULL;
         }
-	
+
 	}
 
 // Maintenance Requests
@@ -1957,7 +1957,7 @@ table.list .center {
 
 	public function addMaintenanceRequest($username, $data) {
 		date_default_timezone_set("America/Toronto");
-		
+
 		$profile 		= $this->getProfileByUsername($username);
     	$bid			= $profile['bid'];
     	$unit 			= $profile['unit'];
@@ -1970,7 +1970,7 @@ table.list .center {
     	$status 		= !empty($data['status']) ? $data['status'] : 's';
     	$date_noticed	= !empty($data['dateNoticed']) ? date('Y-m-d', strtotime($data['dateNoticed'])) : $date_added;
     	$image 			= !empty($data['image']) ? $data['image'] : '';
-		
+
 		$stmt = $this->conn->prepare("INSERT INTO maintenance SET username = :username, bid = :bid, unit = :unit, date_added = :date_added, description = :description, enterpermission = :enterpermission, urgency = :urgency, instruction = :instruction, category_id = :category_id, status = :status, date_noticed = :date_noticed, date_modified = :date_added, assigned_to = '', is_new = '1'");
     	$stmt->bindParam(':username',$username);
     	$stmt->bindParam(':date_noticed',$date_noticed);
@@ -1983,13 +1983,13 @@ table.list .center {
     	$stmt->bindParam(':status',$status);
     	$stmt->bindParam(':unit',$unit);
     	$stmt->bindParam(':bid',$bid);
-    	
+
     	$result = $stmt->execute();
 
     	$maintenance_id = $this->conn->lastInsertId();
-    	
+
     	if ($result) {
-			// save Base 64 string as image.    	
+			// save Base 64 string as image.
 	    	if ($image) {
 	    		$uploadDir	= $_ENV['DIR_MAINTENANCEREPORT'];
 	    		$uploadPath = $_ENV['PATH_MAINTENANCEREPORT'];
@@ -2017,8 +2017,8 @@ table.list .center {
 			return NULL;
 		}
 	}
-  
-  
+
+
   public function addComment($username, $id, $comment, $type) {
     date_default_timezone_set("America/Toronto");
 
@@ -2032,7 +2032,7 @@ table.list .center {
       $comment_id = 0;
 
       $sql = "INSERT INTO {$type}_log SET username = :username, fullname = :fullname, bid = :bid, notify = :notify, date_added = :date_added, comment = :comment, {$type}_id = :id";
-        
+
       $stmt = $this->conn->prepare($sql);
       $stmt->bindParam(':username',$username);
       $stmt->bindParam(':fullname',$fullname);
@@ -2041,9 +2041,9 @@ table.list .center {
       $stmt->bindParam(':date_added',$date_added);
       $stmt->bindParam(':comment',$comment);
       $stmt->bindParam(':id',$id);
-      
+
       $result = $stmt->execute();
-      
+
       if ($result) {
 
         return $this->conn->lastInsertId();
@@ -2053,16 +2053,16 @@ table.list .center {
     } else {
       return false;
     }
-  
-  } 
-  
-	
-	
+
+  }
+
+
+
 	public function updateMaintenanceRequest($id, $username, $date_created, $description, $enterpermission, $urgency, $instruction, $category, $status, $date_noticed) {
 		$file = '';
 		$thumbNailPathName = '';
-    	
-    	if (isset($_FILES['fileUpload'])) {	
+
+    	if (isset($_FILES['fileUpload'])) {
     	// upload the file if it exists
 		$file = $this->uploadMaintenanceImage();
     	// Create a Thumbnail if an image exists
@@ -2083,7 +2083,7 @@ table.list .center {
 			$tn->loadData($image,$imgType);
 			// Build the thumbnail and store as a file
 			$tn->buildThumb($thumbNailPathName);
-			
+
 			//update filenames in DB table
 			$stmt = $this->conn->prepare('UPDATE maintenance SET photo = :photo, thumb = :thumb WHERE id = :id');
     		$stmt->bindParam(':photo',$file);
@@ -2092,8 +2092,8 @@ table.list .center {
     		$result = $stmt->execute();
 		}
 		}
-		
-		$stmt = $this->conn->prepare('UPDATE maintenance SET username = :username, date_created = :date_created, description = :description, enterpermission = :enterpermission, urgency = :urgency, 
+
+		$stmt = $this->conn->prepare('UPDATE maintenance SET username = :username, date_created = :date_created, description = :description, enterpermission = :enterpermission, urgency = :urgency,
 		instruction = :instruction, category = :category, status = :status, date_noticed = :date_noticed WHERE id = :id');
     	$stmt->bindParam(':username',$username);
     	$stmt->bindParam(':date_noticed',$date_noticed);
@@ -2106,14 +2106,14 @@ table.list .center {
     	$stmt->bindParam(':status',$status);
     	$stmt->bindParam(':id',$id);
     	$result = $stmt->execute();
-    	
-    	
+
+
     	if ($result) {
     		return TRUE;
     	} else {
     		return NULL;
     	}
-	
+
 	}
 
   private function numberOfMaintenanceRequests($username) {
@@ -2139,7 +2139,7 @@ table.list .center {
 
     $stmt = $this->conn->prepare("SELECT * FROM maintenance WHERE maintenance_id = :maintenance_id");
         $stmt->bindParam(':maintenance_id',$maintenance_id);
-        
+
         if ($stmt->execute()) {
           $post = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -2161,28 +2161,28 @@ table.list .center {
             'images'          => $this->getMaintenanceImages($post['maintenance_id']),
             'image'           => $this->getMaintenanceFirstImage($post['maintenance_id']),
             'comments'        => $this->getMaintenanceComments($post['maintenance_id']),
-            
+
           );
 
-      } 
-        
+      }
+
         return $post_data;
     }
-	
+
 	public function getAllMaintenanceRequests($username,$page = 1)	{
 		$page = (isset($page)) ? $page : 1;
     	$start = ($page - 1) * $_ENV['LIMIT'];
     	$limit = $_ENV['LIMIT'];
-		
+
 		  $profile 	= $this->getProfileByUsername($username);
     	$bid		= $profile['bid'];
     	$post_data	= array();
 
 		$stmt = $this->conn->prepare("SELECT * FROM maintenance WHERE username = :username AND bid = :bid ORDER BY date_added DESC LIMIT $start, $limit");
-		
+
         $stmt->bindParam(':username', $username);
         $stmt->bindParam(':bid',$bid);
-        
+
         if ($stmt->execute()) {
       		$posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
       		foreach ($posts AS $post) {
@@ -2204,21 +2204,21 @@ table.list .center {
       				'images'          => $this->getMaintenanceImages($post['maintenance_id']),
               		'image'           => $this->getMaintenanceFirstImage($post['maintenance_id']),
       				'comments'        => $this->getMaintenanceComments($post['maintenance_id']),
-      				
+
       			);
       		}
-        } 
-        
+        }
+
         $lastCount = $start + $limit;
         $maxCount  = $this->numberOfMaintenanceRequests($username);
         $nextPage  = ($lastCount < $maxCount) ? $page + 1 : null;
-        
+
         return array(
           'nextPage'  => $nextPage,
           'requests'  => $post_data,
         );
    	}
-	
+
 	public function deleteMaintenanceRequest($username, $maintenance_id) {
 		$stmt = $this->conn->prepare('DELETE FROM maintenance WHERE maintenance_id = :maintenance_id AND username = :username');
         $stmt->bindParam(':maintenance_id', $maintenance_id);
@@ -2237,9 +2237,9 @@ table.list .center {
         } else {
             return NULL;
         }
-	
+
 	}
-	
+
 // Front Desk Instructions
 
 	public function getFrontdeskComments($frontdesk_id) {
@@ -2279,7 +2279,7 @@ table.list .center {
 	public function addFrontDeskInstruction($username, $data) {
 		date_default_timezone_set('America/Toronto');
     	$now = date('Y-m-d H:i:s');
-		
+
 		$profile 		= $this->getProfileByUsername($username);
     	$bid			= $profile['bid'];
     	$description	= !empty($data['description']) ? $data['description'] : '';
@@ -2287,7 +2287,7 @@ table.list .center {
     	$start_date		= !empty($data['startDate']) ? $data['startDate'] : date('Y-m-d');
     	$end_date 		= !empty($data['endDate']) ? $data['endDate'] : null;
     	$category_id 	= !empty($data['category_id']) ? $data['category_id'] : 0;
-    	
+
 		$stmt = $this->conn->prepare("INSERT INTO frontdesk SET username = :username, bid = :bid, date_added = :date_added, date_modified = :date_added, description = :description, start_date = :start_date, end_date = :end_date, no_enddate = :no_enddate, category_id = :category_id, is_new = '1', admin_id = '0'");
     	$stmt->bindParam(':username',$username);
     	$stmt->bindParam(':date_added',$now);
@@ -2297,16 +2297,16 @@ table.list .center {
     	$stmt->bindParam(':no_enddate',$no_enddate);
     	$stmt->bindParam(':category_id',$category_id);
     	$stmt->bindParam(':bid',$bid);
-    	
+
     	$result = $stmt->execute();
-    	
+
 		if ($result) {
 			return TRUE;
 		} else {
 			return NULL;
 		}
 	}
-	
+
 	public function updateFrontDeskInstruction($id, $username, $date_created, $description, $startdate, $enddate, $noenddate, $category) {
 		$stmt = $this->conn->prepare('UPDATE frontdesk SET username = :username, date_created = :date_created, description = :description, startdate = :startdate, enddate = :enddate, noenddate = :noenddate,
 										category = :category WHERE id = :id');
@@ -2319,13 +2319,13 @@ table.list .center {
     	$stmt->bindParam(':category',$category);
     	$stmt->bindParam(':id',$id);
     	$result = $stmt->execute();
-    	
+
     	if ($result) {
     		return TRUE;
     	} else {
     		return NULL;
     	}
-	
+
 	}
 
   private function numberOfFrontdeskInstructions($username) {
@@ -2350,7 +2350,7 @@ table.list .center {
 
     $stmt = $this->conn->prepare("SELECT * FROM frontdesk WHERE frontdesk_id = :frontdesk_id");
     $stmt->bindParam(':frontdesk_id', $frontdesk_id);
-    
+
     if ($stmt->execute()) {
       $stmt->setFetchMode(PDO::FETCH_ASSOC);
       $post = $stmt->fetch();
@@ -2377,7 +2377,7 @@ table.list .center {
     $page = (isset($page)) ? $page : 1;
     $start = ($page - 1) * $_ENV['LIMIT'];
     $limit = $_ENV['LIMIT'];
-      
+
     $profile  = $this->getProfileByUsername($username);
     $bid    = $profile['bid'];
     $post_data  = array ();
@@ -2385,7 +2385,7 @@ table.list .center {
     $stmt = $this->conn->prepare("SELECT * FROM frontdesk WHERE username = :username AND bid = :bid ORDER BY date_added DESC LIMIT $start, $limit");
     $stmt->bindParam(':username', $username);
     $stmt->bindParam(':bid',$bid);
-    
+
     if ($stmt->execute()) {
       $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
       foreach ($posts AS $post) {
@@ -2404,18 +2404,18 @@ table.list .center {
             'comments'      => $this->getFrontdeskComments($post['frontdesk_id'])
         );
       }
-    } 
+    }
 
     $lastCount = $start + $limit;
     $maxCount  = $this->numberOfFrontdeskInstructions($username);
     $nextPage  = ($lastCount < $maxCount) ? $page + 1 : null;
-    
+
     return array(
       'nextPage'  => $nextPage,
       'instructions'     => $post_data,
     );
   }
-	
+
 	public function deleteFrontDeskInstruction($username, $frontdesk_id) {
 		$stmt = $this->conn->prepare('DELETE FROM frontdesk WHERE frontdesk_id = :frontdesk_id AND username = :username');
         $stmt->bindParam(':frontdesk_id', $frontdesk_id);
@@ -2504,7 +2504,7 @@ table.list .center {
 
 	public function addIncidentReport($username, $data) {
 		date_default_timezone_set("America/Toronto");
-		
+
 		$profile 		= $this->getProfileByUsername($username);
     	$bid			= $profile['bid'];
     	$date_added		= date('Y-m-d H:i:s');
@@ -2514,7 +2514,7 @@ table.list .center {
     	$category_id 	= !empty($data['category_id']) ? $data['category_id'] : 0;
     	$status 		= !empty($data['status']) ? $data['status'] : 's';
     	$image 			= !empty($data['image']) ? $data['image'] : '';
-		
+
 		$stmt = $this->conn->prepare("INSERT INTO incident SET username = :username, bid = :bid, date_added = :date_added, description = :description, category_id = :category_id, status = :status, date_noticed = :date_noticed, time_noticed = :time_noticed, date_modified = :date_added, adminid = '0', is_new = '1'");
     	$stmt->bindParam(':username',$username);
     	$stmt->bindParam(':bid',$bid);
@@ -2524,13 +2524,13 @@ table.list .center {
     	$stmt->bindParam(':date_noticed',$date_noticed);
     	$stmt->bindParam(':time_noticed',$time_noticed);
     	$stmt->bindParam(':status',$status);
-    	
+
     	$result = $stmt->execute();
 
     	$incident_id = $this->conn->lastInsertId();
-    	
+
     	if ($result) {
-			// save Base 64 string as image.    	
+			// save Base 64 string as image.
 	    	if ($image) {
 	    		$uploadDir	= $_ENV['DIR_INCIDENTREPORT'];
 	    		$uploadPath = $_ENV['PATH_INCIDENTREPORT'];
@@ -2558,12 +2558,12 @@ table.list .center {
 			return NULL;
 		}
 	}
-	
-	
+
+
 	public function updateIncidentReport($id, $username, $date_created, $date_noticed, $time_noticed, $description, $category) {
 		$status = 's'; // sent
-		
-		if (isset($_FILES['fileUpload'])) {	
+
+		if (isset($_FILES['fileUpload'])) {
     	// upload the file if it exists
 		$file = $this->uploadIncidentImage();
     	// Create a Thumbnail if an image exists
@@ -2584,7 +2584,7 @@ table.list .center {
 			$tn->loadData($image,$imgType);
 			// Build the thumbnail and store as a file
 			$tn->buildThumb($thumbNailPathName);
-			
+
 			//update filenames in DB table
 			$stmt = $this->conn->prepare('UPDATE maintenance SET photo = :photo, thumb = :thumb WHERE id = :id');
     		$stmt->bindParam(':photo',$file);
@@ -2593,8 +2593,8 @@ table.list .center {
     		$result = $stmt->execute();
 		}
 		}
-		
-		$stmt = $this->conn->prepare('UPDATE incident SET username = :username, date_created = :date_created, date_noticed = :date_noticed, time_noticed = :time_noticed, description = :description, 
+
+		$stmt = $this->conn->prepare('UPDATE incident SET username = :username, date_created = :date_created, date_noticed = :date_noticed, time_noticed = :time_noticed, description = :description,
 		category = :category, status = :status WHERE id = :id');
     	$stmt->bindParam(':username',$username);
     	$stmt->bindParam(':date_noticed',$date_noticed);
@@ -2605,13 +2605,13 @@ table.list .center {
     	$stmt->bindParam(':status',$status);
     	$stmt->bindParam(':id',$id);
     	$result = $stmt->execute();
-    	    	
+
     	if ($result) {
     		return TRUE;
     	} else {
     		return NULL;
     	}
-	
+
 	}
 
   private function getCategoryName($category_id, $type) {
@@ -2642,13 +2642,13 @@ table.list .center {
           return 0;
         }
       }
-	
+
   public function getIncidentReport($incident_id)  {
     $post_data  = array ();
 
     $stmt = $this->conn->prepare("SELECT * FROM incident WHERE incident_id = :incident_id");
     $stmt->bindParam(':incident_id',$incident_id);
-    
+
     if ($stmt->execute()) {
       $post = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -2669,8 +2669,8 @@ table.list .center {
             'image'         => $this->getIncidentFirstImage($post['incident_id']),
             'comments'      => $this->getIncidentComments($post['incident_id']),
         );
-    } 
-        
+    }
+
     return $post_data;
   }
 
@@ -2678,7 +2678,7 @@ table.list .center {
 		$page = (isset($page)) ? $page : 1;
     $start = ($page - 1) * $_ENV['LIMIT'];
     $limit = $_ENV['LIMIT'];
-    	
+
     $profile 	= $this->getProfileByUsername($username);
     $bid		= $profile['bid'];
     $post_data	= array ();
@@ -2686,7 +2686,7 @@ table.list .center {
 		$stmt = $this->conn->prepare("SELECT * FROM incident WHERE username = :username AND bid = :bid ORDER BY date_added DESC LIMIT $start, $limit");
     $stmt->bindParam(':username', $username);
     $stmt->bindParam(':bid',$bid);
-		
+
     if ($stmt->execute()) {
     	$posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
     	foreach ($posts AS $post) {
@@ -2708,18 +2708,18 @@ table.list .center {
     				'comments'      => $this->getIncidentComments($post['incident_id']),
     		);
     	}
-    } 
-        
+    }
+
     $lastCount = $start + $limit;
     $maxCount  = $this->numberOfIncidentReports($username);
     $nextPage  = ($lastCount < $maxCount) ? $page + 1 : null;
-        
+
     return array(
       'nextPage'  => $nextPage,
       'incidents' => $post_data,
     );
 	}
-	
+
 	public function deleteIncidentReport($username, $incident_id) {
 		$stmt = $this->conn->prepare('DELETE FROM incident WHERE incident_id = :incident_id AND username = :username');
         $stmt->bindParam(':incident_id', $incident_id);
@@ -2739,7 +2739,7 @@ table.list .center {
         } else {
             return NULL;
         }
-	
+
 	}
 
 // News
@@ -2764,21 +2764,21 @@ table.list .center {
     $start = ($page - 1) * $_ENV['LIMIT'];
     $limit = $_ENV['LIMIT'];
     $status = 1;
-      
+
     $news = array ();
-      
+
     $stmt = $this->conn->prepare("SELECT * FROM news WHERE bid = :bid AND status = :status ORDER BY news_id DESC LIMIT $start, $limit");
     $stmt->bindParam(':bid', $bid);
     $stmt->bindParam(':status', $status);
-      
+
     if ($stmt->execute()) {
       $msgs = $stmt->fetchAll(PDO::FETCH_ASSOC);
       foreach ($msgs AS $row) {
 
         $user = $this->getUserByUsername($row['author']);
-      
+
         $news [] = array (
-          
+
             'id'            => (int)$row['news_id'],
             'start_date'    => date('m/d/Y',strtotime($row['start_date'])),
             'end_date'      => date('m/d/Y',strtotime($row['end_date'])),
@@ -2803,7 +2803,7 @@ table.list .center {
     $lastCount = $start + $limit;
     $maxCount  = $this->numberOfNews($bid);
     $nextPage  = ($lastCount < $maxCount) ? $page + 1 : null;
-      
+
     return array(
       'nextPage'  => $nextPage,
       'news'     => $news,
@@ -2859,19 +2859,19 @@ table.list .center {
       }
     public function getAllPeopleAutoComplete($bid = 1) {
 	    $status = 1;
-	      
+
 	    $people = array ();
-	      
+
 	    $stmt = $this->conn->prepare("SELECT username, fullname FROM user WHERE bid = :bid AND status = :status AND privacy != 's' ORDER BY firstname ");
 	    $stmt->bindParam(':bid', $bid);
 	    $stmt->bindParam(':status', $status);
-	      
+
 	    if ($stmt->execute()) {
 	      $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 	      foreach ($posts AS $row) {
-	      
+
 	        $people [] = array (
-	          
+
 	            'username'	    => $row['username'],
 	            'fullname'      => trim($row['fullname']),
 	          );
@@ -2886,19 +2886,19 @@ table.list .center {
     $start = ($page - 1) * $_ENV['LIMIT'];
     $limit = $_ENV['LIMIT'];
     $status = 1;
-      
+
     $people = array ();
-      
+
     $stmt = $this->conn->prepare("SELECT * FROM user WHERE bid = :bid AND status = :status AND privacy != 's' AND propertymanager = 'n' ORDER BY firstname ASC LIMIT $start, $limit");
     $stmt->bindParam(':bid', $bid);
     $stmt->bindParam(':status', $status);
-      
+
     if ($stmt->execute()) {
       $msgs = $stmt->fetchAll(PDO::FETCH_ASSOC);
       foreach ($msgs AS $row) {
-      
+
         $people [] = array (
-          
+
             'user_id'       => (int)$row['user_id'],
             'username'	    => $row['username'],
             'fullname'      => trim($row['fullname']),
@@ -2920,33 +2920,33 @@ table.list .center {
     $lastCount = $start + $limit;
     $maxCount  = $this->numberOfPeople($bid);
     $nextPage  = ($lastCount < $maxCount) ? $page + 1 : null;
-      
+
     return array(
       'nextPage'  => $nextPage,
       'people'     => $people,
     );
 
   }
-	
+
 
   public function getAllPropertyManagers($bid = 1,$page = 1) {
     $page = (isset($page)) ? $page : 1;
     $start = ($page - 1) * $_ENV['LIMIT'];
     $limit = $_ENV['LIMIT'];
     $status = 1;
-      
+
     $people = array ();
-      
+
     $stmt = $this->conn->prepare("SELECT * FROM user WHERE bid = :bid AND status = :status AND privacy != 's' AND propertymanager = 'y' ORDER BY firstname ASC LIMIT $start, $limit");
     $stmt->bindParam(':bid', $bid);
     $stmt->bindParam(':status', $status);
-      
+
     if ($stmt->execute()) {
       $msgs = $stmt->fetchAll(PDO::FETCH_ASSOC);
       foreach ($msgs AS $row) {
-      
+
         $people [] = array (
-          
+
             'user_id'       => (int)$row['user_id'],
             'username'      => $row['username'],
             'fullname'      => trim($row['fullname']),
@@ -2968,7 +2968,7 @@ table.list .center {
     $lastCount = $start + $limit;
     $maxCount  = $this->numberOfPropertyManagers($bid);
     $nextPage  = ($lastCount < $maxCount) ? $page + 1 : null;
-      
+
     return array(
       'nextPage'  => $nextPage,
       'people'     => $people,
@@ -2981,19 +2981,19 @@ table.list .center {
     $start = ($page - 1) * $_ENV['LIMIT'];
     $limit = $_ENV['LIMIT'];
     $status = 1;
-      
+
     $people = array ();
-      
+
     $stmt = $this->conn->prepare("SELECT * FROM user WHERE bid = :bid AND status = :status AND boardmember = 'y' AND privacy != 's' ORDER BY firstname ASC LIMIT $start, $limit");
     $stmt->bindParam(':bid', $bid);
     $stmt->bindParam(':status', $status);
-      
+
     if ($stmt->execute()) {
       $msgs = $stmt->fetchAll(PDO::FETCH_ASSOC);
       foreach ($msgs AS $row) {
-      
+
         $people [] = array (
-          
+
             'user_id'       => (int)$row['user_id'],
             'username'      => $row['username'],
             'fullname'      => trim($row['fullname']),
@@ -3015,7 +3015,7 @@ table.list .center {
     $lastCount = $start + $limit;
     $maxCount  = $this->numberOfBoardMembers($bid);
     $nextPage  = ($lastCount < $maxCount) ? $page + 1 : null;
-      
+
     return array(
       'nextPage'  => $nextPage,
       'people'     => $people,
@@ -3025,7 +3025,7 @@ table.list .center {
 // Messaging / mail
 
 	public function addMessage($username, $userTo, $subject, $message) {
-		
+
 		$profile  	= $this->getProfileByUsername($username);
     $bid		    = $profile['bid'];
 		$sentDate 	= date('Y-m-d H:i:s');
@@ -3033,7 +3033,7 @@ table.list .center {
     $starred    = 0;
     $status     = 'unread';
     $userFrom   = $username;
-		
+
 		$stmt = $this->conn->prepare("INSERT INTO message SET owner = :owner, bid = :bid, sentDate = :sentDate, userTo = :userTo, userFrom = :userFrom, subject = :subject, message = :message, status = :status, childid = :childid, starred = :starred");
     $stmt->bindParam(':userTo',$userTo);
   	$stmt->bindParam(':userFrom',$userFrom);
@@ -3045,9 +3045,9 @@ table.list .center {
     $stmt->bindParam(':childid',$childid);
     $stmt->bindParam(':starred',$starred);
   	$stmt->bindParam(':bid',$bid);
-  	
+
   	$result = $stmt->execute();
-    	
+
     $stmt = $this->conn->prepare("INSERT INTO message SET owner = :owner, bid = :bid, sentDate = :sentDate, userTo = :userTo, userFrom = :userFrom, subject = :subject, message = :message, status = :status, childid = :childid, starred = :starred");
     $stmt->bindParam(':userTo',$userTo);
     $stmt->bindParam(':userFrom',$userFrom);
@@ -3059,20 +3059,20 @@ table.list .center {
     $stmt->bindParam(':childid',$childid);
     $stmt->bindParam(':starred',$starred);
     $stmt->bindParam(':bid',$bid);
-    
+
     $result = $stmt->execute();
-    	
+
     if ($result) {
   		return TRUE;
   	} else {
    		return NULL;
     }
 	}
-	
+
 	public function addReplyToMessage($username, $id, $message) {
 	  date_default_timezone_set('America/Toronto');
 		$msg = $this->getMessage($username, $id);
-		
+
 		if ($msg) {
       $oMessage     = $msg['message'];
       $oSubject     = $msg['subject'];
@@ -3080,18 +3080,18 @@ table.list .center {
       $userTo       = $msg['userFrom'];
       $userFrom     = $msg['userTo'];
       $fromFullname = $this->getResidentName($userFrom);
-      
+
       $subject      = "Re: ".$oSubject;
-        
+
       $totalMessage = $message."\n\n\n"
                     ."----- Original Message -----\n"
                     ."From: ".$fromFullname."\n"
                     ."Date: ".date('m/d/Y h:i a', strtotime($sentDate))."\n"
                     ."Subject: ".$oSubject."\n"
                     ."Message:\n".$oMessage;
-        
+
       $result = $this->addMessage($username, $userTo, $subject, $totalMessage);
-    	
+
   		if ($result) {
   			return TRUE;
   		} else {
@@ -3100,9 +3100,9 @@ table.list .center {
   	} else {
   		return NULL;
   	}
-	}	
-	
-	
+	}
+
+
 	public function getMessage($username, $message_id)	{
 		$stmt = $this->conn->prepare('SELECT * FROM message WHERE message_id = :message_id');
         $stmt->bindParam(':message_id', $message_id);
@@ -3138,25 +3138,25 @@ table.list .center {
 		$page = (isset($page)) ? $page : 1;
     	$start = ($page - 1) * $_ENV['LIMIT'];
     	$limit = $_ENV['LIMIT'];
-    	
+
     	$messages = array ();
     	$profile  = $this->getProfileByUsername($username);
       	$bid      = $profile['bid'];
-		  
+
       	$stmt = $this->conn->prepare("SELECT * FROM message WHERE owner = :username AND userTo = :username AND bid = :bid ORDER BY message_id DESC LIMIT $start, $limit");
-		
+
       	$stmt->bindParam(':username', $username);
       	$stmt->bindParam(':bid', $bid);
-		
+
 	    if ($stmt->execute()) {
 	  		$msgs = $stmt->fetchAll(PDO::FETCH_ASSOC);
     		foreach ($msgs AS $msg) {
-    			
+
     			$fullnameFrom = $this->getResidentName($msg['userFrom']);
   				$fullnameTo 	 = $this->getResidentName($msg['userTo']);
-  		
+
     			$messages [] = array (
-    				
+
     				'owner'       => $msg['owner'],
           	'id'          => (int)$msg['message_id'],
           	'userTo'	    => $msg['userTo'],
@@ -3171,18 +3171,18 @@ table.list .center {
     			);
     		}
 	    }
-	    
+
       $lastCount = $start + $limit;
       $maxCount  = $this->numberOfMessages($username);
       $nextPage  = ($lastCount < $maxCount) ? $page + 1 : null;
-        
+
       return array(
         'nextPage'  => $nextPage,
         'messages' => $messages,
-      );  
+      );
 
 	}
-	
+
 	public function deleteMessage($username, $id) {
 		$stmt = $this->conn->prepare('DELETE FROM message WHERE message_id = :id AND owner = :username');
         $stmt->bindParam(':id', $id);
@@ -3192,9 +3192,9 @@ table.list .center {
         } else {
             return NULL;
         }
-	
+
 	}
-	
+
 // Notifications FROM building management / announcements
 
 	public function getAllNotifications($bid,$page) {
@@ -3204,12 +3204,12 @@ table.list .center {
 
     	date_default_timezone_set('America/Toronto');
       $now   = date('Y-m-d');
-    	
+
     	$post_data = array();
         $stmt = $this->conn->prepare("SELECT a.id, a.bid, a.who AS username, u.fullname,u.profilepic, a.date AS date_added, a.title, a.message FROM announcement a LEFT JOIN user u ON a.who = u.username WHERE a.bid = :bid AND a.date_start <= :now AND a.date_end >= :now ORDER BY a.date DESC LIMIT $start, $limit");
         $stmt->bindParam(':bid',$bid);
         $stmt->bindParam(':now',$now);
-        
+
         if ($stmt->execute()) {
       		$posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
       		foreach ($posts AS $post) {
@@ -3224,10 +3224,10 @@ table.list .center {
       				'message'    => $post['message']
       			);
       		}
-        } 
+        }
 
-        if ($post_data) {        
-          return $post_data; 
+        if ($post_data) {
+          return $post_data;
         } else {
           return array(
             'id'         => 0,
@@ -3241,8 +3241,44 @@ table.list .center {
             );
         }
     }
-    
-	
+
+		public function newAnnouncementsCount($username, $bid) {
+      $count = false;
+      date_default_timezone_set($_ENV['TIMEZONE']);
+      $now   = date('Y-m-d');
+      $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM announcement WHERE bid = :bid AND date_start <= :now AND date_end >= :now");
+
+      $stmt->bindParam(':bid', $bid);
+      $stmt->bindParam(':now',$now);
+      $stmt->execute();
+      $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+
+      if (isset($row) && $row['total']) {
+       $count = $row['total'] > 0;
+      }
+
+      return $count;
+    }
+
+		public function newNotificationsCount($username) {
+      $count = 0;
+      $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM user_notification WHERE new = '1' AND recipient = :username");
+
+      $stmt->bindParam(':username', $username);
+      $stmt->execute();
+      $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+
+      if (isset($row) && $row['total']) {
+       $count = $row['total'];
+      }
+
+      return $count;
+    }
+
+
+
 // Wall Posts
 
     function getMarketplaceMessage($marketplace_id) {
@@ -3251,13 +3287,13 @@ table.list .center {
         if ($stmt->execute()) {
             $stmt->setFetchMode(PDO::FETCH_ASSOC);
             $row = $stmt->fetch();
-    
+
       if ($row['type'] == 's') {
         $price = (is_numeric($row['price']) && $row['price']) ? '$'.number_format($row['price'],2) : 'Contact for price';
       } else {
         $price = '';
       }
-      
+
       $type = ($row['type'] == 's') ? 'For Sale' : 'Wanted';
       $title      = $row['title'].' '.$type;
       $description  = substr(strip_tags(html_entity_decode($row['description'])), 0, 150).' ...';
@@ -3280,11 +3316,11 @@ table.list .center {
 
     	return $images;
     }
-    
+
     public function addPost($username, $message = '', $image = '') {
     	date_default_timezone_set("America/Toronto");
 	 	$profile 	   = $this->getProfileByUsername($username);
-    	
+
       	$bid         = $profile['bid'];
       	$fullname    = $profile['fullname'];
     	$type        = 'posts';
@@ -3305,7 +3341,7 @@ table.list .center {
       	$sql = "INSERT INTO `wall` SET username = :username, bid = :bid, fullname = :fullname, message = :message, type = :type, date_added = :date_added, type_id = :type_id, group_id = :group_id, parent_id = :parent_id, abuse = :abuse, markabuse = :markabuse, comments = :comments, pin = :pin, pin_expiry = :pin_expiry, love = :love";
 
       try {
-  		
+
       	$stmt = $this->conn->prepare($sql);
       	$stmt->bindParam(':username',$username);
         $stmt->bindParam(':bid',$bid);
@@ -3322,13 +3358,13 @@ table.list .center {
         $stmt->bindParam(':pin',$pin);
         $stmt->bindParam(':pin_expiry',$pin_expiry);
         $stmt->bindParam(':love',$love);
-      	
+
         $result = $stmt->execute();
 
         $post_id = $this->conn->lastInsertId();
 
         if ($result) {
-			// save Base 64 string as image.    	
+			// save Base 64 string as image.
 	    	if ($image) {
 	    		$uploadDir	= $_ENV['DIR_WALLPOST'];
 	    		$uploadPath = $_ENV['PATH_WALLPOST'];
@@ -3360,7 +3396,7 @@ table.list .center {
       catch (PDOException $e) {
         die(htmlspecialchars ($e->getMessage()));
       }
-    
+
     }
 
     private function getLikeCount($post_id) {
@@ -3402,7 +3438,7 @@ table.list .center {
         $stmt->bindParam(':username',$username);
         $stmt->bindParam(':post_id',$post_id);
         $result = $stmt->execute();
-        
+
         $stmt = $this->conn->prepare("UPDATE wall SET love = love - 1 WHERE post_id = :post_id");
         $stmt->bindParam(':post_id',$post_id);
         $result = $stmt->execute();
@@ -3416,15 +3452,15 @@ table.list .center {
         $stmt->bindParam(':bid',$bid);
         $stmt->bindParam(':admin_new',$admin_new);
         $result = $stmt->execute();
-        
+
         $stmt = $this->conn->prepare("UPDATE wall SET love = love + 1 WHERE post_id = :post_id");
         $stmt->bindParam(':post_id',$post_id);
         $result = $stmt->execute();
 
       }
-      
+
       return $this->getPostLikeData($username, $post_id);
-      
+
     }
 
     private function getPostLikeData($username, $post_id) {
@@ -3449,7 +3485,7 @@ table.list .center {
         $stmt->bindParam(':username',$username);
         $stmt->bindParam(':post_id',$post_id);
         $result = $stmt->execute();
-        
+
         $stmt = $this->conn->prepare("UPDATE wall SET markabuse = markabuse - 1 WHERE post_id = :post_id");
         $stmt->bindParam(':post_id',$post_id);
         $result = $stmt->execute();
@@ -3463,15 +3499,15 @@ table.list .center {
         $stmt->bindParam(':bid',$bid);
         $stmt->bindParam(':admin_new',$admin_new);
         $result = $stmt->execute();
-        
+
         $stmt = $this->conn->prepare("UPDATE wall SET markabuse = markabuse + 1 WHERE post_id = :post_id");
         $stmt->bindParam(':post_id',$post_id);
         $result = $stmt->execute();
 
       }
-      
+
       return $this->getPostReportData($username, $post_id);
-      
+
     }
 
     private function alreadyReportedPost($username, $post_id) {
@@ -3496,13 +3532,13 @@ table.list .center {
         'isReported'     => $alreadyReportedPost
       );
     }
-    
+
     public function addPostComment($username, $id, $comment) {
     	date_default_timezone_set("America/Toronto");
       $post_id    = 0;
       $result     = null;
       $response   = array();
-        
+
       $post_id    = $id;
       $profile 	 = $this->getProfileByUsername($username);
       $fullname  = $profile['fullname'];
@@ -3526,7 +3562,7 @@ table.list .center {
       $sql = "INSERT INTO `wall` SET username = :username, bid = :bid, fullname = :fullname, message = :message, type = :type, date_added = :date_added, type_id = :type_id, group_id = :group_id, parent_id = :parent_id, abuse = :abuse, markabuse = :markabuse, comments = :comments, pin = :pin, pin_expiry = :pin_expiry, love = :love";
 
       try {
-        
+
           $stmt = $this->conn->prepare($sql);
           $stmt->bindParam(':username',$username);
           $stmt->bindParam(':bid',$bid);
@@ -3543,7 +3579,7 @@ table.list .center {
           $stmt->bindParam(':pin',$pin);
           $stmt->bindParam(':pin_expiry',$pin_expiry);
           $stmt->bindParam(':love',$love);
-          
+
           $result = $stmt->execute();
 
         	if ($result) {
@@ -3553,9 +3589,9 @@ table.list .center {
             $stmt->bindParam(':post_id', $post_id);
             $stmt->execute();
 
-          } 
+          }
 
-          
+
         }
         catch (PDOException $e) {
           die(htmlspecialchars ($e->getMessage()));
@@ -3565,8 +3601,8 @@ table.list .center {
       return $post_id;
 
     }
- 
-    
+
+
     private function numberOfComments($id) {
     	$stmt = $this->conn->prepare('SELECT COUNT(*) AS total FROM wall WHERE parent_id = :id');
       $stmt->bindParam(':id', $id);
@@ -3580,7 +3616,7 @@ table.list .center {
       }
     }
 
-    
+
     public function getPostComments($id) {
     	$markabuse = 0;
     	$stmt = $this->conn->prepare('SELECT post_id, bid, username, fullname, date_added, message, parent_id, type FROM wall WHERE parent_id = :id AND markabuse=:markabuse ORDER BY date_added  ASC');
@@ -3600,8 +3636,8 @@ table.list .center {
     				'message'		  => $post['message']
     			);
     		}
-        } 
-        
+        }
+
         return $post_data;
     }
 
@@ -3621,33 +3657,33 @@ table.list .center {
           return 0;
         }
       }
-     
+
     public function getAllPosts($username,$page) {
     	$page = (isset($page)) ? $page : 1;
     	$start = ($page - 1) * $_ENV['LIMIT'];
     	$limit = $_ENV['LIMIT'];
-    	
+
     	$profile 	= $this->getProfileByUsername($username);
     	$bid		= $profile['bid'];
 
     	$post_data = array();
-    	
+
     	$pinned_posts = array ();
-    	
+
     	$stmt = $this->conn->prepare("SELECT post_id, type_id, bid, username, date_added, comments, message, type, love FROM wall w WHERE parent_id = '0' AND bid = :bid AND pin = '1' ORDER BY date_added DESC");
     	$stmt->bindParam(':bid',$bid);
     	if ($stmt->execute()) {
     		$pinned_posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
     	}
-    	
+
         $stmt = $this->conn->prepare("SELECT post_id, type_id, bid, username, date_added, comments, message, type, love FROM wall WHERE parent_id = '0' AND bid = :bid AND pin = '0' ORDER BY date_added DESC LIMIT $start, $limit");
         $stmt->bindParam(':bid',$bid);
-        
+
         if ($stmt->execute()) {
     		$posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    		
+
     		$posts = array_merge($pinned_posts,$posts);
-    		
+
     		if ($posts) {
     			foreach ($posts AS $post) {
 
@@ -3708,19 +3744,19 @@ table.list .center {
   	    			'images'		     => array()
   	    		);
       		}
-        } 
+        }
 
         $lastCount = $start + $limit;
         $maxCount  = $this->numberOfPosts($username);
         $nextPage  = ($lastCount < $maxCount) ? $page + 1 : null;
-        
+
         return array(
           'nextPage'  => $nextPage,
           'posts'     => $post_data,
         );
     }
-    
-    
+
+
   public function deletePost($username, $id) {
 		$stmt = $this->conn->prepare('DELETE FROM wall WHERE id = :id AND username = :username');
     $stmt->bindParam(':id', $id);
@@ -3730,9 +3766,9 @@ table.list .center {
     } else {
         return NULL;
     }
-	
+
 	}
-	
+
 // RESERVATION Facilities
 
 	public function getFacilities($bid) {
@@ -3740,7 +3776,7 @@ table.list .center {
 
 		$stmt = $this->conn->prepare("SELECT * FROM facility WHERE bid = :bid ORDER BY name ASC");
       	$stmt->bindParam(':bid',$bid);
-    	
+
     	if ($stmt->execute()) {
         	$cats = $stmt->fetchAll(PDO::FETCH_ASSOC);
         	foreach ($cats AS $cat) {
@@ -3749,10 +3785,10 @@ table.list .center {
 	            	'name'  		=> $cat['name']
           		);
         	}
-    	} 
-    
+    	}
+
     	return $facilities;
-		
+
 	}
 
 	public function getResources($bid, $facility_id) {
@@ -3761,7 +3797,7 @@ table.list .center {
 		$stmt = $this->conn->prepare("SELECT * FROM reservation_resources WHERE bid = :bid AND facility_id = :facility_id ORDER BY name ASC");
       	$stmt->bindParam(':bid',$bid);
       	$stmt->bindParam(':facility_id',$facility_id);
-    	
+
     	if ($stmt->execute()) {
         	$cats = $stmt->fetchAll(PDO::FETCH_ASSOC);
         	foreach ($cats AS $cat) {
@@ -3770,16 +3806,16 @@ table.list .center {
 	            	'name'  		=> $cat['name']
           		);
         	}
-    	} 
-    
+    	}
+
     	return $resources;
-		
+
 	}
 
 // Get categories for front desk instructions, maintenance requests and incident reports
 
 	public function getCategories($username,$type)	{
-		
+
 		$profile 	  = $this->getProfileByUsername($username);
     $bid		    = $profile['bid'];
     $status     = 1;
@@ -3804,7 +3840,7 @@ table.list .center {
     }
 
 		if ($table) {
-			
+
 			$stmt = $this->conn->prepare("SELECT * FROM ".$table." WHERE bid = :bid AND status = :status ORDER BY category_name ASC");
       $stmt->bindParam(':bid',$bid);
 			$stmt->bindParam(':status',$status);
@@ -3816,28 +3852,28 @@ table.list .center {
             'name'  => $cat['category_name']
           );
         }
-    	} 
+    	}
     }
-    
+
     return $categories;
-		
+
 	}
-	
+
 // Resident autocomplete
 
 	public function getResidentAutoComplete($username, $search = '') {
 		$search 	= "%".strtolower($search)."%";
     	$profile 	= $this->getProfileByUsername($username);
     	$bid		= $profile['bid'];
-    	
+
 		$stmt = $this->conn->prepare("SELECT username, fullname FROM `user` WHERE userlevel < 8 AND bid = :bid AND LCASE(fullname) LIKE :search ORDER BY firstname ASC");
 		$stmt->bindParam(':bid',$bid);
         $stmt->bindParam(':search',$search);
-        
+
         if ($stmt->execute()) {
             	$stmt->setFetchMode(PDO::FETCH_ASSOC);
             	$rows = $stmt->fetchAll();
-            
+
             	return $rows;
         } else {
             	return NULL;
@@ -3850,15 +3886,15 @@ table.list .center {
 		$page = (isset($page)) ? $page : 1;
     	$start = ($page - 1) * $_ENV['LIMIT'];
     	$limit = $_ENV['LIMIT'];
-    	
+
     	$profile 	= $this->getProfileByUsername($username);
     	$bid		= $profile['bid'];
-    	
+
     	$managers_data	= array ();
 
 		$stmt = $this->conn->prepare("SELECT username, bid, title, firstname, lastname, fullname, email, phone, mobilephone, profilepic FROM user WHERE propertymanager = 'y' AND bid = :bid ORDER BY fullname ASC LIMIT $start, $limit");
 		$stmt->bindParam(':bid',$bid);
-        
+
         if ($stmt->execute()) {
     		$managers = $stmt->fetchAll(PDO::FETCH_ASSOC);
     		foreach ($managers AS $manager) {
@@ -3875,12 +3911,12 @@ table.list .center {
     				'profilepic'	=> $_ENV['HTTP_SERVER'].$manager['profilepic']
     			);
     		}
-        
-        } 
-        
+
+        }
+
         return $managers_data;
 	}
- 
+
 }
- 
+
 ?>

@@ -85,14 +85,14 @@ function generateJWT($username) {
 				    "iat" 			=> time(),
 				    "nbf" 			=> time(),
 	    			"username" 		=> $username,
-	                "firstname"		=> $user['firstname'],
-	            	"lastname"      => $user['lastname'],
-	            	"fullname"      => $user['fullname'],
-	           		"unit"     		=> $user['unit'],
-	           		"bid"    		=> (int)$user['bid'],
-	            	"privacy" 		=> $user['privacy'],
-	            	"resident_type"	=> $user['resident_type'],
-	                "avatar"        => $_ENV['HTTP_SERVER'].$user['profilepic'],
+	          "firstname"		=> $user['firstname'],
+	          "lastname"      => $user['lastname'],
+	          "fullname"      => $user['fullname'],
+	          "unit"     		=> $user['unit'],
+	          "bid"    		=> (int)$user['bid'],
+	           "privacy" 		=> $user['privacy'],
+	           "resident_type"	=> $user['resident_type'],
+	           "avatar"        => $_ENV['HTTP_SERVER'].$user['profilepic'],
 	);
 
 	$db = NULL;
@@ -359,6 +359,47 @@ $app->post('/users/password/reset', function() use($app) {
 // Calls that require authentication
 
 // File uploads
+
+$app->get('/counts/announcements', 'authenticate', function() use($app) { 
+    $response = array();
+
+    $db = new DbHandler();
+
+    $new =  $db->newAnnouncementsCount($app->username, $app->property_id);
+
+    $response['success']  = true;
+    $response['error']    = false;
+    $response['username'] = $app->username;
+    $response['new']      = $new;
+
+    echoResponse(200, $response);
+
+    $db = NULL;
+  });
+
+$app->get('/counts/notifications', 'authenticate', function() use($app) {
+  $response = array();
+
+  $db = new DbHandler();
+
+  $count =  (int)$db->newNotificationsCount($app->username);
+
+  if ($count !== null) {
+      $response['success']  = true;
+      $response['error']    = false;
+      $response['username'] = $app->username;
+      $response['count']    = $count;
+  } else {
+      $response['success']  = false;
+      $response['error']    = true;
+      $response['count']    = '';
+      $response['message'] = 'Error getting notifications count!';
+  }
+
+  echoResponse(200, $response);
+
+  $db = NULL;
+});
 
 $app->post('/files', 'authenticate', function() use($app) {
 
