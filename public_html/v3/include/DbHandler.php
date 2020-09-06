@@ -2869,6 +2869,38 @@ table.list .center {
 
 		}
 
+	public function getPeopleNextPage($username, $query = '', $page = 1) {
+    $status = 1;
+    $invisible = 0;
+    $limit = 15;
+
+    if ($query) {
+      $query = "%".strtolower($query)."%";
+
+      $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM user WHERE status = :status AND privacy != 's' AND (LCASE(fullname) LIKE :query OR LCASE(title) LIKE :query) ");
+      $stmt->bindParam(':invisible', $invisible);
+      $stmt->bindParam(':status', $status);
+      $stmt->bindParam(':query', $query);
+    } else {
+      $stmt = $this->conn->prepare("SELECT * FROM wch_user WHERE status = :status AND privacy != 's' ");
+      $stmt->bindParam(':invisible', $invisible);
+      $stmt->bindParam(':status', $status);
+    }
+
+    if ($stmt->execute()) {
+      $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      $maxCount = (int)$row['total'];
+    } else {
+      $maxCount = 0;
+    }
+
+    $lastCount = $page + $limit;
+    $nextPage  = ($lastCount < $maxCount) ? $page + 1 : null;
+
+    return $nextPage;
+  }
+
   private function numberOfBoardMembers($bid) {
         $status = 1;
         $stmt     = $this->conn->prepare("SELECT COUNT(*) AS total FROM user WHERE status = :status AND bid = :bid AND boardmember = 'y'");
