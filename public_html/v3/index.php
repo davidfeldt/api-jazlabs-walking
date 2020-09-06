@@ -562,755 +562,748 @@ $app->post('/posts/report/:id', 'authenticate', function($id) use($app) {
         });
 
 $app->get('/posts', 'authenticate', function() use($app) {
-            $response = array();
+    $response = array();
 
-            $db = new DbHandler();
+    $db = new DbHandler();
 
-            $page = $app->request()->get('page');
+    $page = $app->request()->get('page');
 
-            if (!isset($page) || $page < 1) { $page = 1;}
+    if (!isset($page) || $page < 1) { $page = 1;}
 
-            $results = $db->getAllPosts($app->username, $page);
+    $results = $db->getAllPosts($app->username, $page);
 
-            if ($results) {
+    if ($results) {
 
-                $response['error'] 	= false;
-                $response['success'] = true;
-                $response['username'] = $app->username;
-                $response['results']  = $results;
-            } else {
-                $response['error'] = true;
-                $response['message'] = 'Error loading community feed';
-            }
+        $response['error'] 	= false;
+        $response['success'] = true;
+        $response['username'] = $app->username;
+        $response['results']  = $results;
+        $response['page'] = $page;
+    } else {
+        $response['error'] = true;
+        $response['message'] = 'Error loading community feed';
+    }
 
-			$db->registerAPICall( $app->username, 'posts', 'get', '1');
+    $db->registerAPICall( $app->username, 'posts', 'get', '1');
 
-            echoResponse(200, $response);
+    echoResponse(200, $response);
 
-            $db = NULL;
-        });
+    $db = NULL;
+});
 
 $app->get('/posts/:id', 'authenticate', function($id) use($app) {
-            $response = array();
-            $db = new DbHandler();
+    $response = array();
+    $db = new DbHandler();
 
-            // fetch task
-            $result = $db->getPost($app->username, $id);
+    // fetch task
+    $result = $db->getPost($app->username, $id);
 
- 			$db->registerAPICall( $app->username, 'posts/'.$id, 'get', $result);
+			$db->registerAPICall( $app->username, 'posts/'.$id, 'get', $result);
 
-            if ($result != NULL) {
-                $response['error'] 		= false;
-                $response['id'] 		= $result['id'];
-                $response['bid'] 		= $result['bid'];
-                $response['username'] 	= $result['username'];
-                $response['fullname']	= $result['fullname'];
-                $response['message']	= $result['message'];
-                $response['date_added'] 		= $db->dateTimeDiff($result['date_added']);
-                $response['type']		= $result['type'];
-                $response['comments']	= $result['comments'];
-                echoResponse(200, $response);
-            } else {
-                $response['error'] = true;
-                $response['message'] = "The requested resource doesn't exists";
-                echoResponse(404, $response);
-            }
-        });
+    if ($result != NULL) {
+        $response['error'] 		= false;
+        $response['id'] 		= $result['id'];
+        $response['bid'] 		= $result['bid'];
+        $response['username'] 	= $result['username'];
+        $response['fullname']	= $result['fullname'];
+        $response['message']	= $result['message'];
+        $response['date_added'] 		= $db->dateTimeDiff($result['date_added']);
+        $response['type']		= $result['type'];
+        $response['comments']	= $result['comments'];
+        echoResponse(200, $response);
+    } else {
+        $response['error'] = true;
+        $response['message'] = "The requested resource doesn't exists";
+        echoResponse(404, $response);
+    }
+  });
 
 $app->get('/posts/search/:q', 'authenticate', function($q) use($app) {
-			$response = array();
+	$response = array();
 
-            $db 	= new DbHandler();
+  $db 	= new DbHandler();
 
-            $page 	= $app->request()->get('page');
-            $page 	= (isset($page)) ? $page : 1;
+  $page 	= $app->request()->get('page');
+  $page 	= (isset($page)) ? $page : 1;
 
-            if (!isset($q)) {
-            	$response["error"] = true;
-                $response["message"] = "Please enter search query!";
-            	echoResponse(200, $response);
-            } else {
+  if (!isset($q)) {
+  	$response["error"] = true;
+      $response["message"] = "Please enter search query!";
+  	echoResponse(200, $response);
+  } else {
 
-            	$response['error'] 	= false;
-            	$response['username'] = $app->username;
-            	$response['posts']  = $db->getSearchPosts($app->username,$page, $q);
+  	$response['error'] 	= false;
+  	$response['username'] = $app->username;
+  	$response['posts']  = $db->getSearchPosts($app->username,$page, $q);
 
-				$db->registerAPICall( $app->username, 'posts/search/'.$q, 'get', '1');
+		$db->registerAPICall( $app->username, 'posts/search/'.$q, 'get', '1');
 
-            	echoResponse(200, $response);
+    echoResponse(200, $response);
 
-            	$db = NULL;
-			}
+    $db = NULL;
+	}
 
 });
 
 $app->delete('/posts/:id', 'authenticate', function($id) use($app) {
 
-            $db = new DbHandler();
-            $response = array();
-            $result = $db->deletePost($app->username, $id);
+    $db = new DbHandler();
+    $response = array();
+    $result = $db->deletePost($app->username, $id);
 
-            $db->registerAPICall( $app->username, 'posts/'.$id, 'delete', 1);
+    $db->registerAPICall( $app->username, 'posts/'.$id, 'delete', 1);
 
-            if ($result) {
-                $response['error'] = false;
-                $response['success'] = true;
-                $response['message'] = "Post deleted successfully";
-            } else {
-                // task failed to delete
-                $response["error"] = true;
-                $response["message"] = "Post failed to delete. Please try again!";
-            }
-            echoResponse(200, $response);
-        });
+    if ($result) {
+        $response['error'] = false;
+        $response['success'] = true;
+        $response['message'] = "Post deleted successfully";
+    } else {
+        // task failed to delete
+        $response["error"] = true;
+        $response["message"] = "Post failed to delete. Please try again!";
+    }
+    echoResponse(200, $response);
+});
 
 // maintenance requests
 
 $app->post('/requests', 'authenticate', function() use($app) {
+    $response 				= array();
+    $requestData  			= array();
 
-            // check for required params
-            //verifyRequiredParams(array('description', 'enterpermission', 'urgency', 'instruction', 'category','date_noticed'));
+    $json 					= $app->request->getBody();
+    $data 					= json_decode($json, true);
 
-            $response 				= array();
-            $requestData  			= array();
+    $requestData['status']			= 's';
+    $requestData['description']		= $data['description'];
+    $requestData['enterPermission'] = $data['enterPermission'];
+    $requestData['urgency'] 		= $data['urgency'];
+    $requestData['instruction'] 	= $data['instruction'];
+    $requestData['category_id']		= $data['category_id'];
+    $requestData['dateNoticed']		= $data['dateNoticed'];
+    $requestData['image']			= $data['image'];
 
-            $json 					= $app->request->getBody();
-            $data 					= json_decode($json, true);
+    $db = new DbHandler();
+    $res = $db->addMaintenanceRequest($app->username, $requestData);
 
-            $requestData['status']			= 's';
-            $requestData['description']		= $data['description'];
-            $requestData['enterPermission'] = $data['enterPermission'];
-            $requestData['urgency'] 		= $data['urgency'];
-            $requestData['instruction'] 	= $data['instruction'];
-            $requestData['category_id']		= $data['category_id'];
-            $requestData['dateNoticed']		= $data['dateNoticed'];
-            $requestData['image']			= $data['image'];
+			$db->registerAPICall( $app->username, 'requests', 'post', $res);
 
-            $db = new DbHandler();
-            $res = $db->addMaintenanceRequest($app->username, $requestData);
-
- 			$db->registerAPICall( $app->username, 'requests', 'post', $res);
-
-            if ($res) {
-                $response['error'] = false;
-                $response['success'] = true;
-                $response['message'] = "Maintenance request posted successfully!";
-                echoResponse(201, $response);
-            } else {
-                $response['error'] = true;
-                $response['message'] = "An error occurred while posting maintenance request";
-                echoResponse(200, $response);
-            }
-        });
+    if ($res) {
+        $response['error'] = false;
+        $response['success'] = true;
+        $response['message'] = "Maintenance request posted successfully!";
+        echoResponse(201, $response);
+    } else {
+        $response['error'] = true;
+        $response['message'] = "An error occurred while posting maintenance request";
+        echoResponse(200, $response);
+    }
+});
 
 
 $app->post('/requests/comments/:id', 'authenticate', function($id) use($app) {
 
-            $response = array();
+    $response = array();
 
-            $json = $app->request->getBody();
-            $data = json_decode($json, true);
+    $json = $app->request->getBody();
+    $data = json_decode($json, true);
 
-            $comment = $data['comment'];
+    $comment = $data['comment'];
 
-            $db = new DbHandler();
-            $res = $db->addComment($app->username, $id, $comment, 'maintenance');
+    $db = new DbHandler();
+    $res = $db->addComment($app->username, $id, $comment, 'maintenance');
 
-            $db->registerAPICall( $app->username, 'requests/comments', 'post', $json);
+    $db->registerAPICall( $app->username, 'requests/comments', 'post', $json);
 
-            if ($res) {
-                $response['error'] = false;
-                $response['success'] = true;
-                $response['username'] = $app->username;
-                $response['message'] = "Comment posted successfully!";
-                $response['results'] = $db->getMaintenanceComments($id);
-                echoResponse(201, $response);
-            } else {
-                $response['error'] = true;
-                $response['username'] = $app->username;
-                $response['message'] = "An error occurred while posting comment";
-                $response['results'] = array();
-                echoResponse(200, $response);
-            }
-        });
+    if ($res) {
+        $response['error'] = false;
+        $response['success'] = true;
+        $response['username'] = $app->username;
+        $response['message'] = "Comment posted successfully!";
+        $response['results'] = $db->getMaintenanceComments($id);
+        echoResponse(201, $response);
+    } else {
+        $response['error'] = true;
+        $response['username'] = $app->username;
+        $response['message'] = "An error occurred while posting comment";
+        $response['results'] = array();
+        echoResponse(200, $response);
+    }
+});
 
 
 
 $app->put('/requests/:id', 'authenticate', function($id) use($app) {
 
-            // check for required params
-            verifyRequiredParams(array('description', 'enterpermission', 'urgency', 'instruction', 'category','status','date_noticed'));
+      // check for required params
+      verifyRequiredParams(array('description', 'enterpermission', 'urgency', 'instruction', 'category','status','date_noticed'));
 
-            // reading post params
+      // reading post params
 
-            $date_created 		= date('Y-m-d');
-            $description 		= $app->request->put('description');
-            $enterpermission 	= $app->request->put('enterpermission');
-            $urgency 			= $app->request->put('urgency');
-            $instruction 		= $app->request->put('instruction');
-            $category 			= $app->request->put('category');
-            $status 			= $app->request->put('status');
-            $date_noticed 		= $app->request->put('date_noticed');
+      $date_created 		= date('Y-m-d');
+      $description 		= $app->request->put('description');
+      $enterpermission 	= $app->request->put('enterpermission');
+      $urgency 			= $app->request->put('urgency');
+      $instruction 		= $app->request->put('instruction');
+      $category 			= $app->request->put('category');
+      $status 			= $app->request->put('status');
+      $date_noticed 		= $app->request->put('date_noticed');
 
-            $db = new DbHandler();
-            $res = $db->updateMaintenanceRequest($id, $app->username, $date_created, $description, $enterpermission, $urgency, $instruction, $category, $status, $date_noticed);
+      $db = new DbHandler();
+      $res = $db->updateMaintenanceRequest($id, $app->username, $date_created, $description, $enterpermission, $urgency, $instruction, $category, $status, $date_noticed);
 
  			$db->registerAPICall( $app->username, 'requests/'.$id, 'put', $res);
 
-            if ($res) {
-                $response['error'] = false;
-                $response['message'] = "Maintenance request updated successfully!";
-                echoResponse(201, $response);
-            } else {
-                $response['error'] = true;
-                $response['message'] = "An error occurred while updating maintenance request";
-                echoResponse(200, $response);
-            }
-        });
+      if ($res) {
+          $response['error'] = false;
+          $response['message'] = "Maintenance request updated successfully!";
+          echoResponse(201, $response);
+      } else {
+          $response['error'] = true;
+          $response['message'] = "An error occurred while updating maintenance request";
+          echoResponse(200, $response);
+      }
+  });
 
 
 $app->get('/requests', 'authenticate', function() use($app) {
-            $response = array();
-            $db = new DbHandler();
+      $response = array();
+      $db = new DbHandler();
 
 			$page = $app->request()->get('page');
 
-            if (!isset($page) || $page < 1) { $page = 1;}
+      if (!isset($page) || $page < 1) { $page = 1;}
 
-            $results = $db->getAllMaintenanceRequests($app->username,$page);
+      $results = $db->getAllMaintenanceRequests($app->username,$page);
 
-            if ($results) {
-                $response['success'] = true;
-                $response['results'] = $results;
-            } else {
-                $response['error'] = true;
-                $response['message'] = 'Could not load maintenance requests.';
-            }
+      if ($results) {
+          $response['success'] = true;
+          $response['results'] = $results;
+      } else {
+          $response['error'] = true;
+          $response['message'] = 'Could not load maintenance requests.';
+      }
 
-            $db->registerAPICall( $app->username, 'requests', 'get', '1');
+      $db->registerAPICall( $app->username, 'requests', 'get', '1');
 
-            echoResponse(200, $response);
+      echoResponse(200, $response);
 
-            $db = NULL;
-        });
+      $db = NULL;
+  });
 
 $app->get('/requests/comments/:id', 'authenticate', function($id) use($app) {
 			$response = array();
-            $db = new DbHandler();
+      $db = new DbHandler();
 
-            $result = $db->getMaintenanceComments($id);
+      $result = $db->getMaintenanceComments($id);
 
  			$db->registerAPICall($app->username, 'requests/comments/'.$id, 'get', json_encode($result));
 
-            if ($result != NULL) {
-                $response['error'] 		= false;
-                $response['success'] 	= true;
-                $response['results']    = $result;
+      if ($result != NULL) {
+          $response['error'] 		= false;
+          $response['success'] 	= true;
+          $response['results']    = $result;
 
-                echoResponse(200, $response);
-            } else {
-                $response['error'] = true;
-                $response['message'] = "The requested resource doesn't exists";
-                $response['results'] = $response;
-                echoResponse(404, $response);
-            }
-        });
+          echoResponse(200, $response);
+      } else {
+          $response['error'] = true;
+          $response['message'] = "The requested resource doesn't exists";
+          $response['results'] = $response;
+          echoResponse(404, $response);
+      }
+  });
 
 $app->delete('/requests/:id', 'authenticate', function($id) use($app) {
 
-            $db = new DbHandler();
-            $response = array();
-            $result = $db->deleteMaintenanceRequest($app->username, $id);
+    $db = new DbHandler();
+    $response = array();
+    $result = $db->deleteMaintenanceRequest($app->username, $id);
 
-            $db->registerAPICall( $app->username, 'requests/'.$id, 'delete', 1);
+    $db->registerAPICall( $app->username, 'requests/'.$id, 'delete', 1);
 
-            if ($result) {
-                // task deleted successfully
-                $response['error'] = false;
-                $response['success'] = true;
-                $response['message'] = "Maintenance request deleted successfully";
-            } else {
-                // task failed to delete
-                $response["error"] = true;
-                $response["message"] = "Maintenance request failed to delete. Please try again!";
-            }
-            echoResponse(200, $response);
-        });
+    if ($result) {
+        // task deleted successfully
+        $response['error'] = false;
+        $response['success'] = true;
+        $response['message'] = "Maintenance request deleted successfully";
+    } else {
+        // task failed to delete
+        $response["error"] = true;
+        $response["message"] = "Maintenance request failed to delete. Please try again!";
+    }
+    echoResponse(200, $response);
+});
 
 // Reservations
 
 $app->get('/reservations/comments/:id', 'authenticate', function($id) use($app) {
-            $response = array();
-            $db = new DbHandler();
+      $response = array();
+      $db = new DbHandler();
 
-            $result = $db->getReservationComments($id);
+      $result = $db->getReservationComments($id);
 
-            $db->registerAPICall($app->username, 'reservations/comments/'.$id, 'get', json_encode($result));
+      $db->registerAPICall($app->username, 'reservations/comments/'.$id, 'get', json_encode($result));
 
-            if ($result != NULL) {
-                $response['error']      = false;
-                $response['success']    = true;
-                $response['results']    = $result;
+      if ($result != NULL) {
+          $response['error']      = false;
+          $response['success']    = true;
+          $response['results']    = $result;
 
-                echoResponse(200, $response);
-            } else {
-                $response['error'] = true;
-                $response['message'] = "The requested resource doesn't exists";
-                $response['results'] = $response;
-                echoResponse(404, $response);
-            }
-        });
+          echoResponse(200, $response);
+      } else {
+          $response['error'] = true;
+          $response['message'] = "The requested resource doesn't exists";
+          $response['results'] = $response;
+          echoResponse(404, $response);
+      }
+  });
 
 $app->post('/reservations/timeslots', 'authenticate', function() use($app) {
-            $response = array();
+      $response = array();
 
-            $json = $app->request->getBody();
-            $data = json_decode($json, true);
+      $json = $app->request->getBody();
+      $data = json_decode($json, true);
 
-            $db = new DbHandler();
+      $db = new DbHandler();
 
-            $result = $db->getAvailableTimeSlots($app->bid, $data);
+      $result = $db->getAvailableTimeSlots($app->bid, $data);
 
-            $db->registerAPICall($app->username, 'reservations/timeslots/', 'get', $json);
+      $db->registerAPICall($app->username, 'reservations/timeslots/', 'get', $json);
 
-            if ($result != NULL) {
-                $response['error']      = false;
-                $response['success']    = true;
-                $response['timeslots']  = $result;
+      if ($result != NULL) {
+          $response['error']      = false;
+          $response['success']    = true;
+          $response['timeslots']  = $result;
 
-                echoResponse(200, $response);
-            } else {
-                $response['error']      = true;
-                $response['message']    = "No available timeslots found. Choose alternative dates.";
-                $response['results']    = $response;
-                echoResponse(404, $response);
-            }
-        });
+          echoResponse(200, $response);
+      } else {
+          $response['error']      = true;
+          $response['message']    = "No available timeslots found. Choose alternative dates.";
+          $response['results']    = $response;
+          echoResponse(404, $response);
+      }
+  });
 
 
 $app->get('/reservations', 'authenticate', function() use($app) {
-            $response = array();
-            $db = new DbHandler();
+      $response = array();
+      $db = new DbHandler();
 
-            $page = $app->request()->get('page');
+      $page = $app->request()->get('page');
 
-            if (!isset($page) || $page < 1) { $page = 1;}
+      if (!isset($page) || $page < 1) { $page = 1;}
 
-            $results = $db->getAllReservations($app->username,$page);
+      $results = $db->getAllReservations($app->username,$page);
 
-            if ($results) {
-                $response['success'] = true;
-                $response['results'] = $results;
-            } else {
-                $response['error'] = true;
-                $response['message'] = 'No reservations at present.';
-            }
+      if ($results) {
+          $response['success'] = true;
+          $response['results'] = $results;
+      } else {
+          $response['error'] = true;
+          $response['message'] = 'No reservations at present.';
+      }
 
-            $db->registerAPICall( $app->username, 'requests', 'get', '1');
+      $db->registerAPICall( $app->username, 'requests', 'get', '1');
 
-            echoResponse(200, $response);
+      echoResponse(200, $response);
 
-            $db = NULL;
-        });
+      $db = NULL;
+  });
 
 $app->post('/reservations', 'authenticate', function() use($app) {
 
-            $response = array();
+      $response = array();
 
-            $json = $app->request->getBody();
-            $data = json_decode($json, true);
+      $json = $app->request->getBody();
+      $data = json_decode($json, true);
 
-            // facility_id, resource_id, startDate, endDate, timeslots, all car data if parking
+      // facility_id, resource_id, startDate, endDate, timeslots, all car data if parking
 
-            $db = new DbHandler();
-            $res = $db->addReservation($app->username, $data);
+      $db = new DbHandler();
+      $res = $db->addReservation($app->username, $data);
 
-            $db->registerAPICall( $app->username, 'reservations', 'post', $json);
+      $db->registerAPICall( $app->username, 'reservations', 'post', $json);
 
-            if ($res) {
-                $response['error'] = false;
-                $response['success'] = true;
-                $response['username'] = $app->username;
-                $response['message'] = "Reservation added successfully!";
-                echoResponse(201, $response);
-            } else {
-                $response['error'] = true;
-                $response['username'] = $app->username;
-                $response['message'] = "An error occurred while adding reservation";
-                $response['results'] = array();
-                echoResponse(200, $response);
-            }
-        });
+      if ($res) {
+          $response['error'] = false;
+          $response['success'] = true;
+          $response['username'] = $app->username;
+          $response['message'] = "Reservation added successfully!";
+          echoResponse(201, $response);
+      } else {
+          $response['error'] = true;
+          $response['username'] = $app->username;
+          $response['message'] = "An error occurred while adding reservation";
+          $response['results'] = array();
+          echoResponse(200, $response);
+      }
+  });
 
 $app->post('/reservations/comments/:id', 'authenticate', function($id) use($app) {
 
-            $response = array();
+      $response = array();
 
-            $json = $app->request->getBody();
-            $data = json_decode($json, true);
+      $json = $app->request->getBody();
+      $data = json_decode($json, true);
 
-            $comment = $data['comment'];
+      $comment = $data['comment'];
 
-            $db = new DbHandler();
-            $res = $db->addComment($app->username, $id, $comment, 'reservation');
+      $db = new DbHandler();
+      $res = $db->addComment($app->username, $id, $comment, 'reservation');
 
-            $db->registerAPICall( $app->username, 'reservations/comments', 'post', $json);
+      $db->registerAPICall( $app->username, 'reservations/comments', 'post', $json);
 
-            if ($res) {
-                $response['error'] = false;
-                $response['success'] = true;
-                $response['username'] = $app->username;
-                $response['message'] = "Comment posted successfully!";
-                $response['results'] = $db->getReservationComments($id);
-                echoResponse(201, $response);
-            } else {
-                $response['error'] = true;
-                $response['username'] = $app->username;
-                $response['message'] = "An error occurred while posting comment";
-                $response['results'] = array();
-                echoResponse(200, $response);
-            }
-        });
+      if ($res) {
+          $response['error'] = false;
+          $response['success'] = true;
+          $response['username'] = $app->username;
+          $response['message'] = "Comment posted successfully!";
+          $response['results'] = $db->getReservationComments($id);
+          echoResponse(201, $response);
+      } else {
+          $response['error'] = true;
+          $response['username'] = $app->username;
+          $response['message'] = "An error occurred while posting comment";
+          $response['results'] = array();
+          echoResponse(200, $response);
+      }
+  });
 
 $app->delete('/reservations/:id', 'authenticate', function($id) use($app) {
 
-            $db = new DbHandler();
-            $response = array();
-            $result = $db->deleteReservation($app->username, $id);
+      $db = new DbHandler();
+      $response = array();
+      $result = $db->deleteReservation($app->username, $id);
 
-            $db->registerAPICall( $app->username, 'reservations/'.$id, 'delete', 1);
+      $db->registerAPICall( $app->username, 'reservations/'.$id, 'delete', 1);
 
-            if ($result) {
-                // task deleted successfully
-                $response['error'] = false;
-                $response['success'] = true;
-                $response['message'] = "Reservation deleted successfully";
-            } else {
-                // task failed to delete
-                $response["error"] = true;
-                $response["message"] = "Reservation failed to delete. Please try again!";
-            }
-            echoResponse(200, $response);
-        });
+      if ($result) {
+          // task deleted successfully
+          $response['error'] = false;
+          $response['success'] = true;
+          $response['message'] = "Reservation deleted successfully";
+      } else {
+          // task failed to delete
+          $response["error"] = true;
+          $response["message"] = "Reservation failed to delete. Please try again!";
+      }
+      echoResponse(200, $response);
+  });
 
 
 // Front Desk Instructions
 
 $app->post('/instructions', 'authenticate', function() use($app) {
 
-            $response               = array();
+      $response               = array();
 
-            $json                   = $app->request->getBody();
-            $data                   = json_decode($json, true);
+      $json                   = $app->request->getBody();
+      $data                   = json_decode($json, true);
 
-            $db  = new DbHandler();
-            $res = $db->addFrontdeskInstruction($app->username, $data);
+      $db  = new DbHandler();
+      $res = $db->addFrontdeskInstruction($app->username, $data);
 
-            $db->registerAPICall( $app->username, 'instructions', 'post', json_encode($res));
+      $db->registerAPICall( $app->username, 'instructions', 'post', json_encode($res));
 
-            if ($res) {
-                $response['error']  = false;
-                $response['success'] = true;
-                $response['message'] = "Frontdesk instruction added successfully!";
-                $response['request'] = $data;
-                $response['results'] = $res;
-                echoResponse(201, $response);
-            } else {
-                $response['error'] = true;
-                $response['message'] = "An error occurred while adding frontdesk instruction";
-                $response['request'] = $data;
-                $response['results'] = $res;
-                echoResponse(200, $response);
-            }
-        });
+      if ($res) {
+          $response['error']  = false;
+          $response['success'] = true;
+          $response['message'] = "Frontdesk instruction added successfully!";
+          $response['request'] = $data;
+          $response['results'] = $res;
+          echoResponse(201, $response);
+      } else {
+          $response['error'] = true;
+          $response['message'] = "An error occurred while adding frontdesk instruction";
+          $response['request'] = $data;
+          $response['results'] = $res;
+          echoResponse(200, $response);
+      }
+  });
 
 $app->post('/instructions/comments/:id', 'authenticate', function($id) use($app) {
 
-            $response = array();
+      $response = array();
 
-            $json = $app->request->getBody();
-            $data = json_decode($json, true);
+      $json = $app->request->getBody();
+      $data = json_decode($json, true);
 
-            $comment = $data['comment'];
+      $comment = $data['comment'];
 
-            $db = new DbHandler();
-            $res = $db->addComment($app->username, $id, $comment, 'frontdesk');
+      $db = new DbHandler();
+      $res = $db->addComment($app->username, $id, $comment, 'frontdesk');
 
-            $db->registerAPICall( $app->username, 'frontdesk/comments', 'post', $json);
+      $db->registerAPICall( $app->username, 'frontdesk/comments', 'post', $json);
 
-            if ($res) {
-                $response['error'] = false;
-                $response['success'] = true;
-                $response['username'] = $app->username;
-                $response['message'] = "Comment posted successfully!";
-                $response['results'] = $db->getFrontdeskComments($id);
-                echoResponse(201, $response);
-            } else {
-                $response['error'] = true;
-                $response['username'] = $app->username;
-                $response['message'] = "An error occurred while posting comment";
-                $response['results'] = array();
-                echoResponse(200, $response);
-            }
-        });
+      if ($res) {
+          $response['error'] = false;
+          $response['success'] = true;
+          $response['username'] = $app->username;
+          $response['message'] = "Comment posted successfully!";
+          $response['results'] = $db->getFrontdeskComments($id);
+          echoResponse(201, $response);
+      } else {
+          $response['error'] = true;
+          $response['username'] = $app->username;
+          $response['message'] = "An error occurred while posting comment";
+          $response['results'] = array();
+          echoResponse(200, $response);
+      }
+  });
 
 
 $app->put('/instructions/:id', 'authenticate', function($id) use($app) {
-            // check for required params
-            verifyRequiredParams(array('description', 'enterpermission', 'urgency', 'instruction', 'category','status','date_noticed'));
+      // check for required params
+      verifyRequiredParams(array('description', 'enterpermission', 'urgency', 'instruction', 'category','status','date_noticed'));
 			// reading post params
 
-            $date_created 		= date('Y-m-d');
-            $description 		= $app->request->put('description');
-            $enterpermission 	= $app->request->put('enterpermission');
-            $urgency 			= $app->request->put('urgency');
-            $instruction 		= $app->request->put('instruction');
-            $category 			= $app->request->put('category');
-            $status 			= $app->request->put('status');
-            $date_noticed 		= $app->request->put('date_noticed');
+      $date_created 		= date('Y-m-d');
+      $description 		= $app->request->put('description');
+      $enterpermission 	= $app->request->put('enterpermission');
+      $urgency 			= $app->request->put('urgency');
+      $instruction 		= $app->request->put('instruction');
+      $category 			= $app->request->put('category');
+      $status 			= $app->request->put('status');
+      $date_noticed 		= $app->request->put('date_noticed');
 
-            $db = new DbHandler();
-            $res = $db->updateFrontDeskInstruction($id, $app->username, $date_created, $description, $startdate, $enddate, $noenddate, $category);
+      $db = new DbHandler();
+      $res = $db->updateFrontDeskInstruction($id, $app->username, $date_created, $description, $startdate, $enddate, $noenddate, $category);
 
  			$db->registerAPICall( $app->username, 'instructions/'.$id, 'put', $res);
 
-            if ($res) {
-                $response['error'] = false;
-                $response['message'] = "Front desk instruction updated successfully!";
-                echoResponse(201, $response);
-            } else {
-                $response['error'] = true;
-                $response['message'] = "An error occurred while updating front desk instruction";
-                echoResponse(200, $response);
-            }
-        });
+      if ($res) {
+          $response['error'] = false;
+          $response['message'] = "Front desk instruction updated successfully!";
+          echoResponse(201, $response);
+      } else {
+          $response['error'] = true;
+          $response['message'] = "An error occurred while updating front desk instruction";
+          echoResponse(200, $response);
+      }
+  });
 
 
 $app->get('/instructions',  'authenticate' , function()  use($app) {
-            $response = array();
+      $response = array();
 
-            $db = new DbHandler();
+      $db = new DbHandler();
 
-            $page = $app->request()->get('page');
+      $page = $app->request()->get('page');
 
-            if (!isset($page) || $page < 1) { $page = 1;}
+      if (!isset($page) || $page < 1) { $page = 1;}
 
-            $results = $db->getAllFrontDeskInstructions($app->username,$page);
+      $results = $db->getAllFrontDeskInstructions($app->username,$page);
 
-            if ($results) {
-                $response['success'] = true;
-                $response['results'] = $results;
-            } else {
-                $response['error'] = true;
-                $response['message'] = 'Could not load frontdesk instructions.';
-            }
+      if ($results) {
+          $response['success'] = true;
+          $response['results'] = $results;
+      } else {
+          $response['error'] = true;
+          $response['message'] = 'Could not load frontdesk instructions.';
+      }
 
 			$db->registerAPICall( $app->username, 'instructions', 'get', '1');
 
-            echoResponse(200, $response);
+      echoResponse(200, $response);
 
-            $db = NULL;
-        });
+      $db = NULL;
+  });
 
 $app->get('/instructions/comments/:id', 'authenticate', function($id) use($app) {
-            $response = array();
-            $db = new DbHandler();
+      $response = array();
+      $db = new DbHandler();
 
-            $result = $db->getFrontdeskComments($id);
+      $result = $db->getFrontdeskComments($id);
 
-            $db->registerAPICall( $app->username, 'instructions/comments/'.$id, 'get', json_encode($result));
+      $db->registerAPICall( $app->username, 'instructions/comments/'.$id, 'get', json_encode($result));
 
 
-            if ($result != NULL) {
-                $response['error'] 			= false;
-                $response['success']        = true;
-                $response['results'] 		= $result;
+      if ($result != NULL) {
+          $response['error'] 			= false;
+          $response['success']        = true;
+          $response['results'] 		= $result;
 
-                echoResponse(200, $response);
-            } else {
-                $response['error'] = true;
-                $response['message'] = "The requested front desk instruction doesn't exists";
-                $response['results'] = $response;
-                echoResponse(404, $response);
-            }
-        });
+          echoResponse(200, $response);
+      } else {
+          $response['error'] = true;
+          $response['message'] = "The requested front desk instruction doesn't exists";
+          $response['results'] = $response;
+          echoResponse(404, $response);
+      }
+  });
 
 $app->delete('/instructions/:id', 'authenticate', function($id) use($app) {
-            $db = new DbHandler();
-            $response = array();
-            $result = $db->deleteFrontDeskInstruction($app->username, $id);
+      $db = new DbHandler();
+      $response = array();
+      $result = $db->deleteFrontDeskInstruction($app->username, $id);
 
-            $db->registerAPICall( $app->username, 'instructions/'.$id, 'delete', 1);
+      $db->registerAPICall( $app->username, 'instructions/'.$id, 'delete', 1);
 
-            if ($result) {
-                // task deleted successfully
-                $response['error'] = false;
-                $response['success'] = true;
-                $response['message'] = "Front desk instruction deleted successfully";
-            } else {
-                // task failed to delete
-                $response['error'] = true;
-                $response['message'] = "Front desk instruction failed to delete. Please try again!";
-            }
-            echoResponse(200, $response);
-        });
+      if ($result) {
+          // task deleted successfully
+          $response['error'] = false;
+          $response['success'] = true;
+          $response['message'] = "Front desk instruction deleted successfully";
+      } else {
+          // task failed to delete
+          $response['error'] = true;
+          $response['message'] = "Front desk instruction failed to delete. Please try again!";
+      }
+      echoResponse(200, $response);
+  });
 
 // Marketplace
 
 $app->get('/items/comments/:id', 'authenticate', function($id) use($app) {
-            $response = array();
-            $db = new DbHandler();
+      $response = array();
+      $db = new DbHandler();
 
-            $result = $db->getMarketplaceComments($id);
+      $result = $db->getMarketplaceComments($id);
 
-            $db->registerAPICall($app->username, 'marketplace/comments/'.$id, 'get', json_encode($result));
+      $db->registerAPICall($app->username, 'marketplace/comments/'.$id, 'get', json_encode($result));
 
-            if ($result != NULL) {
-                $response['error']      = false;
-                $response['success']    = true;
-                $response['results']    = $result;
+      if ($result != NULL) {
+          $response['error']      = false;
+          $response['success']    = true;
+          $response['results']    = $result;
 
-                echoResponse(200, $response);
-            } else {
-                $response['error'] = true;
-                $response['message'] = "The requested resource doesn't exists";
-                $response['results'] = $response;
-                echoResponse(404, $response);
-            }
-        });
+          echoResponse(200, $response);
+      } else {
+          $response['error'] = true;
+          $response['message'] = "The requested resource doesn't exists";
+          $response['results'] = $response;
+          echoResponse(404, $response);
+      }
+  });
 
 $app->get('/items', 'authenticate', function() use($app) {
-            $response = array();
-            $db = new DbHandler();
+      $response = array();
+      $db = new DbHandler();
 
 			$page = $app->request()->get('page');
 
-            if (!isset($page) || $page < 1) { $page = 1;}
+      if (!isset($page) || $page < 1) { $page = 1;}
 
-            $results = $db->getAllMarketplaceItems($app->bid,$page);
+      $results = $db->getAllMarketplaceItems($app->bid,$page);
 
-            if ($results) {
-                $response['success'] = true;
-                $response['results'] = $results;
-            } else {
-                $response['error'] = true;
-                $response['message'] = 'Could not load marketplace items';
-            }
+      if ($results) {
+          $response['success'] = true;
+          $response['results'] = $results;
+      } else {
+          $response['error'] = true;
+          $response['message'] = 'Could not load marketplace items';
+      }
 
 
-            $db->registerAPICall( $app->username, 'items', 'get', '1');
+      $db->registerAPICall( $app->username, 'items', 'get', '1');
 
-            echoResponse(200, $response);
+      echoResponse(200, $response);
 
-            $db = NULL;
-        });
+      $db = NULL;
+  });
 
 
 
 $app->post('/items', 'authenticate', function() use($app) {
+      $response               = array();
+      $requestData            = array();
 
-            // check for required params
-            //verifyRequiredParams(array('description', 'enterpermission', 'urgency', 'instruction', 'category','date_noticed'));
+      $json                   = $app->request->getBody();
+      $data                   = json_decode($json, true);
 
-            $response               = array();
-            $requestData            = array();
+      $requestData['image']           = $data['image'];
+      $requestData['title']           = $data['title'];
+      $requestData['description']     = $data['description'];
+      $requestData['price']           = $data['price'];
+      $requestData['type']            = $data['type'];
+      $requestData['isAvailable']     = $data['isAvailable'];
+      $requestData['category_id']     = $data['category_id'];
 
-            $json                   = $app->request->getBody();
-            $data                   = json_decode($json, true);
+      $db = new DbHandler();
+      $res = $db->addMarketplaceItem($app->username, $requestData);
 
-            $requestData['image']           = $data['image'];
-            $requestData['title']           = $data['title'];
-            $requestData['description']     = $data['description'];
-            $requestData['price']           = $data['price'];
-            $requestData['type']            = $data['type'];
-            $requestData['isAvailable']     = $data['isAvailable'];
-            $requestData['category_id']     = $data['category_id'];
+      $db->registerAPICall( $app->username, 'items', 'post', 1);
 
-            $db = new DbHandler();
-            $res = $db->addMarketplaceItem($app->username, $requestData);
-
-            $db->registerAPICall( $app->username, 'items', 'post', 1);
-
-            if ($res) {
-                $response['error'] = false;
-                $response['success'] = true;
-                $response['message'] = "Marketplace item added successfully!";
-                $response['request'] = $requestData;
-                $response['response'] =  $res;
-                echoResponse(201, $response);
-            } else {
-                $response['error'] = true;
-                $response['message'] = "An error occurred while adding marketplace item";
-                $response['request'] = $requestData;
-                $response['response'] =  $res;
-                echoResponse(200, $response);
-            }
-        });
+      if ($res) {
+          $response['error'] = false;
+          $response['success'] = true;
+          $response['message'] = "Marketplace item added successfully!";
+          $response['request'] = $requestData;
+          $response['response'] =  $res;
+          echoResponse(201, $response);
+      } else {
+          $response['error'] = true;
+          $response['message'] = "An error occurred while adding marketplace item";
+          $response['request'] = $requestData;
+          $response['response'] =  $res;
+          echoResponse(200, $response);
+      }
+  });
 
 $app->post('/items/comments/:id', 'authenticate', function($id) use($app) {
 
-            $response = array();
+      $response = array();
 
-            $json = $app->request->getBody();
-            $data = json_decode($json, true);
+      $json = $app->request->getBody();
+      $data = json_decode($json, true);
 
-            $comment = $data['comment'];
+      $comment = $data['comment'];
 
-            $db = new DbHandler();
-            $res = $db->addComment($app->username, $id, $comment, 'marketplace');
+      $db = new DbHandler();
+      $res = $db->addComment($app->username, $id, $comment, 'marketplace');
 
-            $db->registerAPICall( $app->username, 'items/comments', 'post', $json);
+      $db->registerAPICall( $app->username, 'items/comments', 'post', $json);
 
-            if ($res) {
-                $response['error'] = false;
-                $response['success'] = true;
-                $response['username'] = $app->username;
-                $response['message'] = "Comment posted successfully!";
-                $response['results'] = $db->getMarketplaceComments($id);
-                echoResponse(201, $response);
-            } else {
-                $response['error'] = true;
-                $response['username'] = $app->username;
-                $response['message'] = "An error occurred while posting comment";
-                $response['results'] = array();
-                echoResponse(200, $response);
-            }
-        });
+      if ($res) {
+          $response['error'] = false;
+          $response['success'] = true;
+          $response['username'] = $app->username;
+          $response['message'] = "Comment posted successfully!";
+          $response['results'] = $db->getMarketplaceComments($id);
+          echoResponse(201, $response);
+      } else {
+          $response['error'] = true;
+          $response['username'] = $app->username;
+          $response['message'] = "An error occurred while posting comment";
+          $response['results'] = array();
+          echoResponse(200, $response);
+      }
+  });
 
 
 // Incident Reports
 
 $app->post('/incidents', 'authenticate', function() use($app) {
 
-            $response 				= array();
-            $incidentData  			= array();
+      $response 				= array();
+      $incidentData  			= array();
 
-            $json 					= $app->request->getBody();
-            $data 					= json_decode($json, true);
+      $json 					= $app->request->getBody();
+      $data 					= json_decode($json, true);
 
-            $incidentData['status']			= 's';
-            $incidentData['description']	= $data['description'];
-            $incidentData['dateNoticed']	= $data['dateNoticed'];
-            $incidentData['timeNoticed'] 	= $data['timeNoticed'];
-            $incidentData['category_id']	= $data['category_id'];
-            $incidentData['image']			= $data['image'];
+      $incidentData['status']			= 's';
+      $incidentData['description']	= $data['description'];
+      $incidentData['dateNoticed']	= $data['dateNoticed'];
+      $incidentData['timeNoticed'] 	= $data['timeNoticed'];
+      $incidentData['category_id']	= $data['category_id'];
+      $incidentData['image']			= $data['image'];
 
-            $db = new DbHandler();
-            $res = $db->addIncidentReport($app->username, $incidentData);
+      $db = new DbHandler();
+      $res = $db->addIncidentReport($app->username, $incidentData);
 
  			$db->registerAPICall( $app->username, 'incidents', 'post', $res);
 
-            if ($res) {
-                $response['error'] = false;
-                $response['success'] = true;
-                $response['message'] = "Incident report posted successfully!";
-                echoResponse(201, $response);
-            } else {
-                $response['error'] = true;
-                $response['message'] = "An error occurred while posting incident report";
-                echoResponse(200, $response);
-            }
-        });
+      if ($res) {
+          $response['error'] = false;
+          $response['success'] = true;
+          $response['message'] = "Incident report posted successfully!";
+          echoResponse(201, $response);
+      } else {
+          $response['error'] = true;
+          $response['message'] = "An error occurred while posting incident report";
+          echoResponse(200, $response);
+      }
+  });
 
 
 $app->post('/incidents/comments/:id', 'authenticate', function($id) use($app) {
