@@ -2828,6 +2828,47 @@ table.list .center {
         }
       }
 
+		public function getPeople($username, $query = '', $page = 1) {
+	    $status = 1;
+	    $invisible = 0;
+
+	    $page = (isset($page)) ? $page : 1;
+	    $start = ($page - 1) * 15;
+	    $limit = 15;
+	    $people = array ();
+
+	    if ($query) {
+	      $query = "%".strtolower($query)."%";
+
+	      $stmt = $this->conn->prepare("SELECT * FROM user WHERE status = :status AND privacy != 's' AND (LCASE(fullname) LIKE :query OR LCASE(title) LIKE :query) ORDER BY firstname ASC LIMIT $start, $limit");
+	      $stmt->bindParam(':invisible', $invisible);
+	      $stmt->bindParam(':status', $status);
+	      $stmt->bindParam(':query', $query);
+	    } else {
+	      $stmt = $this->conn->prepare("SELECT * FROM user WHERE status = :status AND privacy != 's' ORDER BY firstname ASC LIMIT $start, $limit");
+	      $stmt->bindParam(':invisible', $invisible);
+	      $stmt->bindParam(':status', $status);
+	    }
+
+
+	    if ($stmt->execute()) {
+	      $peeps = $stmt->fetchAll(PDO::FETCH_ASSOC);
+	      foreach ($peeps AS $row) {
+
+	        $people [] = array (
+	            'id'          => (int)$row['user_id'],
+	            'username'      => $row['username'],
+	            'fullname'    => trim($row['fullname']),
+	            'avatar'    => $this->getAvatar($row['username']),
+	            'name'        => trim($row['fullname'])
+	          );
+	      }
+	    }
+
+	    return $people;
+
+		}
+
   private function numberOfBoardMembers($bid) {
         $status = 1;
         $stmt     = $this->conn->prepare("SELECT COUNT(*) AS total FROM user WHERE status = :status AND bid = :bid AND boardmember = 'y'");
@@ -3343,7 +3384,7 @@ table.list .center {
     public function addPost($username, $payload) {
     	date_default_timezone_set("America/Toronto");
 	 		$profile 	   = $this->getProfileByUsername($username);
-
+			$message 		 = $payload['message'];
       $bid         = $profile['bid'];
       $fullname    = $profile['fullname'];
     	$type        = 'posts';

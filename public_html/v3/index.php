@@ -1639,6 +1639,33 @@ $app->get('/news', 'authenticate', function() use($app) {
 // people
 
 $app->get('/people', 'authenticate', function() use($app) {
+    $response = array();
+    $db = new DbHandler();
+
+    $page = $app->request()->get('page');
+
+    if (!isset($page) || $page < 1) { $page = 1;}
+
+    $results   = $db->getAllPeople($app->bid, $page);
+
+    if ($results) {
+        $response['success']    = true;
+        $response['username'] = $app->username;
+        $response['results']  = $results;
+    } else {
+        $response['error'] = true;
+        $response['results'] = array();
+        $response['message'] = 'No people found!';
+    }
+
+    $db->registerAPICall( $app->username, 'people', 'get', '1');
+
+    echoResponse(200, $response);
+
+    $db = NULL;
+});
+
+    $app->get('/people/search/:query', 'authenticate', function($query) use($app) {
         $response = array();
         $db = new DbHandler();
 
@@ -1646,7 +1673,35 @@ $app->get('/people', 'authenticate', function() use($app) {
 
         if (!isset($page) || $page < 1) { $page = 1;}
 
-        $results   = $db->getAllPeople($app->bid, $page);
+        $results   = $db->getPeople($app->username,$query, $page);
+
+        if ($results) {
+            $response['success']  = true;
+            $response['username'] = $app->username;
+            $response['results']  = $results;
+            $response['nextPage'] = $db->getPeopleNextPage($app->username, $query, $page);
+            $response['query']    = $query;
+        } else {
+            $response['error']    = true;
+            $response['results']  = array();
+            $response['message']  = 'No people found!';
+            $response['query']    = $query;
+            $response['page']     = $page;
+            $response['nextPage'] = null;
+        }
+
+        $db->addUserActivityLog( $app->username, $app->fullname,  'Search people for'.$query, 'people');
+
+        echoResponse(200, $response);
+
+        $db = NULL;
+      });
+
+      $app->get('/people/:id', 'authenticate', function($id) use($app) {
+        $response = array();
+        $db = new DbHandler();
+
+        $results   = $db->getPerson($app->username, $id);
 
         if ($results) {
             $response['success']    = true;
@@ -1655,15 +1710,15 @@ $app->get('/people', 'authenticate', function() use($app) {
         } else {
             $response['error'] = true;
             $response['results'] = array();
-            $response['message'] = 'No people found!';
+            $response['message'] = 'No person found!';
         }
 
-        $db->registerAPICall( $app->username, 'people', 'get', '1');
+        $db->addUserActivityLog( $app->username, $app->fullname,  'Get person #'.$id, 'people', $id);
 
         echoResponse(200, $response);
 
         $db = NULL;
-    });
+      });
 
 $app->get('/propertymanagers', 'authenticate', function() use($app) {
         $response = array();
