@@ -3799,7 +3799,7 @@ table.list .center {
         }
       }
 
-    public function getAllPosts($username,$page) {
+  public function getAllPosts($username,$page) {
     	$page = (isset($page)) ? $page : 1;
     	$start = ($page - 1) * $_ENV['LIMIT'];
     	$limit = $_ENV['LIMIT'];
@@ -3869,35 +3869,22 @@ table.list .center {
     				}
 
     			}
+
+					$lastCount = $start + $limit;
+	        $maxCount  = $this->numberOfPosts($username);
+	        $nextPage  = ($lastCount < $maxCount) ? $page + 1 : null;
+
     		} else {
-  	    		$post_data [] = array (
-  	    			'id'			       => 1,
-  	    			'bid'			       => $bid,
-  	    			'message'		     => 'No posts at this time. Please add a post!',
-  	    			'date_added'	   => 'A few seconds ago',
-  	    			'fullname'		   => 'System Administrator',
-  	    			'avatar'		     => $_ENV['HTTP_SERVER'].'/images/jazlife0.png',
-  	    			'image'			     => '',
-  	    			'type'			     => 'posts',
-  	    			'numComments'	   => 0,
-  	    			'iconComments'   => 'ios-chatbubbles-outline',
-              'love'           => $this->getPostLikeData($username, 0),
-              'report'         => $this->getPostReportData($username, 0),
-  	    			'comments'		   => array(),
-  	    			'images'		     => array()
-  	    		);
-      		}
-        }
+	    		$post_data = array ();
+					$nextPage = null;
+    		}
+      }
 
-        $lastCount = $start + $limit;
-        $maxCount  = $this->numberOfPosts($username);
-        $nextPage  = ($lastCount < $maxCount) ? $page + 1 : null;
-
-        return array(
-          'nextPage'  => $nextPage,
-          'posts'     => $post_data,
-        );
-    }
+	    return array(
+	      'nextPage'  => $nextPage,
+	      'posts'     => $post_data,
+	    );
+  }
 
 
   public function deletePost($username, $id) {
