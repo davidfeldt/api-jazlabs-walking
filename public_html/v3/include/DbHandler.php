@@ -2856,11 +2856,11 @@ table.list .center {
 	      foreach ($peeps AS $row) {
 
 	        $people [] = array (
-	            'id'          => (int)$row['user_id'],
-	            'username'      => $row['username'],
-	            'fullname'    => trim($row['fullname']),
-	            'avatar'    => $this->getAvatar($row['username']),
-	            'name'        => trim($row['fullname'])
+	            'id'       => (int)$row['user_id'],
+	            'username' => $row['username'],
+	            'fullname' => trim($row['fullname']),
+	            'avatar'   => $_ENV['HTTP_SERVER'].$this->getResidentAvatar($row['username']),
+	            'name'     => trim($row['fullname'])
 	          );
 	      }
 	    }
@@ -3499,7 +3499,7 @@ table.list .center {
             $who[] = array(
               'username'    => $row['username'],
               'fullname'    => $this->getFullName($row['username']),
-              'avatar'      => $this->getAvatar($row['username']),
+              'avatar'      => $_ENV['HTTP_SERVER'].$this->getResidentAvatar($row['username']),
               'date_added'  => $this->dateTimeDiff($row['date_added']),
               );
           }
@@ -3740,7 +3740,7 @@ table.list .center {
     				'bid'			    => (int)$post['bid'],
     				'username'		=> $post['username'],
     				'fullname'    => $this->getResidentName($post['username']),
-            		'avatar'      => $_ENV['HTTP_SERVER'].$this->getResidentAvatar($post['username']),
+            'avatar'      => $_ENV['HTTP_SERVER'].$this->getResidentAvatar($post['username']),
     				'date_added'	=> $this->dateTimeDiff($post['date_added']),
     				'message'		  => $post['message']
     			);
