@@ -1011,7 +1011,7 @@ table.list .center {
     }
 
 		public function associateDeviceToken($username, $deviceToken) {
-      date_default_timezone_set($_ENV['TIMEZONE']);
+      date_default_timezone_set('America/Toronto');
       $date_modified   = date('Y-m-d H:i:s');
 
       $result = false;
@@ -3335,7 +3335,7 @@ table.list .center {
 
 		public function newAnnouncementsCount($username, $bid) {
       $count = false;
-      date_default_timezone_set($_ENV['TIMEZONE']);
+      date_default_timezone_set('America/Toronto');
       $now   = date('Y-m-d');
       $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM announcement WHERE bid = :bid AND date_start <= :now AND date_end >= :now");
 
