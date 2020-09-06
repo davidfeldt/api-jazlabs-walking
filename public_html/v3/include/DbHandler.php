@@ -3817,10 +3817,10 @@ table.list .center {
     		$pinned_posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
     	}
 
-        $stmt = $this->conn->prepare("SELECT post_id, type_id, bid, username, date_added, comments, message, type, love FROM wall WHERE parent_id = '0' AND bid = :bid AND pin = '0' ORDER BY date_added DESC LIMIT $start, $limit");
-        $stmt->bindParam(':bid',$bid);
+      $stmt = $this->conn->prepare("SELECT post_id, type_id, bid, username, date_added, comments, message, type, love FROM wall WHERE parent_id = '0' AND bid = :bid AND pin = '0' ORDER BY date_added DESC LIMIT $start, $limit");
+      $stmt->bindParam(':bid',$bid);
 
-        if ($stmt->execute()) {
+      if ($stmt->execute()) {
     		$posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     		$posts = array_merge($pinned_posts,$posts);
@@ -3880,7 +3880,7 @@ table.list .center {
   	    			'image'			     => '',
   	    			'type'			     => 'posts',
   	    			'numComments'	   => 0,
-  	    			'iconComments'   => $post['comments'] ? 'ios-chatbubbles' : 'ios-chatbubbles-outline',
+  	    			'iconComments'   => 'ios-chatbubbles-outline',
               'love'           => $this->getPostLikeData($username, 0),
               'report'         => $this->getPostReportData($username, 0),
   	    			'comments'		   => array(),
