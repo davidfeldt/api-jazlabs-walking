@@ -1690,7 +1690,7 @@ $app->get('/people', 'authenticate', function() use($app) {
             $response['nextPage'] = null;
         }
 
-        $db->addUserActivityLog( $app->username, $app->fullname,  'Search people for'.$query, 'people');
+        // $db->addUserActivityLog( $app->username, $app->fullname,  'Search people for'.$query, 'people');
 
         echoResponse(200, $response);
 
