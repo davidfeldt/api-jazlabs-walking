@@ -3445,6 +3445,28 @@ table.list .center {
 
     }
 
+		private function getPostMentions($post_id) {
+      $stmt = $this->conn->prepare('SELECT username, date_added FROM wall_mention WHERE post_id = :post_id');
+      $stmt->bindParam(':post_id',$post_id);
+
+      $who = array();
+
+      if ($stmt->execute()) {
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($results AS $row) {
+          if (!empty($row['username'])) {
+            $who[] = array(
+              'username'    => $row['username'],
+              'fullname'    => $this->getFullName($row['username']),
+              'avatar'      => $this->getAvatar($row['username']),
+              'date_added'  => $this->dateTimeDiff($row['date_added']),
+              );
+          }
+        }
+      }
+      return $who;
+    }
+
     private function getLikeCount($post_id) {
       $stmt = $this->conn->prepare('SELECT COUNT(*) AS total FROM wall_love WHERE post_id = :post_id');
       $stmt->bindParam(':post_id',$post_id);
@@ -3749,6 +3771,8 @@ table.list .center {
                 'report'      => $this->getPostReportData($username, $post['post_id']),
 	  						'comments'		=> $this->getPostComments($post['post_id']),
 	  						'images'		  => $this->getPostImages($post['post_id']),
+								'mentions'    => $this->getPostMentions($post['post_id']),
+								'myPost'      => $post['username'] == $username
 	  					);
     				}
 
