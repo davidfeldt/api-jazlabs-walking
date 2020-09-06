@@ -1792,6 +1792,39 @@ $app->get('/people/all', 'authenticate', function() use($app) {
 
 // Profiles
 
+$app->post('/users/devices', 'authenticate', function() use($app) {
+
+    $response = array();
+
+    $json = $app->request->getBody();
+    $data = json_decode($json, true);
+
+    $userId = isset($data['userId']) ? $data['userId'] : '';
+    $username = isset($data['username']) ? $data['username'] : '';
+
+    if ($username == '') {
+        $username = $app->username;
+    }
+
+    $db = new DbHandler();
+    $res = $db->associateDeviceToken($username, $userId);
+
+    if ($res) {
+        $response['error'] = false;
+        $response['success'] = true;
+        $response['message'] = "Device token registered!";
+        $response['response'] = $res;
+        $response['id'] = $userId;
+        $response['username'] = $app->username;
+        echoResponse(201, $response);
+    } else {
+        $response['error'] = true;
+        $response['response'] = $res;
+        $response['message'] = "An error occurred while registering device token";
+        echoResponse(200, $response);
+    }
+});
+
 $app->get('/users/profile', 'authenticate', function() use($app) {
             $response = array();
             $db = new DbHandler();

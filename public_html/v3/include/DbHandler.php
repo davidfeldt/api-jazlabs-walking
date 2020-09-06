@@ -1010,6 +1010,24 @@ table.list .center {
         }
     }
 
+		public function associateDeviceToken($username, $deviceToken) {
+      date_default_timezone_set($_ENV['TIMEZONE']);
+      $date_modified   = date('Y-m-d H:i:s');
+
+      $result = false;
+
+      if (isset($username) && $username && isset($deviceToken) && $deviceToken) {
+        $sql = "UPDATE user SET deviceToken = :deviceToken, date_modified = :date_modified WHERE username = :username";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':deviceToken', $deviceToken);
+        $stmt->bindParam(':date_modified', $date_modified);
+        $stmt->bindParam(':username', $username);
+        $result = $stmt->execute();
+      }
+
+      return $result;
+    }
+
 
     public function getProfileByUsername($username) {
         $stmt = $this->conn->prepare('SELECT username, bid, firstname, lastname, fullname, email, phone, mobilephone, profilepic, resident_type, privacy, unit, bio, twitter, facebook, linkedin FROM user WHERE username = :username');
