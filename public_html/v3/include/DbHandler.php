@@ -3301,7 +3301,7 @@ table.list .center {
     }
   }
 
-    function getPostImages($post_id) {
+  function getPostImages($post_id) {
     	$images = array();
 
     	$stmt = $this->conn->prepare("SELECT image FROM wall_image WHERE post_id = :post_id ");
@@ -3317,25 +3317,48 @@ table.list .center {
     	return $images;
     }
 
-    public function addPost($username, $message = '', $image = '') {
-    	date_default_timezone_set("America/Toronto");
-	 	$profile 	   = $this->getProfileByUsername($username);
+		private function returnFileExtension($mime) {
+      switch ($mime) {
+        case 'image/jpeg':
+          return 'jpg';
+          break;
+        case 'image/jpe':
+          return 'jpg';
+          break;
+        case 'image/jpg':
+          return 'jpg';
+          break;
+        case 'image/png':
+          return 'png';
+          break;
+        case 'image/gif':
+          return 'gif';
+          break;
+        default:
+          return 'jpg';
+          break;
+      }
+    }
 
-      	$bid         = $profile['bid'];
-      	$fullname    = $profile['fullname'];
+    public function addPost($username, $payload) {
+    	date_default_timezone_set("America/Toronto");
+	 		$profile 	   = $this->getProfileByUsername($username);
+
+      $bid         = $profile['bid'];
+      $fullname    = $profile['fullname'];
     	$type        = 'posts';
     	$date_added  = date('Y-m-d H:i:s');
-      	$type_id     = '0';
-      	$group_id    = '0';
-      	$parent_id   = '0';
-      	$abuse       = '0';
-      	$markabuse   = '0';
-      	$comments    = '0';
-      	$pin         = '0';
-      	$pin_expiry  = $date_added;
-      	$love        = '0';
+    	$type_id     = '0';
+    	$group_id    = '0';
+    	$parent_id   = '0';
+    	$abuse       = '0';
+    	$markabuse   = '0';
+    	$comments    = '0';
+    	$pin         = '0';
+    	$pin_expiry  = $date_added;
+    	$love        = '0';
 
-      	$result      = NULL;
+      $result      = NULL;
     	$images     = array();
 
       	$sql = "INSERT INTO `wall` SET username = :username, bid = :bid, fullname = :fullname, message = :message, type = :type, date_added = :date_added, type_id = :type_id, group_id = :group_id, parent_id = :parent_id, abuse = :abuse, markabuse = :markabuse, comments = :comments, pin = :pin, pin_expiry = :pin_expiry, love = :love";
@@ -3364,33 +3387,56 @@ table.list .center {
         $post_id = $this->conn->lastInsertId();
 
         if ($result) {
-			// save Base 64 string as image.
-	    	if ($image) {
-	    		$uploadDir	= $_ENV['DIR_WALLPOST'];
-	    		$uploadPath = $_ENV['PATH_WALLPOST'];
-	    		$img 		= str_replace(' ', '+', $image);
-				$imgData 	= base64_decode($img);
-				$filename 	= $username . '_' . uniqid() . '.jpg';
-				$imgPath 	= $uploadPath . $filename;
-				$file 		= $uploadDir . $filename;
-				$success = file_put_contents($file, $imgData);
+	    		if ($payload['images']) {
+		    		$uploadDir	= $_ENV['DIR_WALLPOST'];
+		    		$uploadPath = $_ENV['PATH_WALLPOST'];
 
-				if ($success) {
-					// add to maintenance_image
-					$stmt = $this->conn->prepare("INSERT INTO wall_image SET post_id = :post_id, username = :username, image = :image, date_added = :date_added, bid = :bid ");
-					$stmt->bindParam(':post_id',$post_id);
-					$stmt->bindParam(':username',$username);
-			    	$stmt->bindParam(':image',$imgPath);
-			    	$stmt->bindParam(':date_added',$date_added);
-			    	$stmt->bindParam(':bid',$bid);
-			    	$result = $stmt->execute();
-				}
-	    	}
+						foreach ($payload['images'] AS $image) {
 
-    		return TRUE;
-		} else {
-			return NULL;
-		}
+							if (!empty($image) && array_key_exists('mime',$image) && array_key_exists('data', $image)) {
+	                $mime = $image['mime'];
+	                $data = $image['data'];
+	                if ($mime && $data) {
+	                  $extension = $this->returnFileExtension($mime);
+	                  $img        = str_replace(' ', '+', $data);
+	                  $imgData    = base64_decode($img);
+	                  $filename   = $username . '_' . uniqid() . '.'. $extension;
+	                  $imgPath    = $uploadPath . $filename;
+	                  $file       = $uploadDir . $filename;
+	                  $success    = file_put_contents($file, $imgData);
+
+	                  if ($success) {
+											// add to maintenance_image
+											$stmt = $this->conn->prepare("INSERT INTO wall_image SET post_id = :post_id, username = :username, image = :image, date_added = :date_added, bid = :bid ");
+											$stmt->bindParam(':post_id',$post_id);
+											$stmt->bindParam(':username',$username);
+								    	$stmt->bindParam(':image',$imgPath);
+								    	$stmt->bindParam(':date_added',$date_added);
+								    	$stmt->bindParam(':bid',$bid);
+								    	$result = $stmt->execute();
+										}
+									}
+		    				}
+							}
+						}
+
+						// if mentions
+          if ($payload['mentions']) {
+            foreach ($payload['mentions'] AS $mention) {
+              $stmt = $this->conn->prepare("INSERT INTO wall_mention SET bid = :bid, post_id = :post_id, username = :username, date_added = :date_added ");
+							$stmt->bindParam(':bid',$bid);
+							$stmt->bindParam(':post_id',$post_id);
+              $stmt->bindParam(':username',$mention['username']);
+              $stmt->bindParam(':date_added',$date_added);
+              $result = $stmt->execute();
+            }
+          }
+
+          return $post_id;
+
+        } else {
+          return NULL;
+        }
 
       }
       catch (PDOException $e) {

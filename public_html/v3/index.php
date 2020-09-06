@@ -360,7 +360,7 @@ $app->post('/users/password/reset', function() use($app) {
 
 // File uploads
 
-$app->get('/counts/announcements', 'authenticate', function() use($app) { 
+$app->get('/counts/announcements', 'authenticate', function() use($app) {
     $response = array();
 
     $db = new DbHandler();
@@ -480,12 +480,19 @@ $app->post('/posts', 'authenticate', function() use($app) {
 
             $json = $app->request->getBody();
             $data = json_decode($json, true);
-            $message = $data['message'];
-            $image   = $data['image'];
+            $message = isset($data['message']) ? $data['message'] : '';
+            $images  = !empty($data['images']) ? $data['images'] : array('mime' => '', 'data' => '');
+            $mentions = !empty($data['mentions']) ? $data['mentions'] : array();
+
+            $payload = array(
+              'message'   => $message,
+              'images'    => $images,
+              'mentions'  => $mentions
+            );
 
             $db = new DbHandler();
 
-            $res = $db->addPost($app->username, $message, $image);
+            $res = $db->addPost($app->username, $payload);
 
             // $db->registerAPICall( $app->username, 'posts', 'post', $res);
 
