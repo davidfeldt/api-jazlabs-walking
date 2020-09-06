@@ -6,6 +6,9 @@ require_once 'include/DbHandler.php';
 
 use \Firebase\JWT\JWT;
 use \Slim\Slim;
+use GuzzleHttp\Client;
+use GuzzleHttp\Psr7\Request;
+use Pusher\Pusher;
 
 
 $dotenv = new Dotenv\Dotenv('../../');
@@ -164,6 +167,51 @@ $app->get('/', function() {
 
 // login
 
+// Pusher
+$app->post('/pusher/auth', 'authenticate', function() use($app) {
+
+    $pusher = new Pusher( $_ENV['PUSHER_APP_KEY'], $_ENV['PUSHER_APP_SECRET'], $_ENV['PUSHER_APP_ID'], array('cluster' => $_ENV['PUSHER_APP_CLUSTER']) );
+
+    $json = $app->request->getBody();
+    // pusher sends data in x-www-form-urlencoded so don't use json for the post vars
+    // $data = json_decode($json, true);
+    // $channel_name = $data['channel_name'];
+    // $socket_id = $data['socket_id'];
+    $channel_name = $app->request()->post('channel_name');
+    $socket_id    = $app->request()->post('socket_id');
+
+    if ($app->username) {
+        header('Content-Type: application/json', true, 200);
+        echo $pusher->socket_auth($channel_name, $socket_id);
+    } else {
+        header('', true, 403);
+        echo "Forbidden";
+    }
+
+});
+
+$app->post('/pusher/authPresence', 'authenticate', function() use($app) {
+
+    $pusher = new Pusher( $_ENV['PUSHER_APP_KEY'], $_ENV['PUSHER_APP_SECRET'], $_ENV['PUSHER_APP_ID'], array('cluster' => $_ENV['PUSHER_APP_CLUSTER']) );
+
+    $json = $app->request->getBody();
+    // pusher sends data in x-www-form-urlencoded so don't use json for the post vars
+    // $data = json_decode($json, true);
+    // $channel_name = $data['channel_name'];
+    // $socket_id = $data['socket_id'];
+    $channel_name = $app->request()->post('channel_name');
+    $socket_id    = $app->request()->post('socket_id');
+
+    if ($app->username) {
+        header('Content-Type: application/json');
+        echo $pusher->presence_auth($channel_name, $socket_id, $app->username);
+    } else {
+        header('', true, 403);
+        echo "Forbidden";
+    }
+
+});
+
 $app->post('/login', function() use($app) {
             // check for required params
             verifyRequiredParams(array('username'));
@@ -268,7 +316,7 @@ $app->post('/users/password/forgot', function() use($app) {
                 $response['type'] = $res;
                 if ($res == 'mobile') {
                     $message = 'Please enter short code we just sent via SMS';
-                } 
+                }
 
                 if ($res == 'email') {
                     $message = 'Please click on the reset password link in the email we just sent you to reset your password';

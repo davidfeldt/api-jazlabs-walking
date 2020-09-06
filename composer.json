@@ -1,11 +1,16 @@
 {
     "require": {
-        "firebase/php-jwt": "^5.0",
-        "vlucas/phpdotenv": "^2.4",
-        "slim/slim": "^2.4.2",
-        "mailgun/mailgun-php": "^2.3",
-        "php-http/curl-client": "^1.7",
-        "guzzlehttp/psr7": "^1.4",
-        "twilio/sdk": "^5.15"
+      "firebase/php-jwt": "^5.0",
+      "vlucas/phpdotenv": "^2.4",
+      "slim/slim": "^2.4.2",
+      "mailgun/mailgun-php": "^2.3",
+      "php-http/curl-client": "^1.7",
+      "guzzlehttp/psr7": "^1.4",
+      "twilio/sdk": "^5.15",
+      "pusher/pusher-push-notifications": "^0.10.6",
+      "guzzlehttp/guzzle": "^6.3",
+      "nette/mail": "^2.4",
+      "pusher/pusher-php-server": "^3.0",
+      "bugsnag/bugsnag": "^3.0"
     }
 }
