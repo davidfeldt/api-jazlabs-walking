@@ -1477,7 +1477,7 @@ table.list .center {
     $reservation_id = $this->conn->lastInsertId();
 
     foreach ($timeslots AS $timeslot) {
-      $t = explode("|",$timeslot);
+      $t = explode("|",$timeslot['value']);
       $date   = $t[0];
       $label  = $t[1];
 
