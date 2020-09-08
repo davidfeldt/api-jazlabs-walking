@@ -1832,7 +1832,7 @@ table.list .center {
     	$type 			  = !empty($data['type']) ? $data['type'] : 's';
     	$category_id 	= !empty($data['category_id']) ? $data['category_id'] : 0;
     	$isAvailable	= !empty($data['isAvailable']) ? $data['isAvailable'] : 0;
-    	$image 			  = !empty($data['image']) ? $data['image'] : '';
+    	$images 			= $data['images'];
     	$ip 			    = $_SERVER['REMOTE_ADDR'];
 
 		  $stmt = $this->conn->prepare("INSERT INTO marketplace SET username = :username, bid = :bid, email = :email, date_added = :date_added, price = :price, ip = :ip, description = :description, title = :title, isAvailable = :isAvailable, category_id = :category_id, date_modified = :date_added, views = '0', isConfirmed = '1', confirmPassword = '', is_new = '1'");
@@ -1854,28 +1854,38 @@ table.list .center {
 
       if ($result) {
       // save Base 64 string as image.
-        if ($image) {
-          $uploadDir  = $_ENV['DIR_MARKETPLACEITEM'];
-          $uploadPath = $_ENV['PATH_MARKETPLACEITEM'];
-          $img    = str_replace(' ', '+', $image);
-          $imgData  = base64_decode($img);
-          $filename   = $username . '_' . uniqid() . '.jpg';
-          $imgPath  = $uploadPath . $filename;
-          $file     = $uploadDir . $filename;
-          $success = file_put_contents($file, $imgData);
+				if ($images) {
+					$uploadDir	= $_ENV['DIR_MARKETPLACEITEM'];
+					$uploadPath = $_ENV['PATH_MARKETPLACEITEM'];
 
-          // add to marketplace_image
-          if ($success) {
-          // add to maintenance_image
-            $stmt = $this->conn->prepare("INSERT INTO marketplace_image SET marketplace_id = :marketplace_id, username = :username, image = :image, date_added = :date_added, bid = :bid ");
-            $stmt->bindParam(':marketplace_id',$marketplace_id);
-            $stmt->bindParam(':username',$username);
-              $stmt->bindParam(':image',$imgPath);
-              $stmt->bindParam(':date_added',$date_added);
-              $stmt->bindParam(':bid',$bid);
-              $result = $stmt->execute();
-          }
-        }
+					foreach ($images AS $image) {
+
+						if (!empty($image) && array_key_exists('mime',$image) && array_key_exists('data', $image)) {
+								$mime = $image['mime'];
+								$data = $image['data'];
+								if ($mime && $data) {
+									$extension = $this->returnFileExtension($mime);
+									$img        = str_replace(' ', '+', $data);
+									$imgData    = base64_decode($img);
+									$filename   = $username . '_' . uniqid() . '.'. $extension;
+									$imgPath    = $uploadPath . $filename;
+									$file       = $uploadDir . $filename;
+									$success    = file_put_contents($file, $imgData);
+
+									if ($success) {
+										// add to maintenance_image
+										$stmt = $this->conn->prepare("INSERT INTO wall_image SET post_id = :post_id, username = :username, image = :image, date_added = :date_added, bid = :bid ");
+										$stmt->bindParam(':post_id',$post_id);
+										$stmt->bindParam(':username',$username);
+										$stmt->bindParam(':image',$imgPath);
+										$stmt->bindParam(':date_added',$date_added);
+										$stmt->bindParam(':bid',$bid);
+										$result = $stmt->execute();
+									}
+								}
+							}
+						}
+					}
 
         return $this->getMarketplaceItem($marketplace_id);
     } else {

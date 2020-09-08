@@ -1211,7 +1211,9 @@ $app->post('/items', 'authenticate', function() use($app) {
       $json                   = $app->request->getBody();
       $data                   = json_decode($json, true);
 
-      $requestData['image']           = $data['image'];
+      $images  = !empty($data['images']) ? $data['images'] : array('mime' => '', 'data' => '');
+
+      $requestData['images']          = $images;
       $requestData['title']           = $data['title'];
       $requestData['description']     = $data['description'];
       $requestData['price']           = $data['price'];
