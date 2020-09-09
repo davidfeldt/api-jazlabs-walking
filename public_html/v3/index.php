@@ -365,7 +365,7 @@ $app->get('/counts/announcements', 'authenticate', function() use($app) {
 
     $db = new DbHandler();
 
-    $new =  $db->newAnnouncementsCount($app->username, $app->property_id);
+    $new =  $db->newAnnouncementsCount($app->username, $app->bid);
 
     $response['success']  = true;
     $response['error']    = false;
@@ -1708,7 +1708,7 @@ $app->get('/people', 'authenticate', function() use($app) {
             $response['message'] = 'No person found!';
         }
 
-        $db->addUserActivityLog( $app->username, $app->fullname,  'Get person #'.$id, 'people', $id);
+        // $db->addUserActivityLog( $app->username, $app->fullname,  'Get person #'.$id, 'people', $id);
 
         echoResponse(200, $response);
 
@@ -2065,7 +2065,7 @@ $app->get('/notifications', 'authenticate', function() use($app) {
       if ($result != NULL) {
           $response['error'] 		= false;
           $response['id'] 		= $result['id'];
-          $response['property_id'] 		= $result['property_id'];
+          $response['bid'] 		= $result['bid'];
           $response['username'] 	= $result['username'];
           $response['fullname']	= $result['fullname'];
           $response['title']		= $result['title'];
@@ -2090,7 +2090,7 @@ $app->get('/notifications', 'authenticate', function() use($app) {
         $response['error'] 		= false;
         $response['username'] 	= $app->username;
         $response['message'] 	= "Notifications cleared successfully!";
-        $db->addUserActivityLog( $app->username, $app->fullname,  'Clear all notifications', 'notifications');
+        // $db->addUserActivityLog( $app->username, $app->fullname,  'Clear all notifications', 'notifications');
         echoResponse(201, $response);
     } else {
         $response['error'] 		= true;
@@ -2122,6 +2122,39 @@ $app->get('/notifications', 'authenticate', function() use($app) {
         $response['message'] 	= "An error occurred while clearing notification. Try again later!";
         echoResponse(200, $response);
     }
+
+    $db = NULL;
+  });
+
+  $app->get('/announcements', 'authenticate', function() use($app) {
+    $response = array();
+
+    $db = new DbHandler();
+
+    $page = $app->request()->get('page');
+
+    if (!isset($page) || $page < 1) { $page = 1;}
+
+    $new     =  $db->newAnnouncementsCount($app->username, $app->bid);
+
+    $results =  $db->getAllAnnouncements($app->username, $app->bid, $page);
+
+    if ($results) {
+        $response['success']  = true;
+        $response['error']    = false;
+        $response['username'] = $app->username;
+        $response['new']      = $new;
+        $response['results']  = $results;
+        // $db->addUserActivityLog( $app->username, $app->fullname,  'Get announcements', 'announcements');
+    } else {
+        $response['success']  = true;
+        $response['error']    = false;
+        $response['results']  = array();
+        $response['new']      = $new;
+        $response['message']  = 'No announcements found!';
+    }
+
+    echoResponse(200, $response);
 
     $db = NULL;
   });
@@ -2168,7 +2201,7 @@ $app->get('/notifications', 'authenticate', function() use($app) {
         $response['message'] = "Announcement posted successfully!";
         $response['results'] = $res;
         $response['request'] = $payload;
-        $db->addUserActivityLog( $app->username, $app->fullname,  'Admin posted new announcements', 'announcements');
+        // $db->addUserActivityLog( $app->username, $app->fullname,  'Admin posted new announcements', 'announcements');
         echoResponse(201, $response);
     } else {
         $response['error'] = true;
@@ -2194,7 +2227,7 @@ $app->get('/notifications', 'authenticate', function() use($app) {
           $response['username'] = $app->username;
           $response['results'] = $res;
           $response['message'] = "Acknowledged successfully!";
-          $db->addUserActivityLog( $app->username, $app->fullname,  'Acknowledged announcement #'.$id, 'announcements', $id);
+          // $db->addUserActivityLog( $app->username, $app->fullname,  'Acknowledged announcement #'.$id, 'announcements', $id);
           echoResponse(201, $response);
       } else {
           $response['error'] = true;

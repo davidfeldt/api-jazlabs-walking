@@ -173,7 +173,7 @@ class DbHandler {
 	}
 
   public function dateTimeDiff($dt) {
-    date_default_timezone_set('America/Toronto');
+    date_default_timezone_set($_ENV['TIMEZONE']);
     $now = date('Y-m-d H:i:s');
 
     $dateNow = date_create($now);
@@ -458,7 +458,7 @@ class DbHandler {
 	}
 
   public function updateUserPreferences($username, $preferences) {
-    date_default_timezone_set('America/Toronto');
+    date_default_timezone_set($_ENV['TIMEZONE']);
 
     $settings = '';
     $updates = array();
@@ -521,7 +521,7 @@ class DbHandler {
 	}
 
 	public function forgotPassword($username) {
-    date_default_timezone_set('America/Toronto');
+    date_default_timezone_set($_ENV['TIMEZONE']);
       	$stmt = $this->conn->prepare('SELECT username, email, mobilephone FROM user WHERE username = :username');
 
         $stmt->bindParam(':username', $username);
@@ -572,7 +572,7 @@ class DbHandler {
    }
 
    private function getUsernameFromResetCode($reset_code) {
-    date_default_timezone_set('America/Toronto');
+    date_default_timezone_set($_ENV['TIMEZONE']);
     $sql = "SELECT username FROM user WHERE (reset_code = :reset_code OR reset_code_short = :reset_code) AND reset_code_active = '1' AND reset_dt >= DATE_SUB(NOW(), INTERVAL 30 MINUTE)";
     $stmt = $this->conn->prepare($sql);
 
@@ -588,7 +588,7 @@ class DbHandler {
    }
 
   public function resetPassword($reset_code, $password) {
-    date_default_timezone_set('America/Toronto');
+    date_default_timezone_set($_ENV['TIMEZONE']);
 
     $username = $this->getUsernameFromResetCode($reset_code);
 
@@ -1011,7 +1011,7 @@ table.list .center {
     }
 
 		public function associateDeviceToken($username, $deviceToken) {
-      date_default_timezone_set('America/Toronto');
+      date_default_timezone_set($_ENV['TIMEZONE']);
       $date_modified   = date('Y-m-d H:i:s');
 
       $result = false;
@@ -1055,7 +1055,7 @@ table.list .center {
 
 
     public function updateProfile($username, $data) {
-      date_default_timezone_set('America/Toronto');
+      date_default_timezone_set($_ENV['TIMEZONE']);
 
       if (!empty($data['firstname']) && !empty($data['lastname'])) {
         $firstname = ucwords(trim($data['firstname']));
@@ -1297,7 +1297,7 @@ table.list .center {
 
   function getReservationComments($reservation_id) {
       $comments = array();
-      date_default_timezone_set('America/Toronto');
+      date_default_timezone_set($_ENV['TIMEZONE']);
       $now = date('Y-m-d H:i:s');
 
       $stmt = $this->conn->prepare("SELECT * FROM reservation_log WHERE reservation_id = :reservation_id ORDER BY log_id ASC");
@@ -1428,7 +1428,7 @@ table.list .center {
   }
 
   public function addReservation ($username, $data) {
-    date_default_timezone_set('America/Toronto');
+    date_default_timezone_set($_ENV['TIMEZONE']);
     $profile    = $this->getProfileByUsername($username);
     $bid        = $profile['bid'];
     $carcolor   = !empty($data['carcolor']) ? ucfirst($data['carcolor']) : '';
@@ -1531,7 +1531,7 @@ table.list .center {
     }
 
   public function getAvailableTimeSlots($bid, $data)  {
-      date_default_timezone_set('America/Toronto');
+      date_default_timezone_set($_ENV['TIMEZONE']);
 
       $timeslots = array();
 
@@ -1580,7 +1580,7 @@ table.list .center {
   }
 
   private function getTimeSlotsForResource($resource, $date) {
-    date_default_timezone_set('America/Toronto');
+    date_default_timezone_set($_ENV['TIMEZONE']);
 
     $timeslots = array();
 
@@ -1640,7 +1640,7 @@ table.list .center {
 
 	function getMarketplaceComments($marketplace_id) {
     	$comments = array();
-      date_default_timezone_set('America/Toronto');
+      date_default_timezone_set($_ENV['TIMEZONE']);
       $now = date('Y-m-d H:i:s');
 
     	$stmt = $this->conn->prepare("SELECT * FROM marketplace_log WHERE marketplace_id = :marketplace_id ORDER BY log_id ASC");
@@ -1915,11 +1915,90 @@ table.list .center {
 
 	}
 
+	public function getAllAnnouncements($username, $bid = 1,$page = 1) {
+    $page = (isset($page)) ? $page : 1;
+    $start = ($page - 1) * $_ENV['LIMIT'];
+    $limit = $_ENV['LIMIT'];
+
+    date_default_timezone_set($_ENV['TIMEZONE']);
+    $now   = date('Y-m-d');
+
+    $post_data = array();
+      $stmt = $this->conn->prepare("SELECT announcement_id, bid, username, date_added, message, acknowledge FROM announcement WHERE bid = :bid AND status = '1' AND start_date <= :now AND end_date >= :now ORDER BY date_added DESC LIMIT $start, $limit");
+      $stmt->bindParam(':bid',$bid);
+      $stmt->bindParam(':now',$now);
+
+      if ($stmt->execute()) {
+        $this->updateLastViewedAnnouncement($username);
+
+        $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($posts AS $post) {
+          $post_data [] = array (
+            'id'         => (int)$post['announcement_id'],
+            'bid'=> (int)$post['bid'],
+            'username'   => $post['username'],
+            'fullname'   => $this->getFullName($post['username']),
+            'avatar'     => $this->getAvatar($post['username']),
+            'date_added' => date('m/d/Y', strtotime($post['date_added'])),
+            'message'    => $post['message'],
+            'requireAcknowledgement' => (int)$post['acknowledge'],
+            'acknowledged'  => $this->didUserAcknowledgeAnnouncement($username, $post['announcement_id']),
+            'acknowledgedDate' => $this->getAcknowledgementDate($username, $post['announcement_id'])
+          );
+        }
+      }
+
+      return $post_data;
+  }
+
+
+  public function addAdminAnnouncement($username, $payload) {
+    date_default_timezone_set($_ENV['TIMEZONE']);
+    $date_added   = date('Y-m-d H:i:s');
+    $start_date   = date('Y-m-d', strtotime($payload['startDate']));
+    $end_date     = date('Y-m-d', strtotime($payload['endDate']));
+    $message      = $payload['message'];
+    $acknowledge  = $payload['acknowledge'];
+    $sendPush     = $payload['sendPush'];
+    $properties   = $payload['properties'];
+    $postCount    = 0;
+
+    foreach ($properties AS $bid) {
+      $sql = "INSERT INTO `announcement` SET username = :username, bid = :bid, message = :message, start_date = :start_date, end_date = :end_date, status = '1', type = 'normal', acknowledge = :acknowledge, date_added = :date_added, date_modified = :date_added";
+      $stmt = $this->conn->prepare($sql);
+      $stmt->bindParam(':username', $username);
+      $stmt->bindParam(':bid', $bid);
+      $stmt->bindParam(':message', $message);
+      $stmt->bindParam(':start_date', $start_date);
+      $stmt->bindParam(':end_date', $end_date);
+      $stmt->bindParam(':acknowledge', $acknowledge);
+      $stmt->bindParam(':date_added', $date_added);
+
+      if ($stmt->execute()) {
+
+        // realtime pusher update
+        $this->updateAnnouncementsCountForUsersInProperty($bid);
+
+        // send push notification to mobile app
+        if ($sendPush) {
+          $propertyCode = $this->getPropertyCode($bid);
+          $this->sendPushNotificationsToProperties($username, strtolower($propertyCode), $message );
+        }
+
+        $postCount++;
+      }
+
+    }
+
+    return $postCount;
+
+   }
+
 // Maintenance Requests
 
 	function getMaintenanceComments($maintenance_id) {
     	$comments = array();
-      date_default_timezone_set('America/Toronto');
+      date_default_timezone_set($_ENV['TIMEZONE']);
       $now = date('Y-m-d H:i:s');
 
     	$stmt = $this->conn->prepare("SELECT * FROM maintenance_log WHERE maintenance_id = :maintenance_id ORDER BY log_id ASC");
@@ -2272,7 +2351,7 @@ table.list .center {
 
 	public function getFrontdeskComments($frontdesk_id) {
   	$comments = array();
-    date_default_timezone_set('America/Toronto');
+    date_default_timezone_set($_ENV['TIMEZONE']);
     $now = date('Y-m-d H:i:s');
 
   	$stmt = $this->conn->prepare("SELECT * FROM frontdesk_log WHERE frontdesk_id = :frontdesk_id ORDER BY log_id ASC");
@@ -2305,7 +2384,7 @@ table.list .center {
     }
 
 	public function addFrontDeskInstruction($username, $data) {
-		date_default_timezone_set('America/Toronto');
+		date_default_timezone_set($_ENV['TIMEZONE']);
     	$now = date('Y-m-d H:i:s');
 
 		$profile 		= $this->getProfileByUsername($username);
@@ -2466,7 +2545,7 @@ table.list .center {
 
 	function getIncidentComments($incident_id) {
     	$comments = array();
-      date_default_timezone_set('America/Toronto');
+      date_default_timezone_set($_ENV['TIMEZONE']);
       $now = date('Y-m-d H:i:s');
 
     	$stmt = $this->conn->prepare("SELECT * FROM incident_log WHERE incident_id = :incident_id ORDER BY log_id ASC");
@@ -3171,7 +3250,7 @@ table.list .center {
 	}
 
 	public function addReplyToMessage($username, $id, $message) {
-	  date_default_timezone_set('America/Toronto');
+	  date_default_timezone_set($_ENV['TIMEZONE']);
 		$msg = $this->getMessage($username, $id);
 
 		if ($msg) {
@@ -3527,7 +3606,7 @@ table.list .center {
 
 		public function newAnnouncementsCount($username, $bid) {
       $count = false;
-      date_default_timezone_set('America/Toronto');
+      date_default_timezone_set($_ENV['TIMEZONE']);
       $now   = date('Y-m-d');
       $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM announcement WHERE bid = :bid AND date_start <= :now AND date_end >= :now");
 
