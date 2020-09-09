@@ -1,4 +1,4 @@
-<?php
+getResidentAvatar<?php
 
 // These constants may be changed without breaking existing hashes.
 	define("PBKDF2_HASH_ALGORITHM", "sha256");
@@ -2910,7 +2910,7 @@ table.list .center {
       $stmt->bindParam(':status', $status);
       $stmt->bindParam(':query', $query);
     } else {
-      $stmt = $this->conn->prepare("SELECT * FROM wch_user WHERE status = :status AND privacy != 's' ");
+      $stmt = $this->conn->prepare("SELECT * FROM user WHERE status = :status AND privacy != 's' ");
       $stmt->bindParam(':invisible', $invisible);
       $stmt->bindParam(':status', $status);
     }
@@ -3295,6 +3295,248 @@ table.list .center {
         }
 
 	}
+
+
+	// Notifications FROM management / announcements
+
+	    private function addNotification($initiator, $recipient, $id, $type) {
+	      date_default_timezone_set($_ENV['TIMEZONE']);
+	      $date_added = date('Y-m-d H:i:s');
+	      $result = array();
+	      $stmt = $this->conn->prepare("INSERT INTO user_notification SET initiator = :initiator, recipient = :recipient, type = :type, id = :id, date = :date, new = '1'");
+	      $stmt->bindParam(':initiator', $initiator);
+	      $stmt->bindParam(':recipient', $recipient);
+	      $stmt->bindParam(':id', $id);
+	      $stmt->bindParam(':type', $type);
+	      $stmt->bindParam(':date', $date_added);
+	      if ($stmt->execute()) {
+	        $notification_id = $this->conn->lastInsertId();
+	        $result = $this->getNotification($recipient, $notification_id);
+	      }
+
+	      return $result;
+
+	    }
+
+	    public function deleteNotification($recipient, $id) {
+	      $stmt = $this->conn->prepare('DELETE FROM user_notification WHERE notification_id = :id AND recipient = :recipient');
+	      $stmt->bindParam(':id', $id);
+	      $stmt->bindParam(':recipient', $recipient);
+	      if ($stmt->execute()) {
+	          return TRUE;
+	      } else {
+	          return NULL;
+	      }
+
+	    }
+
+	    public function clearAllNotifications($recipient) {
+	      $stmt = $this->conn->prepare("UPDATE user_notification SET new = '0' WHERE recipient = :recipient");
+	      $stmt->bindParam(':recipient', $recipient);
+	      $stmt->execute();
+
+	      return TRUE;
+	    }
+
+	    public function deleteAllMyNotifications($recipient) {
+	      $stmt = $this->conn->prepare('DELETE FROM user_notification WHERE recipient = :recipient');
+	      $stmt->bindParam(':recipient', $recipient);
+	      if ($stmt->execute()) {
+	          return TRUE;
+	      } else {
+	          return NULL;
+	      }
+
+	    }
+
+	    public function markNotificationRead($recipient, $id) {
+	      $stmt = $this->conn->prepare("UPDATE user_notification SET new = '0' WHERE notification_id = :id AND recipient = :recipient");
+	      $stmt->bindParam(':id', $id);
+	      $stmt->bindParam(':recipient', $recipient);
+	      if ($stmt->execute()) {
+	          return TRUE;
+	      } else {
+	          return NULL;
+	      }
+
+	    }
+
+	    private function markAllMyNotificationsRead($recipient) {
+	      $stmt = $this->conn->prepare("UPDATE user_notification SET new = '0' WHERE recipient = :recipient");
+	      $stmt->bindParam(':recipient', $recipient);
+	      if ($stmt->execute()) {
+	        return true;
+	      } else {
+	        return false;
+	      }
+	    }
+
+	    public function getNotification($username, $notification_id) {
+	      $data = array();
+	      $stmt = $this->conn->prepare("SELECT * FROM user_notification WHERE notification_id = :notification_id");
+	      $stmt->bindParam(':notification_id',$notification_id);
+
+	      if ($stmt->execute()) {
+	        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+	        $row = $stmt->fetch();
+	        $fullname = $this->getResidentName($row['initiator']);
+	        switch ($row['type']) {
+	          case 'comment-my-post':
+	            $message = array(
+	              'text'      => $fullname.' commented on your post',
+	              'postId'    => $row['id'],
+	              'data'      => $this->getPost($username, $row['id']),
+	              'location'  => 'IndividualPost',
+	            );
+	            break;
+	          case 'like-my-post':
+	            $message = array(
+	              'text'      => $fullname.' liked your post',
+	              'postId'    => $row['id'],
+	              'data'      => $this->getPost($username, $row['id']),
+	              'location'  => 'IndividualPost',
+	            );
+	            break;
+	          case 'join-my-group':
+	            $message = array(
+	              'text'      => $fullname.' joined your group',
+	              'groupId'   => $row['id'],
+	              'data'      => $this->getGroup($username, $row['id']),
+	              'location'  => 'GroupsDetail',
+	            );
+	            break;
+	          default:
+	            $message      = array();
+	            break;
+	        }
+
+	        $data = array (
+	          'notification_id' => (int)$row['notification_id'],
+	          'fullname'        => $this->getResidentName($row['initiator']),
+	          'avatar'          => $this->getResidentAvatar($row['initiator']),
+	          'date_added'      => $this->dateTimeDiff($row['date']),
+	          'type'            => $row['type'],
+	          'message'         => $message,
+	          'new'             => (int)$row['new']
+	        );
+	      }
+
+	      return $data;
+	    }
+
+	    public function clearNewNotifications($recipient) {
+	      date_default_timezone_set($_ENV['TIMEZONE']);
+	      $now = date('Y-m-d H:i:s');
+	      $stmt = $this->conn->prepare("UPDATE user_notification SET new = '0' WHERE recipient = :recipient");
+	      $stmt->bindParam(':recipient', $recipient);
+	      if ($stmt->execute()) {
+	        return true;
+	      } else {
+	        return false;
+	      }
+	    }
+
+	    public function getAllNotifications($recipient, $page = 1) {
+	      date_default_timezone_set($_ENV['TIMEZONE']);
+	      $now   = date('Y-m-d');
+	      $page = (isset($page)) ? $page : 1;
+	      $start = ($page - 1) * 10;
+	      $limit = 10;
+
+	      $data = array();
+	      $stmt = $this->conn->prepare("SELECT * FROM user_notification WHERE recipient = :recipient ORDER BY date DESC LIMIT $start, $limit");
+	      $stmt->bindParam(':recipient',$recipient);
+
+	      if ($stmt->execute()) {
+	        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+	        foreach ($rows AS $row) {
+	          $fullname = $this->getResidentName($row['initiator']);
+	          switch ($row['type']) {
+	            case 'comment-my-post':
+	              $message = array(
+	                'text'      => $fullname.' commented on your post',
+	                'postId'    => $row['id'],
+	                'data'      => $this->getPost($recipient, $row['id']),
+	                'location'  => 'PostDetail',
+	                'icon'      => 'ios-chatbubbles-outline',
+	              );
+	              break;
+	            case 'like-my-post':
+	              $message = array(
+	                'text'      => $fullname.' liked your post',
+	                'postId'    => $row['id'],
+	                'data'      => $this->getPost($recipient, $row['id']),
+	                'location'  => 'PostDetail',
+	                'icon'      => 'ios-chatbubbles-outline',
+	              );
+	              break;
+	            case 'join-my-group':
+	              $message = array(
+	                'text'      => $fullname.' joined your group',
+	                'groupId'   => $row['id'],
+	                'data'      => $this->getGroup($username, $row['id']),
+	                'location'  => 'GroupDetail',
+	                'icon'      => 'ios-people-outline',
+	              );
+	              break;
+	            default:
+	              $message      = array();
+	              break;
+	          }
+
+	          $data [] = array (
+	            'notification_id' => (int)$row['notification_id'],
+	            'fullname'        => $this->getResidentName($row['initiator']),
+	            'avatar'          => $this->getAvatar($row['initiator']),
+	            'date_added'      => $this->dateTimeDiff($row['date']),
+	            'type'            => $row['type'],
+	            'message'         => $message,
+	            'new'             => (int)$row['new']
+	          );
+	        }
+	      }
+
+	      $lastCount = $start + $limit;
+	      $maxCount  = $this->numberOfNotifications($recipient);
+	      $nextPage  = ($lastCount < $maxCount) ? $page + 1 : null;
+
+	      return array(
+	        'results'   => $data,
+	        'nextPage'  => $nextPage
+	      );
+
+	    }
+
+	    private function numberOfNotifications($recipient) {
+	        $status = 1;
+	        $stmt   = $this->conn->prepare("SELECT COUNT(*) AS total FROM user_notification WHERE recipient = :recipient");
+	        $stmt->bindParam(':recipient', $recipient);
+
+	        $post_data = array();
+	        if ($stmt->execute()) {
+	          $stmt->setFetchMode(PDO::FETCH_ASSOC);
+	          $row = $stmt->fetch();
+	          return (int)$row['total'];
+	        } else {
+	          return 0;
+	        }
+	      }
+
+	    public function newNotificationsCount($username) {
+	      $count = 0;
+	      $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM user_notification WHERE new = '1' AND recipient = :username");
+
+	      $stmt->bindParam(':username', $username);
+	      $stmt->execute();
+	      $stmt->setFetchMode(PDO::FETCH_ASSOC);
+	      $row = $stmt->fetch();
+
+	      if (isset($row) && $row['total']) {
+	       $count = $row['total'];
+	      }
+
+	      return $count;
+	    }
 
 // Notifications FROM building management / announcements
 

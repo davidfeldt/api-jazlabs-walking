@@ -2010,7 +2010,7 @@ $app->get('/notifications', 'authenticate', function() use($app) {
             } else {
                 $response['error'] = true;
                 $response['results'] = array();
-                $response['message'] = 'No announcements found!';
+                $response['message'] = 'No notifications found!';
             }
 
 
@@ -2022,31 +2022,188 @@ $app->get('/notifications', 'authenticate', function() use($app) {
         });
 
 
-$app->get('/notifications/:id', 'authenticate', function($id) use($app) {
+        $app->get('/notifications', 'authenticate', function() use($app) {
             $response = array();
+
             $db = new DbHandler();
 
-            // fetch task
-            $result = $db->getNotification($app->username, $id);
+            $page = $app->request()->get('page');
 
-            $db->registerAPICall($app->username, 'notifications/'.$id, 'get', $result);
+            if (!isset($page) || $page < 1) { $page = 1;}
 
-            if ($result != NULL) {
-                $response['error'] 		= false;
-                $response['id'] 		= $result['id'];
-                $response['bid'] 		= $result['bid'];
-                $response['username'] 	= $result['username'];
-                $response['fullname']	= $result['fullname'];
-                $response['title']		= $result['title'];
-                $response['message']	= $result['message'];
-                $response['date_added'] 		= $result['date_added'];
-                echoResponse(200, $response);
+            $results =  $db->getAllNotifications($app->username, $page);
+
+            if ($results) {
+                $response['success']    = true;
+                $response['username'] = $app->username;
+                $response['count']    = (int)$db->newNotificationsCount($app->username);
+                $response['results']  = $results['results'];
+                $response['nextPage'] = $results['nextPage'];
+                // $db->addUserActivityLog( $app->username, $app->fullname,  'Get notifications', 'notifications');
+                // clear new notifications so counter will reset to zero - no longer used - now clear individual notifications after they have been viewed
+                // $db->clearNewNotifications($app->username);
+
             } else {
-                $response['error'] = true;
-                $response['message'] = "The requested notification doesn't exists";
-                echoResponse(404, $response);
+                $response['error']    = true;
+                $response['results']  = array();
+                $response['nextPage'] = null;
+                $response['message']  = 'No notifications found!';
             }
-        });
+
+            echoResponse(200, $response);
+
+            $db = NULL;
+          });
+
+  $app->get('/notifications/:id', 'authenticate', function($id) use($app) {
+      $response = array();
+      $db = new DbHandler();
+
+      // fetch task
+      $result = $db->getNotification($app->username, $id);
+
+      if ($result != NULL) {
+          $response['error'] 		= false;
+          $response['id'] 		= $result['id'];
+          $response['property_id'] 		= $result['property_id'];
+          $response['username'] 	= $result['username'];
+          $response['fullname']	= $result['fullname'];
+          $response['title']		= $result['title'];
+          $response['message']	= $result['message'];
+          $response['date_added'] 		= $result['date_added'];
+          // $db->addUserActivityLog( $app->username, $app->fullname,  'View notification', 'notifications', $id);
+          echoResponse(200, $response);
+      } else {
+          $response['error'] = true;
+          $response['message'] = "The requested notification doesn't exists";
+          echoResponse(404, $response);
+      }
+
+      $db = NULL;
+  });
+
+  $app->put('/notifications', 'authenticate', function() use($app) {
+    $db = new DbHandler();
+    $res = $db->clearAllNotifications($app->username);
+
+    if ($res) {
+        $response['error'] 		= false;
+        $response['username'] 	= $app->username;
+        $response['message'] 	= "Notifications cleared successfully!";
+        $db->addUserActivityLog( $app->username, $app->fullname,  'Clear all notifications', 'notifications');
+        echoResponse(201, $response);
+    } else {
+        $response['error'] 		= true;
+        $response['username'] 	= $app->username;
+        $response['message'] 	= "An error occurred while clearing notifications. Try again later!";
+        echoResponse(200, $response);
+    }
+
+    $db = NULL;
+  });
+
+  $app->post('/notifications/:id', 'authenticate', function($id) use($app) {
+    $db = new DbHandler();
+    $result = $db->markNotificationRead($app->username, $id);
+
+    if ($result) {
+        $response['error'] 		= false;
+        $response['success']  = true;
+        $response['username'] = $app->username;
+        $response['count']    = (int)$db->newNotificationsCount($app->username);
+        $response['results']  = $db->getAllNotifications($app->username);
+        $response['message'] 	= "Notification cleared successfully!";
+        // $db->addUserActivityLog( $app->username, $app->fullname,  'Clear notification #'.$id, 'notifications', $id);
+        echoResponse(201, $response);
+    } else {
+        $response['error'] 		= true;
+        $response['success']  = false;
+        $response['username'] = $app->username;
+        $response['message'] 	= "An error occurred while clearing notification. Try again later!";
+        echoResponse(200, $response);
+    }
+
+    $db = NULL;
+  });
+
+  $app->post('/admin/announcements', 'authenticate', function() use($app) {
+    // check for required params
+
+    $response = array();
+
+    $json           = $app->request->getBody();
+    $data           = json_decode($json, true);
+    $startDate      = !empty($data['startDate']) ? $data['startDate'] : '';
+    $endDate        = !empty($data['endDate']) ? $data['endDate'] : '';
+    $message        = !empty($data['message']) ? $data['message'] : '';
+    $acknowledge    = !empty($data['acknowledge']) ? $data['acknowledge'] : 0;
+    $sendPush    	= !empty($data['sendPush']) ? $data['sendPush'] : 0;
+    $properties     = !empty($data['properties']) ? $data['properties'] : array();
+
+    $props = array();
+
+    if (is_array($properties) && count($properties)) {
+        foreach ($properties AS $property) {
+            array_push($props, $property['value']);
+        }
+    }
+
+    $payload = array(
+        'startDate'     => $startDate,
+        'endDate'       => $endDate,
+        'message'       => $message,
+        'acknowledge'	  => $acknowledge,
+        'sendPush'		  => $sendPush,
+        'properties'    => $props,
+    );
+
+    $db = new DbHandler();
+
+    $res = $db->addAdminAnnouncement($app->username, $payload);
+
+    if ($res) {
+        $response['error'] = false;
+        $response['success'] = true;
+        $response['username'] = $app->username;
+        $response['message'] = "Announcement posted successfully!";
+        $response['results'] = $res;
+        $response['request'] = $payload;
+        $db->addUserActivityLog( $app->username, $app->fullname,  'Admin posted new announcements', 'announcements');
+        echoResponse(201, $response);
+    } else {
+        $response['error'] = true;
+        $response['username'] = $app->username;
+        $response['message'] = "An error occurred while posting announcement";
+        $response['request'] = $payload;
+        echoResponse(200, $response);
+    }
+    $db = NULL;
+
+  });
+
+
+  $app->post('/announcements/acknowledgements/:id', 'authenticate', function($id) use($app) {
+
+      $response = array();
+
+      $db = new DbHandler();
+      $res = $db->acknowledgeAnnouncement($app->username, $id);
+
+      if ($res) {
+          $response['success'] = true;
+          $response['username'] = $app->username;
+          $response['results'] = $res;
+          $response['message'] = "Acknowledged successfully!";
+          $db->addUserActivityLog( $app->username, $app->fullname,  'Acknowledged announcement #'.$id, 'announcements', $id);
+          echoResponse(201, $response);
+      } else {
+          $response['error'] = true;
+          $response['username'] = $app->username;
+          $response['message'] = "An error occurred while acknowledging the announcement";
+          echoResponse(200, $response);
+      }
+      $db = NULL;
+  });
 
 
 // list of categories (front desk instructions, maintenance requests, incident reports)
