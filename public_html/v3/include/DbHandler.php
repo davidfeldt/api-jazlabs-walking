@@ -3540,50 +3540,6 @@ table.list .center {
 
 // Notifications FROM building management / announcements
 
-	public function getAllNotifications($bid,$page) {
-    	$page = (isset($page)) ? $page : 1;
-    	$start = ($page - 1) * $_ENV['LIMIT'];
-    	$limit = $_ENV['LIMIT'];
-
-    	date_default_timezone_set('America/Toronto');
-      $now   = date('Y-m-d');
-
-    	$post_data = array();
-        $stmt = $this->conn->prepare("SELECT a.id, a.bid, a.who AS username, u.fullname,u.profilepic, a.date AS date_added, a.title, a.message FROM announcement a LEFT JOIN user u ON a.who = u.username WHERE a.bid = :bid AND a.date_start <= :now AND a.date_end >= :now ORDER BY a.date DESC LIMIT $start, $limit");
-        $stmt->bindParam(':bid',$bid);
-        $stmt->bindParam(':now',$now);
-
-        if ($stmt->execute()) {
-      		$posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
-      		foreach ($posts AS $post) {
-      			$post_data [] = array (
-      				'id'         => (int)$post['id'],
-      				'bid'        => (int)$post['bid'],
-      				'username'   => $post['username'],
-      				'fullname'	 => $post['fullname'],
-          		'avatar'     => $_ENV['HTTP_SERVER'].$post['profilepic'],
-      				'date_added' => date('m/d/Y', strtotime($post['date_added'])),
-      				'title'      => $post['title'],
-      				'message'    => $post['message']
-      			);
-      		}
-        }
-
-        if ($post_data) {
-          return $post_data;
-        } else {
-          return array(
-            'id'         => 0,
-            'bid'        => $bid,
-            'username'   => '',
-            'fullname'   => '',
-            'avatar'     => $_ENV['HTTP_SERVER'].'img/profile/default.png',
-            'date_added' => date('m/d/Y'),
-            'title'      => 'No announcements',
-            'message'    => 'There are no announcements currently'
-            );
-        }
-    }
 
 		public function newAnnouncementsCount($username, $bid) {
       $count = false;
