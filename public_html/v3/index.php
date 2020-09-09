@@ -2170,16 +2170,8 @@ $app->get('/notifications', 'authenticate', function() use($app) {
     $endDate        = !empty($data['endDate']) ? $data['endDate'] : '';
     $message        = !empty($data['message']) ? $data['message'] : '';
     $acknowledge    = !empty($data['acknowledge']) ? $data['acknowledge'] : 0;
-    $sendPush    	= !empty($data['sendPush']) ? $data['sendPush'] : 0;
-    $properties     = !empty($data['properties']) ? $data['properties'] : array();
-
-    $props = array();
-
-    if (is_array($properties) && count($properties)) {
-        foreach ($properties AS $property) {
-            array_push($props, $property['value']);
-        }
-    }
+    $sendPush    	  = !empty($data['sendPush']) ? $data['sendPush'] : 0;
+    $bid            = $app->bid;
 
     $payload = array(
         'startDate'     => $startDate,
@@ -2187,7 +2179,7 @@ $app->get('/notifications', 'authenticate', function() use($app) {
         'message'       => $message,
         'acknowledge'	  => $acknowledge,
         'sendPush'		  => $sendPush,
-        'properties'    => $props,
+        'bid'           => $bid,
     );
 
     $db = new DbHandler();

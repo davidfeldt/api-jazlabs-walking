@@ -1136,7 +1136,17 @@ table.list .center {
         }
     }
 
-
+		public function getResidentEmail($username) {
+        $stmt = $this->conn->prepare('SELECT email FROM user WHERE username = :username');
+        $stmt->bindParam(':username', $username);
+        if ($stmt->execute()) {
+        	$stmt->setFetchMode(PDO::FETCH_ASSOC);
+            $row = $stmt->fetch();
+            return $row['email'];
+        } else {
+            return NULL;
+        }
+    }
 
     public function getResidentName($username) {
         $stmt = $this->conn->prepare('SELECT fullname FROM user WHERE username = :username');
@@ -1960,10 +1970,10 @@ table.list .center {
     $message      = $payload['message'];
     $acknowledge  = $payload['acknowledge'];
     $sendPush     = $payload['sendPush'];
-    $properties   = $payload['properties'];
+    $bid   				= $payload['bid'];
     $postCount    = 0;
 
-    foreach ($properties AS $bid) {
+
       $sql = "INSERT INTO `announcement` SET username = :username, bid = :bid, message = :message, start_date = :start_date, end_date = :end_date, status = '1', type = 'normal', acknowledge = :acknowledge, date_added = :date_added, date_modified = :date_added";
       $stmt = $this->conn->prepare($sql);
       $stmt->bindParam(':username', $username);
@@ -1988,11 +1998,41 @@ table.list .center {
         $postCount++;
       }
 
-    }
+
 
     return $postCount;
 
    }
+
+	 private function updateAnnouncementsCountForUsersInProperty($bid) {
+    $pusher = new Pusher( $_ENV['PUSHER_APP_KEY'], $_ENV['PUSHER_APP_SECRET'], $_ENV['PUSHER_APP_ID'], array('cluster' => $_ENV['PUSHER_APP_CLUSTER']) );
+    $response = $pusher->get('/channels/presence-online/users');
+    if ($response['status'] == 200) {
+      $users = json_decode($response['body'],true)['users'];
+      foreach ($users AS $user) {
+        $pid = $this->getPropertyIdForUser($user['id']);
+        if ($pid === $bid) {
+          $channel = 'private-notification-'.$user['id'];
+          $payload = array(
+            'new' => $this->newAnnouncementsCount($user['id'], $bid)
+          );
+          $pusher->trigger($channel, 'updated-announcements-count', $payload);
+        }
+      }
+    }
+  }
+
+	public function getPropertyIdForUser($username) {
+        $stmt = $this->conn->prepare('SELECT bid FROM user WHERE username = :username');
+        $stmt->bindParam(':username', $username);
+        if ($stmt->execute()) {
+          $stmt->setFetchMode(PDO::FETCH_ASSOC);
+            $row = $stmt->fetch();
+            return $row['bid'];
+        } else {
+            return NULL;
+        }
+    }
 
 // Maintenance Requests
 
@@ -3887,10 +3927,236 @@ table.list .center {
         $stmt->bindParam(':post_id',$post_id);
         $result = $stmt->execute();
 
+				// add notification
+        $recipient = $this->getPostOwner($post_id);
+        $this->addNotification($username, $recipient, $post_id, 'like-my-post');
+        $this->sendNotification($username, $post_id, 'like_my_post');
+
       }
 
       return $this->getPostLikeData($username, $post_id);
 
+
+
+    }
+
+		public function sendMessageToExternalEmail($to, $from, $subject, $message) {
+
+      $to_email   = $this->getResidentEmail($to);
+      $to_name    = $this->getResidentName($to);
+      $from_name  = $this->getEmployeeName($from);
+      $msg = '<img src="'.$this->getSetting('config_logo').'" width="220" height="55" /><br/><h3>Notification from: '.$from_name.' on JazLabs.</h3><p>'.$message.'</p><p>You are receiving this email because you are a member of JazLife.</p>';
+
+      $mg = Mailgun\Mailgun::create($_ENV['MAILGUN_API_KEY']);
+
+		  $mg->messages()->send('jazlife.com', [
+		    'from'    => 'info@jazlife.com',
+		    'to'      => $to_email,
+		    'subject' => $subject,
+		    'text'    => strip_tags(html_entity_decode($msg)),
+		    'html'    => $msg
+		  ]);
+
+    }
+
+		function sendToChannel($channel, $username, $recipient, $subject = '', $message = '', $type = '', $id = 0) {
+      if ($type === 'mandatory_notifications') {
+        $this->addSingleMessage ($username, $recipient, $subject, $message);
+      }
+      switch ($channel) {
+        case 'message':
+          $this->addSingleMessage ($username, $recipient, $subject, $message);
+          break;
+        case 'sms':
+          $tonumber = $this->getMobilePhone($recipient);
+          if ($tonumber) {
+            $this->sendSMS($tonumber,$message);
+          }
+          break;
+        case 'email':
+          if ($this->getEmployeeEmail($recipient)) {
+            $this->sendMessageToExternalEmail($username, $recipient, $subject, $message);
+          }
+          break;
+        case 'push':
+          if (in_array($type, array('join_my_group')) && $id) {
+            $data = array(
+                'data'        => $this->getGroupDataForNotification($recipient, $id),
+                'screen'    => 'GroupsDetail'
+              );
+          } elseif (in_array($type, array('comment_my_post','tag_in_post','like_my_post')) && $id) {
+            $data = array(
+              'data'        => $this->getPost($username, $id),
+              'screen'    => 'IndividualPost',
+            );
+          } else {
+            $data = array();
+          }
+          $this->sendPushNotificationsToIndividual($recipient, $subject, $data);
+          break;
+        default:
+          // code...
+          break;
+      }
+
+    }
+
+		public function sendPushNotificationsToIndividual($username, $message, $data = array(), $sound = 0) {
+
+			// get group members
+			$filters = array(
+				array(
+				"field" =>"tag",
+				"key" => "username",
+				"relation" => "=",
+				"value" => $username
+			)
+			);
+
+			// create push notification data
+			$contents = array(
+				"en" => $message,
+			);
+
+			$fields = array(
+				'app_id'    => $_ENV['ONESIGNAL_APP_ID'],
+				'contents'    => $contents,
+				'data'    => $data,
+				'filters'   => $filters,
+				'ios_sound' => $sound ? 'alert.wav' : ''
+			);
+
+			$fields = json_encode($fields);
+				$ch = curl_init();
+				curl_setopt($ch, CURLOPT_URL, $_ENV['ONESIGNAL_API_URL']);
+				curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json; charset=utf-8',
+														 'Authorization: Basic '.$_ENV['ONESIGNAL_APP_KEY']));
+				curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+				curl_setopt($ch, CURLOPT_HEADER, FALSE);
+				curl_setopt($ch, CURLOPT_POST, TRUE);
+				curl_setopt($ch, CURLOPT_POSTFIELDS, $fields);
+				curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+
+				$response = curl_exec($ch);
+				curl_close($ch);
+
+			return json_decode($response, true);
+		}
+
+		public function getGroupName($group_id) {
+	   	$stmt = $this->conn->prepare('SELECT name FROM group WHERE group_id = :group_id');
+
+      $stmt->bindParam(':group_id', $group_id);
+      $stmt->execute();
+      $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+
+      if (isset($row) && $row) {
+       return $row['name'];
+      } else {
+       return NULL;
+      }
+	 }
+
+  public function sendNotification($username, $id, $preference) {
+    switch ($preference) {
+      case 'join_my_group':
+        $group_owner = $this->getGroupOwner($id);
+        $channel = $this->getPermissionFor($group_owner, 'join_my_group');
+        if ($channel !== 'none' && ($group_owner !== $username)) {
+          $name = $this->getResidentName($username);
+          $group_name  = $this->getGroupName($id);
+          $message = $name.' joined your group: '.$group_name;
+          $subject = 'Someone new joined your group!';
+
+          $this->sendToChannel($channel, $username, $group_owner, $subject, $message, $preference, $id);
+        }
+        break;
+      case 'like_my_post':
+        $post_owner = $this->getPostOwner($id);
+        $channel = $this->getPermissionFor($post_owner, 'like_my_post');
+        if ($channel !== 'none' && ($post_owner !== $username)) {
+          $name = $this->getResidentName($username);
+          $post_message = $this->getWallPostMessage($id);
+          $message = '<p>'.$name.' liked your post:<br/>';
+          $pm = '';
+          if ($post_message['message']) {
+            $pm .= $post_message['message'];
+          }
+          if ($post_message['image']) {
+            $pm = '<img src="'.$_ENV['HTTP_SERVER'].'/image.php/image-name.jpg?width=300&height=300&cropratio=1:1&image=/'.$post_message['image'].'"><br/>';
+          }
+
+          $message .= $pm.'</p>';
+          $subject = 'Someone liked your wall post!';
+
+          $this->sendToChannel($channel, $username, $post_owner, $subject, $message, $preference, $id);
+        }
+        break;
+      case 'tag_in_post':
+        $channel = $this->getPermissionFor($username, 'tag_in_post');
+        $post_owner = $this->getPostOwner($id);
+        if ($channel !== 'none' && ($post_owner !== $username)) {
+          $name = $this->getResidentName($username);
+          $post_owner_name = $this->getResidentName($post_owner);
+          $post_message = $this->getWallPostMessage($id);
+          $message = '<p>'.$post_owner_name.' tagged you in the following post:<br/>';
+          $pm = '';
+          if ($post_message['message']) {
+            $pm .= $post_message['message'];
+          }
+          if ($post_message['image']) {
+            $pm = '<img src="'.$_ENV['HTTP_SERVER'].'/image.php/image-name.jpg?width=300&height=300&cropratio=1:1&image=/'.$post_message['image'].'"><br/>';
+          }
+
+          $message .= $pm.'</p>';
+          $subject = 'Someone tagged you in their wall post!';
+
+          $this->sendToChannel($channel, $username, $username, $subject, $message, $preference, $id);
+
+        }
+        break;
+      case 'comment_my_post':
+        $post_owner = $this->getPostOwner($id);
+        $channel = $this->getPermissionFor($post_owner, 'comment_my_post');
+        if ($channel !== 'none' && ($post_owner !== $username)) {
+          $name = $this->getResidentName($username);
+          $post_message = $this->getWallPostMessage($id);
+          $message = '<p>'.$name.' commented on your post:<br/>';
+          $pm = '';
+          if ($post_message['message']) {
+            $pm .= $post_message['message'];
+          }
+          if ($post_message['image']) {
+            $pm = '<img src="'.$_ENV['HTTP_SERVER'].'/image.php/image-name.jpg?width=300&height=300&cropratio=1:1&image=/'.$post_message['image'].'"><br/>';
+          }
+
+          $message .= $pm.'</p>';
+          $subject = 'Someone commented on your wall post!';
+
+          $this->sendToChannel($channel, $username, $post_owner, $subject, $message, $preference, $id);
+        }
+        break;
+
+      default:
+        # code...
+        break;
+    }
+  }
+
+		private function getPostOwner($post_id) {
+      $stmt = $this->conn->prepare('SELECT username FROM wall WHERE post_id = :post_id');
+
+      $stmt->bindParam(':post_id', $post_id);
+      $stmt->execute();
+      $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+
+      if (isset($row) && $row['username']) {
+       return $row['username'];
+      } else {
+       return '';
+      }
     }
 
     private function getPostLikeData($username, $post_id) {
