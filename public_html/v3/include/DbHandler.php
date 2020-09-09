@@ -3522,22 +3522,6 @@ table.list .center {
 	        }
 	      }
 
-	    public function newNotificationsCount($username) {
-	      $count = 0;
-	      $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM user_notification WHERE new = '1' AND recipient = :username");
-
-	      $stmt->bindParam(':username', $username);
-	      $stmt->execute();
-	      $stmt->setFetchMode(PDO::FETCH_ASSOC);
-	      $row = $stmt->fetch();
-
-	      if (isset($row) && $row['total']) {
-	       $count = $row['total'];
-	      }
-
-	      return $count;
-	    }
-
 // Notifications FROM building management / announcements
 
 
