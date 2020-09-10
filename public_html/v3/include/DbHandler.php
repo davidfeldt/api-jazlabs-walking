@@ -1,4 +1,4 @@
-<?php
+getResidentAvatar<?php
 
 // These constants may be changed without breaking existing hashes.
 	define("PBKDF2_HASH_ALGORITHM", "sha256");
@@ -1947,8 +1947,8 @@ table.list .center {
             'id'         => (int)$post['announcement_id'],
             'bid'=> (int)$post['bid'],
             'username'   => $post['username'],
-            'fullname'   => $this->getFullName($post['username']),
-            'avatar'     => $this->getAvatar($post['username']),
+            'fullname'   => $this->getResidentName($post['username']),
+            'avatar'     => $this->getResidentAvatar($post['username']),
             'date_added' => date('m/d/Y', strtotime($post['date_added'])),
             'message'    => $post['message'],
             'requireAcknowledgement' => (int)$post['acknowledge'],
@@ -3621,8 +3621,8 @@ table.list .center {
       $results = array (
         'post_id'       => (int)$post['post_id'],
         'username'    => $post['username'],
-        'fullname'    => $this->getFullName($post['username']),
-        'avatar'      => $this->getAvatar($post['username']),
+        'fullname'    => $this->getResidentName($post['username']),
+        'avatar'      => $this->getResidentAvatar($post['username']),
         'date_added'  => $this->dateTimeDiff($post['date_added']),
         'message'   => $message,
         'youtube'     => $youtube,
