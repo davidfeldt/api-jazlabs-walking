@@ -2116,7 +2116,7 @@ table.list .center {
     	$category_id 	= !empty($data['category_id']) ? $data['category_id'] : 0;
     	$status 		= !empty($data['status']) ? $data['status'] : 's';
     	$date_noticed	= !empty($data['dateNoticed']) ? date('Y-m-d', strtotime($data['dateNoticed'])) : $date_added;
-    	$image 			= !empty($data['image']) ? $data['image'] : '';
+    	$images 			= !empty($data['images']) ? $data['images'] : array();
 
 		$stmt = $this->conn->prepare("INSERT INTO maintenance SET username = :username, bid = :bid, unit = :unit, date_added = :date_added, description = :description, enterpermission = :enterpermission, urgency = :urgency, instruction = :instruction, category_id = :category_id, status = :status, date_noticed = :date_noticed, date_modified = :date_added, assigned_to = '', is_new = '1'");
     	$stmt->bindParam(':username',$username);
@@ -2137,27 +2137,38 @@ table.list .center {
 
     	if ($result) {
 			// save Base 64 string as image.
-	    	if ($image) {
-	    		$uploadDir	= $_ENV['DIR_MAINTENANCEREPORT'];
-	    		$uploadPath = $_ENV['PATH_MAINTENANCEREPORT'];
-	    		$img 		= str_replace(' ', '+', $image);
-				$imgData 	= base64_decode($img);
-				$filename 	= $username . '_' . uniqid() . '.jpg';
-				$imgPath 	= $uploadPath . $filename;
-				$file 		= $uploadDir . $filename;
-				$success = file_put_contents($file, $imgData);
+			if ($images) {
+				$uploadDir	= $_ENV['DIR_MAINTENANCEREPORT'];
+				$uploadPath = $_ENV['PATH_MAINTENANCEREPORT'];
 
-				if ($success) {
-					// add to maintenance_image
-					$stmt = $this->conn->prepare("INSERT INTO maintenance_image SET maintenance_id = :maintenance_id, username = :username, image = :image, date_added = :date_added, bid = :bid ");
-					$stmt->bindParam(':maintenance_id',$maintenance_id);
-					$stmt->bindParam(':username',$username);
-			    	$stmt->bindParam(':image',$imgPath);
-			    	$stmt->bindParam(':date_added',$date_added);
-			    	$stmt->bindParam(':bid',$bid);
-			    	$result = $stmt->execute();
+				foreach ($images AS $image) {
+
+					if (!empty($image) && array_key_exists('mime',$image) && array_key_exists('data', $image)) {
+							$mime = $image['mime'];
+							$data = $image['data'];
+							if ($mime && $data) {
+								$extension = $this->returnFileExtension($mime);
+								$img        = str_replace(' ', '+', $data);
+								$imgData    = base64_decode($img);
+								$filename   = $username . '_' . uniqid() . '.'. $extension;
+								$imgPath    = $uploadPath . $filename;
+								$file       = $uploadDir . $filename;
+								$success    = file_put_contents($file, $imgData);
+
+								if ($success) {
+									// add to maintenance_image
+									$stmt = $this->conn->prepare("INSERT INTO wall_image SET post_id = :post_id, username = :username, image = :image, date_added = :date_added, bid = :bid ");
+									$stmt->bindParam(':post_id',$post_id);
+									$stmt->bindParam(':username',$username);
+									$stmt->bindParam(':image',$imgPath);
+									$stmt->bindParam(':date_added',$date_added);
+									$stmt->bindParam(':bid',$bid);
+									$result = $stmt->execute();
+								}
+							}
+						}
+					}
 				}
-	    	}
 
     		return TRUE;
 		} else {
@@ -2660,9 +2671,9 @@ table.list .center {
     	$time_noticed	= !empty($data['timeNoticed']) ? $data['timeNoticed'] : '';
     	$category_id 	= !empty($data['category_id']) ? $data['category_id'] : 0;
     	$status 		= !empty($data['status']) ? $data['status'] : 's';
-    	$image 			= !empty($data['image']) ? $data['image'] : '';
+    	$images 			= !empty($data['images']) ? $data['images'] : array();
 
-		$stmt = $this->conn->prepare("INSERT INTO incident SET username = :username, bid = :bid, date_added = :date_added, description = :description, category_id = :category_id, status = :status, date_noticed = :date_noticed, time_noticed = :time_noticed, date_modified = :date_added, adminid = '0', is_new = '1'");
+			$stmt = $this->conn->prepare("INSERT INTO incident SET username = :username, bid = :bid, date_added = :date_added, description = :description, category_id = :category_id, status = :status, date_noticed = :date_noticed, time_noticed = :time_noticed, date_modified = :date_added, adminid = '0', is_new = '1'");
     	$stmt->bindParam(':username',$username);
     	$stmt->bindParam(':bid',$bid);
     	$stmt->bindParam(':date_added',$date_added);
@@ -2678,27 +2689,38 @@ table.list .center {
 
     	if ($result) {
 			// save Base 64 string as image.
-	    	if ($image) {
-	    		$uploadDir	= $_ENV['DIR_INCIDENTREPORT'];
-	    		$uploadPath = $_ENV['PATH_INCIDENTREPORT'];
-	    		$img 		= str_replace(' ', '+', $image);
-				$imgData 	= base64_decode($img);
-				$filename 	= $username . '_' . uniqid() . '.jpg';
-				$imgPath 	= $uploadPath . $filename;
-				$file 		= $uploadDir . $filename;
-				$success = file_put_contents($file, $imgData);
+			if ($images) {
+				$uploadDir	= $_ENV['DIR_INCIDENTREPORT'];
+				$uploadPath = $_ENV['PATH_INCIDENTREPORT'];
 
-				if ($success) {
-					// add to maintenance_image
-					$stmt = $this->conn->prepare("INSERT INTO incident_image SET incident_id = :incident_id, username = :username, image = :image, date_added = :date_added, bid = :bid ");
-					$stmt->bindParam(':incident_id',$incident_id);
-					$stmt->bindParam(':username',$username);
-			    	$stmt->bindParam(':image',$imgPath);
-			    	$stmt->bindParam(':date_added',$date_added);
-			    	$stmt->bindParam(':bid',$bid);
-			    	$stmt->execute();
+				foreach ($images AS $image) {
+
+					if (!empty($image) && array_key_exists('mime',$image) && array_key_exists('data', $image)) {
+							$mime = $image['mime'];
+							$data = $image['data'];
+							if ($mime && $data) {
+								$extension = $this->returnFileExtension($mime);
+								$img        = str_replace(' ', '+', $data);
+								$imgData    = base64_decode($img);
+								$filename   = $username . '_' . uniqid() . '.'. $extension;
+								$imgPath    = $uploadPath . $filename;
+								$file       = $uploadDir . $filename;
+								$success    = file_put_contents($file, $imgData);
+
+								if ($success) {
+									// add to maintenance_image
+									$stmt = $this->conn->prepare("INSERT INTO wall_image SET post_id = :post_id, username = :username, image = :image, date_added = :date_added, bid = :bid ");
+									$stmt->bindParam(':post_id',$post_id);
+									$stmt->bindParam(':username',$username);
+									$stmt->bindParam(':image',$imgPath);
+									$stmt->bindParam(':date_added',$date_added);
+									$stmt->bindParam(':bid',$bid);
+									$result = $stmt->execute();
+								}
+							}
+						}
+					}
 				}
-	    	}
 
     		return TRUE;
 		} else {

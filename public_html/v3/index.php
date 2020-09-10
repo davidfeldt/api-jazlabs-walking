@@ -675,14 +675,16 @@ $app->post('/requests', 'authenticate', function() use($app) {
     $json 					= $app->request->getBody();
     $data 					= json_decode($json, true);
 
-    $requestData['status']			= 's';
-    $requestData['description']		= $data['description'];
-    $requestData['enterPermission'] = $data['enterPermission'];
-    $requestData['urgency'] 		= $data['urgency'];
-    $requestData['instruction'] 	= $data['instruction'];
-    $requestData['category_id']		= $data['category_id'];
-    $requestData['dateNoticed']		= $data['dateNoticed'];
-    $requestData['image']			= $data['image'];
+    $images         = !empty($data['images']) ? $data['images'] : array('mime' => '', 'data' => '');
+
+    $requestData['status']			   = 's';
+    $requestData['description']		 = $data['description'];
+    $requestData['enterPermission']= $data['enterPermission'];
+    $requestData['urgency'] 		   = $data['urgency'];
+    $requestData['instruction'] 	 = $data['instruction'];
+    $requestData['category_id']		 = $data['category_id'];
+    $requestData['dateNoticed']		 = $data['dateNoticed'];
+    $requestData['images']			   = $images;
 
     $db = new DbHandler();
     $res = $db->addMaintenanceRequest($app->username, $requestData);
@@ -1284,12 +1286,14 @@ $app->post('/incidents', 'authenticate', function() use($app) {
       $json 					= $app->request->getBody();
       $data 					= json_decode($json, true);
 
-      $incidentData['status']			= 's';
+      $images         = !empty($data['images']) ? $data['images'] : array('mime' => '', 'data' => '');
+
+      $incidentData['status']			  = 's';
       $incidentData['description']	= $data['description'];
       $incidentData['dateNoticed']	= $data['dateNoticed'];
       $incidentData['timeNoticed'] 	= $data['timeNoticed'];
       $incidentData['category_id']	= $data['category_id'];
-      $incidentData['image']			= $data['image'];
+      $incidentData['images']			  = $images;
 
       $db = new DbHandler();
       $res = $db->addIncidentReport($app->username, $incidentData);
