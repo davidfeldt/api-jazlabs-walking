@@ -502,7 +502,7 @@ $app->post('/posts', 'authenticate', function() use($app) {
                 $response['req'] = $message;
                 $response['username'] = $app->username;
                 $response['message'] = "Message posted successfully!";
-                $response['results'] = $db->getAllPosts($app->username, $page);
+                $response['results'] = $db->getPost($app->username, $res);
                 $response['page'] = $page;
                 echoResponse(201, $response);
             } else {
