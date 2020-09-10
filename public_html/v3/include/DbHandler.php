@@ -2442,8 +2442,8 @@ table.list .center {
     	$bid			= $profile['bid'];
     	$description	= !empty($data['description']) ? $data['description'] : '';
     	$no_enddate 	= !empty($data['endDate']) ? 0 : 1;
-    	$start_date		= !empty($data['startDate']) ? $data['startDate'] : date('Y-m-d');
-    	$end_date 		= !empty($data['endDate']) ? $data['endDate'] : null;
+    	$start_date		= !empty($data['startDate']) ? date('Y-m-d', strtotime($data['startDate'])) : date('Y-m-d');
+    	$end_date 		= !empty($data['endDate']) ? date('Y-m-d', strtotime($data['endDate'])) : null;
     	$category_id 	= !empty($data['category_id']) ? $data['category_id'] : 0;
 
 		$stmt = $this->conn->prepare("INSERT INTO frontdesk SET username = :username, bid = :bid, date_added = :date_added, date_modified = :date_added, description = :description, start_date = :start_date, end_date = :end_date, no_enddate = :no_enddate, category_id = :category_id, is_new = '1', admin_id = '0'");
