@@ -3555,6 +3555,45 @@ table.list .center {
 	      }
 	    }
 
+			private function isYouTubeVideo($string) {
+
+      $youtube_id = '';
+      if(preg_match('%(?:youtube(?:-nocookie)?\.com/(?:[^/]+/.+/|(?:v|e(?:mbed)?)/|.*[?&]v=)|youtu\.be/)([^"&?/ ]{11})%i', $string)) {
+        preg_match('%(?:youtube(?:-nocookie)?\.com/(?:[^/]+/.+/|(?:v|e(?:mbed)?)/|.*[?&]v=)|youtu\.be/)([^"&?/ ]{11})%i', $string, $matches);
+          if(isset($matches[1])) {
+            $youtube_id = $matches[1];
+          }
+      } else if(preg_match("/youtube.com(.+)v=([^&]+)/", $string)) {
+        preg_match("/v=([^&]+)/", $string, $matches);
+          if(isset($matches[1])) {
+            $youtube_id = $matches[1];
+          }
+      }
+
+      return $youtube_id;
+    }
+
+    private function stripMessage($message) {
+        $yt = '';
+        str_replace("+", " ", $message);
+        $message = explode(" ",$message);
+        $i=0;
+        while ($i<count($message)) {
+          $youtube_id = $this->isYouTubeVideo($message[$i]);
+
+          if ($youtube_id) {
+            $message[$i] = '';
+            $yt = $youtube_id.'?rel=0&autoplay=0&showinfo=0&controls=0';
+          }
+          $i++;
+        }
+
+        return array(
+          'message' => implode(" ",$message),
+          'youtube' => $yt
+        );
+    }
+
 			public function getPost($username, $post_id) {
       $stmt = $this->conn->prepare("SELECT * FROM wall WHERE post_id = :post_id ");
       $stmt->bindParam(':post_id',$post_id);
