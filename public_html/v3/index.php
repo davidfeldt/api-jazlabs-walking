@@ -932,6 +932,7 @@ $app->post('/reservations', 'authenticate', function() use($app) {
           $response['success'] = true;
           $response['username'] = $app->username;
           $response['message'] = "Reservation added successfully!";
+          $response['results'] = $db->getAllReservations($app->username,1);
           echoResponse(201, $response);
       } else {
           $response['error'] = true;
@@ -1235,6 +1236,7 @@ $app->post('/items', 'authenticate', function() use($app) {
           $response['message'] = "Marketplace item added successfully!";
           $response['request'] = $requestData;
           $response['response'] =  $res;
+          $response['results'] = $db->getAllMarketplaceItems($app->bid, 1);
           echoResponse(201, $response);
       } else {
           $response['error'] = true;
@@ -1304,6 +1306,7 @@ $app->post('/incidents', 'authenticate', function() use($app) {
           $response['error'] = false;
           $response['success'] = true;
           $response['message'] = "Incident report posted successfully!";
+          $response['results'] = $db->getAllIncidentReports($app->username, 1);
           echoResponse(201, $response);
       } else {
           $response['error'] = true;
