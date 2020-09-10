@@ -118,7 +118,7 @@ class DbHandler {
 	 }
 
    public function captureDebug($endpoint, $request, $response) {
-    date_default_timezone_set("America/Toronto");
+    date_default_timezone_set($_ENV['TIMEZONE']);
     $date_added  = date('Y-m-d H:i:s');
     $ip          = $_SERVER['REMOTE_ADDR'];
 
@@ -140,7 +140,7 @@ class DbHandler {
    }
 
 	 public function registerAPICall($username, $endpoint, $type, $status) {
-	 	date_default_timezone_set("America/Toronto");
+	 	date_default_timezone_set($_ENV['TIMEZONE']);
 	 	$date_added  = date('Y-m-d H:i:s');
 	 	$ip          = $_SERVER['REMOTE_ADDR'];
 	 	$profile 		 = $this->getProfileByUsername($username);
@@ -537,7 +537,7 @@ class DbHandler {
 
             $reset_code_short  = mt_rand(100000,999999);
             $reset_code = sha1(uniqid(rand(), true));
-            date_default_timezone_set("America/Toronto");
+            date_default_timezone_set($_ENV['TIMEZONE']);
             $reset_dt = date('Y-m-d H:i:s');
             $reset_code_active = 1;
 
@@ -828,7 +828,7 @@ table.list .center {
 
    			$building 	= ucfirst($building);
    			$management	= ucfirst($management);
-   			date_default_timezone_set("America/Toronto");
+   			date_default_timezone_set($_ENV['TIMEZONE']);
 	 		$date_added = date('Y-m-d H:i:s');
 	 		$ip 		= $_SERVER['REMOTE_ADDR'];
 	 		$source		= 'iPhone App';
@@ -876,7 +876,7 @@ table.list .center {
             $firstname 	= ucfirst($firstname);
             $lastname	= ucfirst($lastname);
             $fullname	= $firstname." ".$lastname;
-            date_default_timezone_set("America/Toronto");
+            date_default_timezone_set($_ENV['TIMEZONE']);
             $date_added	= date('Y-m-d');
 
             // insert query
@@ -1732,45 +1732,44 @@ table.list .center {
     public function getMarketplaceItem($marketplace_id)	{
     	$post_data	= array();
 
-		$stmt = $this->conn->prepare("SELECT * FROM marketplace WHERE marketplace_id = :marketplace_id ");
-        $stmt->bindParam(':marketplace_id',$marketplace_id);
+			$stmt = $this->conn->prepare("SELECT * FROM marketplace WHERE marketplace_id = :marketplace_id ");
+      $stmt->bindParam(':marketplace_id',$marketplace_id);
 
-        if ($stmt->execute()) {
-    		$stmt->setFetchMode(PDO::FETCH_ASSOC);
-        	$post = $stmt->fetch();
+      if ($stmt->execute()) {
+	  		$stmt->setFetchMode(PDO::FETCH_ASSOC);
+	      	$post = $stmt->fetch();
 
-    		if ($post['type'] == 's') {
-				$price = (is_numeric($post['price']) && $post['price']) ? '$'.number_format($post['price'],2) : 'Contact for price';
-			} else {
-				$price = '';
-			}
+	  		if ($post['type'] == 's') {
+					$price = (is_numeric($post['price']) && $post['price']) ? '$'.number_format($post['price'],2) : 'Contact for price';
+				} else {
+					$price = '';
+				}
 
-			$type = ($post['type'] == 's') ? 'For Sale' : 'Wanted';
+				$type = ($post['type'] == 's') ? 'For Sale' : 'Wanted';
 
-  			$post_data = array (
-  				'id'			=> (int)$post['marketplace_id'],
-  				'bid'			=> (int)$post['bid'],
-  				'username'		=> $post['username'],
-  				'dateAdded'		=> $this->dateTimeDiff($post['date_added']),
-  				'description'	=> $post['description'],
-  				'blurb'         => substr(strip_tags(html_entity_decode($post['description'])), 0, 50).' ...',
-  				'category'		=> (int)$post['category_id'],
-  				'categoryName'  => $this->getCategoryName($post['category_id'],'marketplace'),
-  				'image'         => $this->getMarketplaceFirstImage($post['marketplace_id']),
-  				'images'		=> $this->getMarketplaceImages($post['marketplace_id']),
-  				'comments'		=> $this->getMarketplaceComments($post['marketplace_id']),
-				'title' 		=> $post['title'],
-				'price'			=> $price,
-				'type'			=> $type,
-				'views'			=> $post['views'],
-				'is_new'		=> $post['is_new'],
-				'fullname'		=> $this->getResidentName($post['username'])
-
+	  		$post_data = array (
+				'id'						=> (int)$post['marketplace_id'],
+				'bid'						=> (int)$post['bid'],
+				'username'			=> $post['username'],
+				'dateAdded'			=> $this->dateTimeDiff($post['date_added']),
+				'description'		=> $post['description'],
+				'blurb'         => substr(strip_tags(html_entity_decode($post['description'])), 0, 50).' ...',
+				'category'			=> (int)$post['category_id'],
+				'categoryName'  => $this->getCategoryName($post['category_id'],'marketplace'),
+				'image'         => $this->getMarketplaceFirstImage($post['marketplace_id']),
+				'images'				=> $this->getMarketplaceImages($post['marketplace_id']),
+				'comments'			=> $this->getMarketplaceComments($post['marketplace_id']),
+				'title' 				=> $post['title'],
+				'price'					=> $price,
+				'type'					=> $type,
+				'views'					=> $post['views'],
+				'is_new'				=> $post['is_new'],
+				'fullname'			=> $this->getResidentName($post['username'])
 			);
-      }
-
-      return $post_data;
     }
+
+    return $post_data;
+  }
 
     public function getAllMarketplaceItems($bid,$page = 1)	{
 		  $page = (isset($page)) ? $page : 1;
@@ -1788,32 +1787,32 @@ table.list .center {
     		$posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
     		foreach ($posts AS $post) {
     			if ($post['type'] == 's') {
-					$price = (is_numeric($post['price']) && $post['price']) ? '$'.number_format($post['price'],2) : 'Contact for price';
-				} else {
-					$price = '';
-				}
-				$type = ($post['type'] == 's') ? 'For Sale' : 'Wanted';
+						$price = (is_numeric($post['price']) && $post['price']) ? '$'.number_format($post['price'],2) : 'Contact for price';
+					} else {
+						$price = '';
+					}
+					$type = ($post['type'] == 's') ? 'For Sale' : 'Wanted';
 
-  			$post_data [] = array (
-  				'id'			=> (int)$post['marketplace_id'],
-  				'bid'			=> (int)$post['bid'],
-  				'username'		=> $post['username'],
-  				'dateAdded'		=> $this->dateTimeDiff($post['date_added']),
-  				'description'	=> $post['description'],
-  				'blurb'         => substr(strip_tags(html_entity_decode($post['description'])), 0, 50).' ...',
-  				'category'		=> (int)$post['category_id'],
-  				'categoryName'  => $this->getCategoryName($post['category_id'],'marketplace'),
-  				'image'         => $this->getMarketplaceFirstImage($post['marketplace_id']),
-  				'images'		=> $this->getMarketplaceImages($post['marketplace_id']),
-  				'comments'		=> $this->getMarketplaceComments($post['marketplace_id']),
-				'title' 		=> $post['title'],
-				'price'			=> $price,
-				'type'			=> $type,
-				'views'			=> $post['views'],
-				'is_new'		=> $post['is_new'],
-				'fullname'		=> $this->getResidentName($post['username'])
+	  			$post_data [] = array (
+	  				'id'					=> (int)$post['marketplace_id'],
+	  				'bid'					=> (int)$post['bid'],
+	  				'username'		=> $post['username'],
+	  				'dateAdded'		=> $this->dateTimeDiff($post['date_added']),
+	  				'description'	=> $post['description'],
+	  				'blurb'       => substr(strip_tags(html_entity_decode($post['description'])), 0, 50).' ...',
+	  				'category'		=> (int)$post['category_id'],
+	  				'categoryName'=> $this->getCategoryName($post['category_id'],'marketplace'),
+	  				'image'       => $this->getMarketplaceFirstImage($post['marketplace_id']),
+	  				'images'			=> $this->getMarketplaceImages($post['marketplace_id']),
+	  				'comments'		=> $this->getMarketplaceComments($post['marketplace_id']),
+						'title' 			=> $post['title'],
+						'price'				=> $price,
+						'type'				=> $type,
+						'views'				=> $post['views'],
+						'is_new'			=> $post['is_new'],
+						'fullname'		=> $this->getResidentName($post['username'])
 
-			);
+					);
     		}
       }
 
@@ -1830,7 +1829,7 @@ table.list .center {
    	}
 
    	public function addMarketplaceItem($username, $data) {
-		  date_default_timezone_set("America/Toronto");
+		  date_default_timezone_set($_ENV['TIMEZONE']);
 
 		  $profile 		  = $this->getProfileByUsername($username);
     	$bid			    = $profile['bid'];
@@ -2103,7 +2102,7 @@ table.list .center {
     }
 
 	public function addMaintenanceRequest($username, $data) {
-		date_default_timezone_set("America/Toronto");
+		date_default_timezone_set($_ENV['TIMEZONE']);
 
 		$profile 		= $this->getProfileByUsername($username);
     	$bid			= $profile['bid'];
@@ -2178,7 +2177,7 @@ table.list .center {
 
 
   public function addComment($username, $id, $comment, $type) {
-    date_default_timezone_set("America/Toronto");
+    date_default_timezone_set($_ENV['TIMEZONE']);
 
     if (!empty($comment) && !empty($id)) {
 
@@ -2661,7 +2660,7 @@ table.list .center {
     }
 
 	public function addIncidentReport($username, $data) {
-		date_default_timezone_set("America/Toronto");
+		date_default_timezone_set($_ENV['TIMEZONE']);
 
 		$profile 		= $this->getProfileByUsername($username);
     	$bid			= $profile['bid'];
@@ -3852,7 +3851,7 @@ table.list .center {
     }
 
     public function addPost($username, $payload) {
-    	date_default_timezone_set("America/Toronto");
+    	date_default_timezone_set($_ENV['TIMEZONE']);
 	 		$profile 	   = $this->getProfileByUsername($username);
 			$message 		 = $payload['message'];
       $bid         = $profile['bid'];
@@ -4006,7 +4005,7 @@ table.list .center {
     }
 
     public function likePost($username, $bid, $post_id) {
-      date_default_timezone_set("America/Toronto");
+      date_default_timezone_set($_ENV['TIMEZONE']);
       $date_added   = date('Y-m-d H:i:s');
       $ip           = $_SERVER['REMOTE_ADDR'];
       $admin_new    = 1;
@@ -4279,7 +4278,7 @@ table.list .center {
     }
 
     public function reportPost($username, $bid, $post_id) {
-      date_default_timezone_set("America/Toronto");
+      date_default_timezone_set($_ENV['TIMEZONE']);
       $date_added   = date('Y-m-d H:i:s');
       $ip           = $_SERVER['REMOTE_ADDR'];
       $admin_new    = 1;
@@ -4339,7 +4338,7 @@ table.list .center {
     }
 
     public function addPostComment($username, $id, $comment) {
-    	date_default_timezone_set("America/Toronto");
+    	date_default_timezone_set($_ENV['TIMEZONE']);
       $post_id    = 0;
       $result     = null;
       $response   = array();
