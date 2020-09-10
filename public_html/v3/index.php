@@ -695,6 +695,7 @@ $app->post('/requests', 'authenticate', function() use($app) {
         $response['error'] = false;
         $response['success'] = true;
         $response['message'] = "Maintenance request posted successfully!";
+        $response['results'] = $db->getAllMaintenanceRequests($app->username, 1);
         echoResponse(201, $response);
     } else {
         $response['error'] = true;
@@ -1014,13 +1015,13 @@ $app->post('/instructions', 'authenticate', function() use($app) {
           $response['success'] = true;
           $response['message'] = "Frontdesk instruction added successfully!";
           $response['request'] = $data;
-          $response['results'] = $res;
+          $response['results'] = $db->getAllFrontDeskInstructions($app->username,1);
           echoResponse(201, $response);
       } else {
           $response['error'] = true;
           $response['message'] = "An error occurred while adding frontdesk instruction";
           $response['request'] = $data;
-          $response['results'] = $res;
+          $response['results'] = $db->getAllFrontDeskInstructions($app->username,1);
           echoResponse(200, $response);
       }
   });
