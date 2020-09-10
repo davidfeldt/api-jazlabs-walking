@@ -493,7 +493,7 @@ $app->post('/posts', 'authenticate', function() use($app) {
             $db = new DbHandler();
 
             $res = $db->addPost($app->username, $payload);
-
+            $page = 1;
             // $db->registerAPICall( $app->username, 'posts', 'post', $res);
 
             if ($res) {
@@ -502,7 +502,8 @@ $app->post('/posts', 'authenticate', function() use($app) {
                 $response['req'] = $message;
                 $response['username'] = $app->username;
                 $response['message'] = "Message posted successfully!";
-                $response['results'] = $db->getAllPosts($app->username, 1);;
+                $response['results'] = $db->getAllPosts($app->username, $page);
+                $response['page'] = $page;
                 echoResponse(201, $response);
             } else {
                 $response['error'] = true;
