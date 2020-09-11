@@ -762,7 +762,7 @@ table.list .center {
         	$username = strtolower($email);
 
             // Generating password hash
-            $password_hash = $this->create_hash($password);
+            $password_hash = password_hash($new_password, PASSWORD_DEFAULT);
 
             // Generating API key
             $api_key = $this->generateApiKey();
