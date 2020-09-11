@@ -4446,7 +4446,7 @@ table.list .center {
 
 
   public function deletePost($username, $id) {
-		$stmt = $this->conn->prepare('DELETE FROM wall WHERE id = :id AND username = :username');
+		$stmt = $this->conn->prepare('DELETE FROM wall WHERE post_id = :id AND username = :username');
     $stmt->bindParam(':id', $id);
     $stmt->bindParam(':username',$username);
     if ($stmt->execute()) {
