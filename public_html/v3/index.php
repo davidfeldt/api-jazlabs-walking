@@ -657,6 +657,7 @@ $app->delete('/posts/:id', 'authenticate', function($id) use($app) {
     if ($result) {
         $response['error'] = false;
         $response['success'] = true;
+        $response['post_id'] = $id;
         $response['message'] = "Post deleted successfully";
     } else {
         // task failed to delete
