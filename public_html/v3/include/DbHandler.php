@@ -850,7 +850,7 @@ table.list .center {
             // Found user with the username
             // Now verify the password
 
-            if ($this->password_verify($password,$row['password'])) {
+            if (password_verify($password,$row['password'])) {
                 // User password is correct
                 return 'valid';
             } else {
