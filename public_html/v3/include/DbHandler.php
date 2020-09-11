@@ -3745,6 +3745,60 @@ table.list .center {
       }
     }
 
+    public function addWallComment($username, $parent_id, $message) {
+      date_default_timezone_set($_ENV['TIMEZONE']);
+	 		$profile 	   = $this->getProfileByUsername($username);
+      $bid         = $profile['bid'];
+      $fullname    = $profile['fullname'];
+    	$type        = 'posts';
+    	$date_added  = date('Y-m-d H:i:s');
+    	$type_id     = '0';
+    	$group_id    = '0';
+    	$abuse       = '0';
+    	$markabuse   = '0';
+    	$comments    = '0';
+    	$pin         = '0';
+    	$pin_expiry  = $date_added;
+    	$love        = '0';
+      $result      = NULL;
+      $post_id     = 0;
+
+      $sql = "INSERT INTO `wall` SET username = :username, bid = :bid, fullname = :fullname, message = :message, type = :type, date_added = :date_added, type_id = :type_id, group_id = :group_id, parent_id = :parent_id, abuse = :abuse, markabuse = :markabuse, comments = :comments, pin = :pin, pin_expiry = :pin_expiry, love = :love";
+
+      try {
+
+      	$stmt = $this->conn->prepare($sql);
+      	$stmt->bindParam(':username',$username);
+        $stmt->bindParam(':bid',$bid);
+      	$stmt->bindParam(':fullname',$fullname);
+      	$stmt->bindParam(':message',$message);
+      	$stmt->bindParam(':type',$type);
+        $stmt->bindParam(':date_added',$date_added);
+        $stmt->bindParam(':type_id',$type_id);
+        $stmt->bindParam(':group_id',$group_id);
+        $stmt->bindParam(':parent_id',$parent_id);
+        $stmt->bindParam(':abuse',$abuse);
+        $stmt->bindParam(':markabuse',$markabuse);
+        $stmt->bindParam(':comments',$comments);
+        $stmt->bindParam(':pin',$pin);
+        $stmt->bindParam(':pin_expiry',$pin_expiry);
+        $stmt->bindParam(':love',$love);
+
+        $result = $stmt->execute();
+
+        if ($result) {
+          $post_id = $this->conn->lastInsertId();
+        }
+
+      }
+      catch (PDOException $e) {
+        die(htmlspecialchars ($e->getMessage()));
+      }
+
+      return $post_id;
+
+    }
+
     public function addPost($username, $payload) {
     	date_default_timezone_set($_ENV['TIMEZONE']);
 	 		$profile 	   = $this->getProfileByUsername($username);

@@ -562,6 +562,35 @@ $app->post('/posts/report/:id', 'authenticate', function($id) use($app) {
             }
         });
 
+  $app->post('/posts/comments/:id', 'authenticate', function($id) use($app) {
+
+              $response = array();
+
+              $json = $app->request->getBody();
+              $data = json_decode($json, true);
+              $comment = $data['comment'];
+
+              $db = new DbHandler();
+              $res = $db->addWallComment($app->username, $id, $comment);
+
+              $db->registerAPICall( $app->username, 'posts/comments', 'post', $json);
+
+              if ($res) {
+                  $response['error'] = false;
+                  $response['success'] = true;
+                  $response['username'] = $app->username;
+                  $response['message'] = "Comment posted successfully!";
+                  $response['results'] = $db->getPostComments($id);
+                  echoResponse(201, $response);
+              } else {
+                  $response['error'] = true;
+                  $response['username'] = $app->username;
+                  $response['message'] = "An error occurred while posting comment";
+                  $response['results'] = array();
+                  echoResponse(200, $response);
+              }
+          });
+
 $app->get('/posts', 'authenticate', function() use($app) {
     $response = array();
 
@@ -1346,6 +1375,7 @@ $app->post('/incidents/comments/:id', 'authenticate', function($id) use($app) {
                 echoResponse(200, $response);
             }
         });
+
 
 
 $app->put('/incidents/:id', 'authenticate', function($id) use($app) {
