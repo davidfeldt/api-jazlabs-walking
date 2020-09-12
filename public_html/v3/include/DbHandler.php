@@ -3510,6 +3510,22 @@ table.list .center {
         );
     }
 
+    public function getWallPostComment($username, $post_id) {
+      date_default_timezone_set($_ENV['TIMEZONE']);
+      $post = $this->getPost($username, $post_id);
+
+      return array (
+        'id'          => (int)$post['post_id'],
+        'bid'         => (int)$post['bid'],
+        'username'    => $username,
+        'fullname'    => $post['fullname'],
+        'avatar'      => $this->getResidentAvatar($post['username']),
+        'date_added'  => 'A few seconds ago',
+        'message'     => $post['message']
+      );
+
+    }
+
 			public function getPost($username, $post_id) {
       $stmt = $this->conn->prepare("SELECT * FROM wall WHERE post_id = :post_id ");
       $stmt->bindParam(':post_id',$post_id);
@@ -3788,6 +3804,15 @@ table.list .center {
 
         if ($result) {
           $post_id = $this->conn->lastInsertId();
+          // increment comment count
+          $stmt = $this->conn->prepare("UPDATE wall SET comments = comments + 1 WHERE post_id = :post_id");
+          $stmt->bindParam(':post_id', $parent_id);
+          $stmt->execute();
+
+          // add notification
+          $recipient = $this->getPostOwner($parent_id);
+          $this->addNotification($username, $recipient, $parent_id, 'comment-my-post');
+          $this->sendNotification($username, $parent_id, 'comment_my_post');
         }
 
       }
