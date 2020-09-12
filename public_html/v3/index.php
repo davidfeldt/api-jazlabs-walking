@@ -581,7 +581,7 @@ $app->post('/posts/report/:id', 'authenticate', function($id) use($app) {
                   $response['username'] = $app->username;
                   $response['message'] = "Comment posted successfully!";
                   $response['post'] = $db->getPost($app->username, $id);
-                  $response['parent_id'] = $id;
+                  $response['parent_id'] = (int)$id;
                   echoResponse(201, $response);
               } else {
                   $response['error'] = true;
