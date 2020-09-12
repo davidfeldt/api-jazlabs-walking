@@ -1010,6 +1010,26 @@ table.list .center {
         }
     }
 
+    public function getPermissionFor($username,$preference) {
+      $pref = false;
+      $stmt = $this->conn->prepare('SELECT settings FROM wch_user_preference WHERE username = :username');
+      $stmt->bindParam(':username', $username);
+      if ($stmt->execute())  {
+
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch();
+        $preferences = unserialize($row['settings']);
+
+        if (array_key_exists($preference,$preferences)) {
+          $pref = $preferences[$preference];
+        }
+
+      }
+
+      return $pref;
+
+    }
+
     public function getPermissionsByUsername($username) {
         $stmt = $this->conn->prepare('SELECT settings FROM user_preference WHERE username = :username');
         $stmt->bindParam(':username', $username);
@@ -4225,6 +4245,24 @@ table.list .center {
         break;
     }
   }
+
+  public function getWallPostMessage($post_id) {
+   $stmt = $this->conn->prepare("SELECT message, image FROM wall WHERE post_id = :post_id");
+
+        $stmt->bindParam(':post_id', $post_id);
+        $stmt->execute();
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch();
+
+        if (isset($row) && $row) {
+         return array(
+            'message'  => $row['message'],
+            'image'    => $row['image'],
+          );
+        } else {
+         return NULL;
+        }
+ }
 
 		private function getPostOwner($post_id) {
       $stmt = $this->conn->prepare('SELECT username FROM wall WHERE post_id = :post_id');
