@@ -3572,20 +3572,20 @@ table.list .center {
 
       $results = array (
         'post_id'       => (int)$post['post_id'],
-        'username'    => $post['username'],
-        'fullname'    => $this->getResidentName($post['username']),
-        'avatar'      => $this->getResidentAvatar($post['username']),
-        'date_added'  => $this->dateTimeDiff($post['date_added']),
-        'message'   => $message,
-        'youtube'     => $youtube,
-        'type'      => $post['type'],
+        'username'      => $post['username'],
+        'fullname'      => $this->getResidentName($post['username']),
+        'avatar'        => $_ENV['HTTP_SERVER'].$this->getResidentAvatar($post['username']),
+        'date_added'    => $this->dateTimeDiff($post['date_added']),
+        'message'       => $message,
+        'youtube'       => $youtube,
+        'type'          => $post['type'],
         'numComments'   => $this->numberOfComments($post['post_id']),
         'iconComments'  => $post['comments'] ? 'ios-chatbubbles' : 'ios-chatbubbles-outline',
         'love'          => $this->getPostLikeData($username, $post['post_id']),
         'report'        => $this->getPostReportData($username, $post['post_id']),
-        'comments'    => $this->getPostComments($post['post_id']),
-        'mentions'    => $this->getPostMentions($post['post_id']),
-        'images'    => $this->getPostImages($post['post_id']),
+        'comments'      => $this->getPostComments($post['post_id']),
+        'mentions'      => $this->getPostMentions($post['post_id']),
+        'images'        => $this->getPostImages($post['post_id']),
         'myPost'        => $post['username'] == $username
       );
       }
