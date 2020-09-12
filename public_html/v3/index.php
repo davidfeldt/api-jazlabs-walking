@@ -580,7 +580,7 @@ $app->post('/posts/report/:id', 'authenticate', function($id) use($app) {
                   $response['success'] = true;
                   $response['username'] = $app->username;
                   $response['message'] = "Comment posted successfully!";
-                  $response['post'] = $db->getPost($username, $post_id);
+                  $response['post'] = $db->getPost($app->username, $post_id);
                   $response['parent_id'] = $id;
                   echoResponse(201, $response);
               } else {
