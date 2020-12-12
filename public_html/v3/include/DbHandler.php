@@ -1,17 +1,5 @@
 <?php
 
-// These constants may be changed without breaking existing hashes.
-	define("PBKDF2_HASH_ALGORITHM", "sha256");
-	define("PBKDF2_ITERATIONS", 50000);
-	define("PBKDF2_SALT_BYTE_SIZE", 24);
-	define("PBKDF2_HASH_BYTE_SIZE", 24);
-
-	define("HASH_SECTIONS", 4);
-	define("HASH_ALGORITHM_INDEX", 0);
-	define("HASH_ITERATION_INDEX", 1);
-	define("HASH_SALT_INDEX", 2);
-	define("HASH_PBKDF2_INDEX", 3);
-
 class DbHandler {
 
     private $conn;
@@ -23,99 +11,6 @@ class DbHandler {
         $db = new DbConnect();
         $this->conn = $db->connect();
     }
-
-    public function create_hash($password) {
-    	// format: algorithm:iterations:salt:hash
-		$salt = base64_encode(mcrypt_create_iv(PBKDF2_SALT_BYTE_SIZE, MCRYPT_DEV_URANDOM));
-		return PBKDF2_HASH_ALGORITHM . ":" . PBKDF2_ITERATIONS . ":" .  $salt . ":" .
-        	base64_encode($this->pbkdf2(
-            	PBKDF2_HASH_ALGORITHM,
-				$password,
-				$salt,
-				PBKDF2_ITERATIONS,
-				PBKDF2_HASH_BYTE_SIZE,
-				true
-			));
-	}
-
-	public function validate_password($password, $correct_hash) {
-    	$params = explode(":", $correct_hash);
-		if(count($params) < HASH_SECTIONS)
-			return false;
-		$pbkdf2 = base64_decode($params[HASH_PBKDF2_INDEX]);
-		return $this->slow_equals(
-        		$pbkdf2,
-				$this->pbkdf2(
-				$params[HASH_ALGORITHM_INDEX],
-				$password,
-				$params[HASH_SALT_INDEX],
-				(int)$params[HASH_ITERATION_INDEX],
-				strlen($pbkdf2),
-				true
-				));
-	}
-
-	// Compares two strings $a and $b in length-constant time.
-	private function slow_equals($a, $b) {
-    	$diff = strlen($a) ^ strlen($b);
-		for($i = 0; $i < strlen($a) && $i < strlen($b); $i++) {
-        	$diff |= ord($a[$i]) ^ ord($b[$i]);
-		}
-		return $diff === 0;
-	}
-
-	/*
-	 * PBKDF2 key derivation function as defined by RSA's PKCS #5: https://www.ietf.org/rfc/rfc2898.txt
-     * $algorithm - The hash algorithm to use. Recommended: SHA256
-     * $password - The password.
-     * $salt - A salt that is unique to the password.
-     * $count - Iteration count. Higher is better, but slower. Recommended: At least 1000.
-     * $key_length - The length of the derived key in bytes.
-     * $raw_output - If true, the key is returned in raw binary format. Hex encoded otherwise.
-     * Returns: A $key_length-byte key derived FROM the password and salt.
-     *
-     * Test vectors can be found here: https://www.ietf.org/rfc/rfc6070.txt
-     *
-     * This implementation of PBKDF2 was originally created by https://defuse.ca
-     * With improvements by http://www.variations-of-shadow.com
-     */
-
-	 private function pbkdf2($algorithm, $password, $salt, $count, $key_length, $raw_output = false) {
-		 $algorithm = strtolower($algorithm);
-		 if(!in_array($algorithm, hash_algos(), true))
-		 	trigger_error('PBKDF2 ERROR: Invalid hash algorithm.', E_USER_ERROR);
-		 if($count <= 0 || $key_length <= 0)
-		 	trigger_error('PBKDF2 ERROR: Invalid parameters.', E_USER_ERROR);
-
-		 if (function_exists("hash_pbkdf2")) {
-			 // The output length is in NIBBLES (4-bits) if $raw_output is false!
-			 if (!$raw_output) {
-				 $key_length = $key_length * 2;
-			 }
-			 return hash_pbkdf2($algorithm, $password, $salt, $count, $key_length, $raw_output);
-		 }
-
-		 $hash_length = strlen(hash($algorithm, "", true));
-		 $block_count = ceil($key_length / $hash_length);
-
-		 $output = "";
-		 for($i = 1; $i <= $block_count; $i++) {
-			 // $i encoded as 4 bytes, big endian.
-			 $last = $salt . pack("N", $i);
-			 // first iteration
-			 $last = $xorsum = hash_hmac($algorithm, $last, $password, true);
-			 // perform the other $count - 1 iterations
-			 for ($j = 1; $j < $count; $j++) {
-				 $xorsum ^= ($last = hash_hmac($algorithm, $last, $password, true));
-			 }
-			 $output .= $xorsum;
-		 }
-
-		 if($raw_output)
-		 	return substr($output, 0, $key_length);
-		 else
-		 	return bin2hex(substr($output, 0, $key_length));
-	 }
 
    public function captureDebug($endpoint, $request, $response) {
     date_default_timezone_set($_ENV['TIMEZONE']);
@@ -593,7 +488,7 @@ class DbHandler {
     $username = $this->getUsernameFromResetCode($reset_code);
 
     if ($username) {
-      $password_hash = $this->create_hash($password);
+      $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
       $stmt = $this->conn->prepare("UPDATE user SET password = :password, reset_code = '', reset_code_short = '', reset_code_active = '0', date_modified = NOW() WHERE username = :username");
 
@@ -867,7 +762,7 @@ table.list .center {
         	$username = strtolower($email);
 
             // Generating password hash
-            $password_hash = $this->create_hash($password);
+            $password_hash = password_hash($new_password, PASSWORD_DEFAULT);
 
             // Generating API key
             $api_key = $this->generateApiKey();
@@ -916,7 +811,7 @@ table.list .center {
        	  } else {
 
             // Generating password hash
-            $password_hash = $this->create_hash($new_password);
+            $password_hash = password_hash($new_password, PASSWORD_DEFAULT);
 
             // Generating new API key
             //$api_key = $this->generateApiKey();
@@ -955,7 +850,7 @@ table.list .center {
             // Found user with the username
             // Now verify the password
 
-            if ($this->validate_password($password, $row['password'])) {
+            if (password_verify($password,$row['password'])) {
                 // User password is correct
                 return 'valid';
             } else {
@@ -1113,6 +1008,26 @@ table.list .center {
         } else {
             return NULL;
         }
+    }
+
+    public function getPermissionFor($username,$preference) {
+      $pref = false;
+      $stmt = $this->conn->prepare('SELECT settings FROM wch_user_preference WHERE username = :username');
+      $stmt->bindParam(':username', $username);
+      if ($stmt->execute())  {
+
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch();
+        $preferences = unserialize($row['settings']);
+
+        if (array_key_exists($preference,$preferences)) {
+          $pref = $preferences[$preference];
+        }
+
+      }
+
+      return $pref;
+
     }
 
     public function getPermissionsByUsername($username) {
@@ -3615,6 +3530,22 @@ table.list .center {
         );
     }
 
+    public function getWallPostComment($username, $post_id) {
+      date_default_timezone_set($_ENV['TIMEZONE']);
+      $post = $this->getPost($username, $post_id);
+
+      return array (
+        'id'          => (int)$post['post_id'],
+        'bid'         => (int)$post['bid'],
+        'username'    => $username,
+        'fullname'    => $post['fullname'],
+        'avatar'      => $this->getResidentAvatar($post['username']),
+        'date_added'  => 'A few seconds ago',
+        'message'     => $post['message']
+      );
+
+    }
+
 			public function getPost($username, $post_id) {
       $stmt = $this->conn->prepare("SELECT * FROM wall WHERE post_id = :post_id ");
       $stmt->bindParam(':post_id',$post_id);
@@ -3641,20 +3572,20 @@ table.list .center {
 
       $results = array (
         'post_id'       => (int)$post['post_id'],
-        'username'    => $post['username'],
-        'fullname'    => $this->getResidentName($post['username']),
-        'avatar'      => $this->getResidentAvatar($post['username']),
-        'date_added'  => $this->dateTimeDiff($post['date_added']),
-        'message'   => $message,
-        'youtube'     => $youtube,
-        'type'      => $post['type'],
+        'username'      => $post['username'],
+        'fullname'      => $this->getResidentName($post['username']),
+        'avatar'        => $_ENV['HTTP_SERVER'].$this->getResidentAvatar($post['username']),
+        'date_added'    => $this->dateTimeDiff($post['date_added']),
+        'message'       => $message,
+        'youtube'       => $youtube,
+        'type'          => $post['type'],
         'numComments'   => $this->numberOfComments($post['post_id']),
         'iconComments'  => $post['comments'] ? 'ios-chatbubbles' : 'ios-chatbubbles-outline',
         'love'          => $this->getPostLikeData($username, $post['post_id']),
         'report'        => $this->getPostReportData($username, $post['post_id']),
-        'comments'    => $this->getPostComments($post['post_id']),
-        'mentions'    => $this->getPostMentions($post['post_id']),
-        'images'    => $this->getPostImages($post['post_id']),
+        'comments'      => $this->getPostComments($post['post_id']),
+        'mentions'      => $this->getPostMentions($post['post_id']),
+        'images'        => $this->getPostImages($post['post_id']),
         'myPost'        => $post['username'] == $username
       );
       }
@@ -3848,6 +3779,69 @@ table.list .center {
           return 'jpg';
           break;
       }
+    }
+
+    public function addWallComment($username, $parent_id, $message) {
+      date_default_timezone_set($_ENV['TIMEZONE']);
+	 		$profile 	   = $this->getProfileByUsername($username);
+      $bid         = $profile['bid'];
+      $fullname    = $profile['fullname'];
+    	$type        = 'posts';
+    	$date_added  = date('Y-m-d H:i:s');
+    	$type_id     = '0';
+    	$group_id    = '0';
+    	$abuse       = '0';
+    	$markabuse   = '0';
+    	$comments    = '0';
+    	$pin         = '0';
+    	$pin_expiry  = $date_added;
+    	$love        = '0';
+      $result      = NULL;
+      $post_id     = 0;
+
+      $sql = "INSERT INTO `wall` SET username = :username, bid = :bid, fullname = :fullname, message = :message, type = :type, date_added = :date_added, type_id = :type_id, group_id = :group_id, parent_id = :parent_id, abuse = :abuse, markabuse = :markabuse, comments = :comments, pin = :pin, pin_expiry = :pin_expiry, love = :love";
+
+      try {
+
+      	$stmt = $this->conn->prepare($sql);
+      	$stmt->bindParam(':username',$username);
+        $stmt->bindParam(':bid',$bid);
+      	$stmt->bindParam(':fullname',$fullname);
+      	$stmt->bindParam(':message',$message);
+      	$stmt->bindParam(':type',$type);
+        $stmt->bindParam(':date_added',$date_added);
+        $stmt->bindParam(':type_id',$type_id);
+        $stmt->bindParam(':group_id',$group_id);
+        $stmt->bindParam(':parent_id',$parent_id);
+        $stmt->bindParam(':abuse',$abuse);
+        $stmt->bindParam(':markabuse',$markabuse);
+        $stmt->bindParam(':comments',$comments);
+        $stmt->bindParam(':pin',$pin);
+        $stmt->bindParam(':pin_expiry',$pin_expiry);
+        $stmt->bindParam(':love',$love);
+
+        $result = $stmt->execute();
+
+        if ($result) {
+          $post_id = $this->conn->lastInsertId();
+          // increment comment count
+          $stmt = $this->conn->prepare("UPDATE wall SET comments = comments + 1 WHERE post_id = :post_id");
+          $stmt->bindParam(':post_id', $parent_id);
+          $stmt->execute();
+
+          // add notification
+          $recipient = $this->getPostOwner($parent_id);
+          $this->addNotification($username, $recipient, $parent_id, 'comment-my-post');
+          $this->sendNotification($username, $parent_id, 'comment_my_post');
+        }
+
+      }
+      catch (PDOException $e) {
+        die(htmlspecialchars ($e->getMessage()));
+      }
+
+      return $post_id;
+
     }
 
     public function addPost($username, $payload) {
@@ -4252,6 +4246,24 @@ table.list .center {
     }
   }
 
+  public function getWallPostMessage($post_id) {
+   $stmt = $this->conn->prepare("SELECT message, image FROM wall WHERE post_id = :post_id");
+
+        $stmt->bindParam(':post_id', $post_id);
+        $stmt->execute();
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch();
+
+        if (isset($row) && $row) {
+         return array(
+            'message'  => $row['message'],
+            'image'    => $row['image'],
+          );
+        } else {
+         return NULL;
+        }
+ }
+
 		private function getPostOwner($post_id) {
       $stmt = $this->conn->prepare('SELECT username FROM wall WHERE post_id = :post_id');
 
@@ -4551,7 +4563,7 @@ table.list .center {
 
 
   public function deletePost($username, $id) {
-		$stmt = $this->conn->prepare('DELETE FROM wall WHERE id = :id AND username = :username');
+		$stmt = $this->conn->prepare('DELETE FROM wall WHERE post_id = :id AND username = :username');
     $stmt->bindParam(':id', $id);
     $stmt->bindParam(':username',$username);
     if ($stmt->execute()) {
