@@ -1794,18 +1794,17 @@ table.list .center {
 									$filename   = $username . '_' . uniqid() . '.'. $extension;
 									$imgPath    = $uploadPath . $filename;
 									$file       = $uploadDir . $filename;
-									$success    = file_put_contents($file, $imgData);
+									file_put_contents($file, $imgData);
 
-									if ($success) {
-										// add to maintenance_image
-										$stmt = $this->conn->prepare("INSERT INTO marketplace_image SET marketplace_id = :marketplace_id, username = :username, image = :image, date_added = :date_added, bid = :bid ");
-										$stmt->bindParam(':marketplace_id',$marketplace_id);
-										$stmt->bindParam(':username',$username);
-										$stmt->bindParam(':image',$imgPath);
-										$stmt->bindParam(':date_added',$date_added);
-										$stmt->bindParam(':bid',$bid);
-										$result = $stmt->execute();
-									}
+									// add to maintenance_image
+									$stmt = $this->conn->prepare("INSERT INTO marketplace_image SET marketplace_id = :marketplace_id, username = :username, image = :image, date_added = :date_added, bid = :bid ");
+									$stmt->bindParam(':marketplace_id',$marketplace_id);
+									$stmt->bindParam(':username',$username);
+									$stmt->bindParam(':image',$imgPath);
+									$stmt->bindParam(':date_added',$date_added);
+									$stmt->bindParam(':bid',$bid);
+									$result = $stmt->execute();
+
 								}
 							}
 						}
@@ -2067,18 +2066,17 @@ table.list .center {
 								$filename   = $username . '_' . uniqid() . '.'. $extension;
 								$imgPath    = $uploadPath . $filename;
 								$file       = $uploadDir . $filename;
-								$success    = file_put_contents($file, $imgData);
+								file_put_contents($file, $imgData);
 
-								if ($success) {
-									// add to maintenance_image
-									$stmt = $this->conn->prepare("INSERT INTO maintenance_image SET maintenance_id = :maintenance_id, username = :username, image = :image, date_added = :date_added, bid = :bid ");
-									$stmt->bindParam(':maintenance_id',$maintenance_id);
-									$stmt->bindParam(':username',$username);
-									$stmt->bindParam(':image',$imgPath);
-									$stmt->bindParam(':date_added',$date_added);
-									$stmt->bindParam(':bid',$bid);
-									$result = $stmt->execute();
-								}
+								// add to maintenance_image
+								$stmt = $this->conn->prepare("INSERT INTO maintenance_image SET maintenance_id = :maintenance_id, username = :username, image = :image, date_added = :date_added, bid = :bid ");
+								$stmt->bindParam(':maintenance_id',$maintenance_id);
+								$stmt->bindParam(':username',$username);
+								$stmt->bindParam(':image',$imgPath);
+								$stmt->bindParam(':date_added',$date_added);
+								$stmt->bindParam(':bid',$bid);
+								$result = $stmt->execute();
+
 							}
 						}
 					}
@@ -2619,18 +2617,17 @@ table.list .center {
 								$filename   = $username . '_' . uniqid() . '.'. $extension;
 								$imgPath    = $uploadPath . $filename;
 								$file       = $uploadDir . $filename;
-								$success    = file_put_contents($file, $imgData);
+								file_put_contents($file, $imgData);
 
-								if ($success) {
-									// add to maintenance_image
-									$stmt = $this->conn->prepare("INSERT INTO incident_image SET incident_id = :incident_id, username = :username, image = :image, date_added = :date_added, bid = :bid ");
-									$stmt->bindParam(':incident_id',$incident_id);
-									$stmt->bindParam(':username',$username);
-									$stmt->bindParam(':image',$imgPath);
-									$stmt->bindParam(':date_added',$date_added);
-									$stmt->bindParam(':bid',$bid);
-									$result = $stmt->execute();
-								}
+								// add to maintenance_image
+								$stmt = $this->conn->prepare("INSERT INTO incident_image SET incident_id = :incident_id, username = :username, image = :image, date_added = :date_added, bid = :bid ");
+								$stmt->bindParam(':incident_id',$incident_id);
+								$stmt->bindParam(':username',$username);
+								$stmt->bindParam(':image',$imgPath);
+								$stmt->bindParam(':date_added',$date_added);
+								$stmt->bindParam(':bid',$bid);
+								$result = $stmt->execute();
+
 							}
 						}
 					}
@@ -3907,18 +3904,17 @@ table.list .center {
 	                  $filename   = $username . '_' . uniqid() . '.'. $extension;
 	                  $imgPath    = $uploadPath . $filename;
 	                  $file       = $uploadDir . $filename;
-	                  $success    = file_put_contents($file, $imgData);
+	                  file_put_contents($file, $imgData);
 
-	                  if ($success) {
-											// add to maintenance_image
-											$stmt = $this->conn->prepare("INSERT INTO wall_image SET post_id = :post_id, username = :username, image = :image, date_added = :date_added, bid = :bid ");
-											$stmt->bindParam(':post_id',$post_id);
-											$stmt->bindParam(':username',$username);
-								    	$stmt->bindParam(':image',$imgPath);
-								    	$stmt->bindParam(':date_added',$date_added);
-								    	$stmt->bindParam(':bid',$bid);
-								    	$result = $stmt->execute();
-										}
+										// add to maintenance_image
+										$stmt = $this->conn->prepare("INSERT INTO wall_image SET post_id = :post_id, username = :username, image = :image, date_added = :date_added, bid = :bid ");
+										$stmt->bindParam(':post_id',$post_id);
+										$stmt->bindParam(':username',$username);
+							    	$stmt->bindParam(':image',$imgPath);
+							    	$stmt->bindParam(':date_added',$date_added);
+							    	$stmt->bindParam(':bid',$bid);
+							    	$result = $stmt->execute();
+
 									}
 		    				}
 							}
