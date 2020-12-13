@@ -2703,7 +2703,7 @@ table.list .center {
       if ($stmt->execute()) {
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
           $row = $stmt->fetch();
-          return $row['category_name'];
+          return !empty($row['category_name']) ? $row['category_name'] : 'N/A';
       } else {
           return NULL;
       }
