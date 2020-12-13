@@ -1,3 +1,4 @@
 .env
 .htaccess
 vendor/
+public_html/v3/img/

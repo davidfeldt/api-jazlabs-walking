@@ -1068,8 +1068,8 @@ table.list .center {
         $stmt->bindParam(':username', $username);
         if ($stmt->execute()) {
         	$stmt->setFetchMode(PDO::FETCH_ASSOC);
-            $row = $stmt->fetch();
-            return $row['fullname'];
+          $row = $stmt->fetch();
+          return !empty($row['fullname']) ? $row['fullname'] : '';
         } else {
             return NULL;
         }
