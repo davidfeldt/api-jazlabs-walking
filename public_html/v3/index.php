@@ -1878,19 +1878,19 @@ $app->get('/users/profile', 'authenticate', function() use($app) {
             $db->registerAPICall( $app->username, 'profile/', 'get', json_encode($result));
 
             if ($result != NULL) {
-                $response['error'] 			= false;
+                $response['error'] 			    = false;
                 $response['success']        = true;
                 $response['username'] 	    = $result['username'];
-			    $response['firstname']      = $result['firstname'];
-				$response['lastname']       = $result['lastname'];
-				$response['fullname']       = $result['fullname'];
-				$response['email']			= $result['email'];
-				$response['phone']			= $result['phone'];
-				$response['mobilephone']	= $result['mobilephone'];
-				$response['resident_type']	= $result['resident_type'];
-				$response['unit']			= $result['unit'];
-				$response['avatar']         = $_ENV['HTTP_SERVER'].$result['profilepic'];
-				$response['privacy']        = $result['privacy'];
+			          $response['firstname']      = $result['firstname'];
+        				$response['lastname']       = $result['lastname'];
+        				$response['fullname']       = $result['fullname'];
+        				$response['email']			     = $result['email'];
+        				$response['phone']			     = $result['phone'];
+        				$response['mobilephone']	   = $result['mobilephone'];
+        				$response['resident_type']	= $result['resident_type'];
+        				$response['unit']			      = $result['unit'];
+        				$response['avatar']         = $_ENV['HTTP_SERVER'].$result['profilepic'];
+        				$response['privacy']        = $result['privacy'];
                 $response['bio']            = $result['bio'];
                 $response['twitter']        = $result['twitter'];
                 $response['facebook']       = $result['facebook'];

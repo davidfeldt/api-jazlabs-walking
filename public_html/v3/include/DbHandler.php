@@ -1081,7 +1081,7 @@ table.list .center {
         if ($stmt->execute()) {
           $stmt->setFetchMode(PDO::FETCH_ASSOC);
             $row = $stmt->fetch();
-            return $row['profilepic'];
+            return !empty($row['profilepic']) ? $row['profilepic'] : NULL;
         } else {
             return NULL;
         }
