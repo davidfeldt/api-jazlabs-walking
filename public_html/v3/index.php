@@ -1906,154 +1906,153 @@ $app->get('/users/profile', 'authenticate', function() use($app) {
 
  $app->put('/users/profile', 'authenticate', function() use($app) {
 
-            $json = $app->request->getBody();
-            $data = json_decode($json, true);
+      $json = $app->request->getBody();
+      $data = json_decode($json, true);
 
-            $payload = array(
-                        'firstname'     => !empty($data['firstname']) ? ucwords($data['firstname']) : '',
-                        'lastname'     => !empty($data['lastname']) ? ucwords($data['lastname']) : '',
-                        'email'         => !empty($data['email']) ? strtolower($data['email']) : '',
-                        'phone'         => !empty($data['phone']) ? $data['phone'] : '',
-                        'mobilephone'   => !empty($data['mobilephone']) ? $data['mobilephone'] : '',
-                        'privacy'       => !empty($data['privacy']) ? $data['privacy'] : '',
-                );
+      $payload = array(
+                  'firstname'     => !empty($data['firstname']) ? ucwords($data['firstname']) : '',
+                  'lastname'     => !empty($data['lastname']) ? ucwords($data['lastname']) : '',
+                  'email'         => !empty($data['email']) ? strtolower($data['email']) : '',
+                  'phone'         => !empty($data['phone']) ? $data['phone'] : '',
+                  'mobilephone'   => !empty($data['mobilephone']) ? $data['mobilephone'] : '',
+                  'privacy'       => !empty($data['privacy']) ? $data['privacy'] : '',
+                  'images'        => !empty($data['images']) ? $data['images'] : array('mime' => '', 'data' => '')
+          );
 
-            $db = new DbHandler();
-            $res = $db->updateProfile($app->username, $payload);
+      $db = new DbHandler();
+      $res = $db->updateProfile($app->username, $payload);
 
- 			$db->registerAPICall( $app->username, 'profile', 'put', $res);
+	      $db->registerAPICall( $app->username, 'profile', 'put', $res);
 
-            if ($res) {
-                $response['error'] 		= false;
-                $response['success']    = true;
-                $response['username'] 	= $app->username;
-                $response['message'] 	= "Profile updated successfully!";
-                echoResponse(201, $response);
-            } else {
-                $response['error'] 		= true;
-                $response['username'] 	= $app->username;
-                $response['message'] 	= "An error occurred while updating profile. Try again later!";
-                echoResponse(400, $response);
-            }
-        });
+      if ($res) {
+          $response['error'] 		= false;
+          $response['success']    = true;
+          $response['username'] 	= $app->username;
+          $response['message'] 	= "Profile updated successfully!";
+          echoResponse(201, $response);
+      } else {
+          $response['error'] 		= true;
+          $response['username'] 	= $app->username;
+          $response['message'] 	= "An error occurred while updating profile. Try again later!";
+          echoResponse(400, $response);
+      }
+  });
 
   $app->put('/users/password', 'authenticate', function() use($app) {
 
-  			// check for required params
-            verifyRequiredParams(array('currentPassword', 'newPassword'));
+  		// check for required params
+      verifyRequiredParams(array('currentPassword', 'newPassword'));
 
-            // reading post params
-        	parse_str($app->request()->getBody(), $request_params);
+      // reading post params
+      parse_str($app->request()->getBody(), $request_params);
 
-            $currentPassword 	= $request_params['currentPassword'];
-            $newPassword		= $request_params['newPassword'];
+      $currentPassword 	= $request_params['currentPassword'];
+      $newPassword		= $request_params['newPassword'];
 
-            $db = new DbHandler();
-            $res = $db->changePassword($app->username, $currentPassword, $newPassword);
+      $db = new DbHandler();
+      $res = $db->changePassword($app->username, $currentPassword, $newPassword);
 
  			$db->registerAPICall( $app->username, 'changepassword', 'put', $res);
 
-            if ($res == 'valid') {
-                $response['error'] 		= false;
-                $response['username'] 	= $app->username;
-                $response['message'] 	= "Password changed successfully!";
-                echoResponse(201, $response);
-            } else if ($res == 'not_password') {
-            	$response['error'] 		= true;
-                $response['username'] 	= $app->username;
-                $response['message'] 	= "Current password entered incorrectly. Please try again!";
-                echoResponse(401, $response);
-            } else {
-                $response['error'] 		= true;
-                $response['username'] 	= $app->username;
-                $response['message'] 	= "An error occurred while updating password. Try again later!";
-                echoResponse(400, $response);
-            }
-
+      if ($res == 'valid') {
+          $response['error'] 		= false;
+          $response['username'] 	= $app->username;
+          $response['message'] 	= "Password changed successfully!";
+          echoResponse(201, $response);
+      } else if ($res == 'not_password') {
+      	$response['error'] 		= true;
+          $response['username'] 	= $app->username;
+          $response['message'] 	= "Current password entered incorrectly. Please try again!";
+          echoResponse(401, $response);
+      } else {
+          $response['error'] 		= true;
+          $response['username'] 	= $app->username;
+          $response['message'] 	= "An error occurred while updating password. Try again later!";
+          echoResponse(400, $response);
+      }
 
   });
 
  // Permissions
 
  $app->get('/users/preferences', 'authenticate', function() use($app) {
- 			$response = array();
-        	$db = new DbHandler();
+ 		$response = array();
+  	$db = new DbHandler();
 
-            // fetch task
-            $result = $db->getPermissionsByUsername($app->username);
+      // fetch task
+      $result = $db->getPermissionsByUsername($app->username);
 
-            $db->registerAPICall( $app->username, 'preferences', 'get', json_encode($result));
+      $db->registerAPICall( $app->username, 'preferences', 'get', json_encode($result));
 
-            if ($result != NULL) {
-                $response['error'] 				    = false;
-                $response['success']                = true;
-                $response['username'] 			    = $app->username;
-                $response['like_my_post']           = (!empty($result['like_my_post']) && $result['like_my_post'] == 'yes');
-                $response['comment_my_post']        = (!empty($result['comment_my_post']) && $result['comment_my_post'] == 'yes');
-                $response['comment_my_frontdesk']   = (!empty($result['comment_my_frontdesk']) && $result['comment_my_frontdesk'] == 'yes');
-                $response['comment_my_incident']    = (!empty($result['comment_my_incident']) && $result['comment_my_incident'] == 'yes');
-                $response['comment_my_maintenance'] = (!empty($result['comment_my_maintenance']) && $result['comment_my_maintenance'] == 'yes');
-                $response['comment_my_reservation'] = (!empty($result['comment_my_reservation']) && $result['comment_my_reservation'] == 'yes');
-                $response['comment_my_marketplace'] = (!empty($result['comment_my_marketplace']) && $result['comment_my_marketplace'] == 'yes');
-                $response['send_external_email']    = (!empty($result['send_external_email']) && $result['send_external_email'] == 'yes');
-                echoResponse(200, $response);
-            } else {
-                $response['error'] = true;
-                $response['message'] = "The requested resource doesn't exists";
-                echoResponse(404, $response);
-            }
+      if ($result != NULL) {
+          $response['error'] 				    = false;
+          $response['success']                = true;
+          $response['username'] 			    = $app->username;
+          $response['like_my_post']           = (!empty($result['like_my_post']) && $result['like_my_post'] == 'yes');
+          $response['comment_my_post']        = (!empty($result['comment_my_post']) && $result['comment_my_post'] == 'yes');
+          $response['comment_my_frontdesk']   = (!empty($result['comment_my_frontdesk']) && $result['comment_my_frontdesk'] == 'yes');
+          $response['comment_my_incident']    = (!empty($result['comment_my_incident']) && $result['comment_my_incident'] == 'yes');
+          $response['comment_my_maintenance'] = (!empty($result['comment_my_maintenance']) && $result['comment_my_maintenance'] == 'yes');
+          $response['comment_my_reservation'] = (!empty($result['comment_my_reservation']) && $result['comment_my_reservation'] == 'yes');
+          $response['comment_my_marketplace'] = (!empty($result['comment_my_marketplace']) && $result['comment_my_marketplace'] == 'yes');
+          $response['send_external_email']    = (!empty($result['send_external_email']) && $result['send_external_email'] == 'yes');
+          echoResponse(200, $response);
+      } else {
+          $response['error'] = true;
+          $response['message'] = "The requested resource doesn't exists";
+          echoResponse(404, $response);
+      }
 
  });
 
  $app->put('/users/preferences', 'authenticate', function() use($app) {
 
-            $json = $app->request->getBody();
-            $data = json_decode($json, true);
+      $json = $app->request->getBody();
+      $data = json_decode($json, true);
 
-            $db = new DbHandler();
-            $res = $db->updateUserPreferences($app->username, $data);
+      $db = new DbHandler();
+      $res = $db->updateUserPreferences($app->username, $data);
 
  			$db->registerAPICall($app->username, 'permissions', 'put', $json);
 
-            if ($res) {
-                $response['error'] 		= false;
-                $response['username'] 	= $app->username;
-                $response['message'] 	= "Permissions updated successfully!";
-                echoResponse(201, $response);
-            } else {
-                $response['error'] 		= true;
-                $response['username'] 	= $app->username;
-                $response['message'] 	= "An error occurred while updating permissions. Try again later!";
-                echoResponse(200, $response);
-            }
+      if ($res) {
+          $response['error'] 		= false;
+          $response['username'] 	= $app->username;
+          $response['message'] 	= "Permissions updated successfully!";
+          echoResponse(201, $response);
+      } else {
+          $response['error'] 		= true;
+          $response['username'] 	= $app->username;
+          $response['message'] 	= "An error occurred while updating permissions. Try again later!";
+          echoResponse(200, $response);
+      }
 
-            $db = null;
-        });
+      $db = null;
+  });
 
 // Announcements / Notifications FROM building management
 
 
 $app->get('/notifications', 'authenticate', function() use($app) {
-            $response = array();
+      $response = array();
 
-            $db = new DbHandler();
+      $db = new DbHandler();
 
-            $page = $app->request()->get('page');
+      $page = $app->request()->get('page');
 
-            if (!isset($page) || $page < 1) { $page = 1;}
+      if (!isset($page) || $page < 1) { $page = 1;}
 
-            $results =  $db->getAllNotifications($app->bid, $page);
+      $results =  $db->getAllNotifications($app->bid, $page);
 
-            if ($results) {
-                $response['success']    = true;
-                $response['username'] = $app->username;
-                $response['results']  = $results;
-            } else {
-                $response['error'] = true;
-                $response['results'] = array();
-                $response['message'] = 'No notifications found!';
-            }
-
+      if ($results) {
+          $response['success']    = true;
+          $response['username'] = $app->username;
+          $response['results']  = $results;
+      } else {
+          $response['error'] = true;
+          $response['results'] = array();
+          $response['message'] = 'No notifications found!';
+      }
 
 			$db->registerAPICall($app->username, 'notifications', 'get', '1');
 
@@ -2063,38 +2062,38 @@ $app->get('/notifications', 'authenticate', function() use($app) {
         });
 
 
-        $app->get('/notifications', 'authenticate', function() use($app) {
-            $response = array();
+  $app->get('/notifications', 'authenticate', function() use($app) {
+      $response = array();
 
-            $db = new DbHandler();
+      $db = new DbHandler();
 
-            $page = $app->request()->get('page');
+      $page = $app->request()->get('page');
 
-            if (!isset($page) || $page < 1) { $page = 1;}
+      if (!isset($page) || $page < 1) { $page = 1;}
 
-            $results =  $db->getAllNotifications($app->username, $page);
+      $results =  $db->getAllNotifications($app->username, $page);
 
-            if ($results) {
-                $response['success']    = true;
-                $response['username'] = $app->username;
-                $response['count']    = (int)$db->newNotificationsCount($app->username);
-                $response['results']  = $results['results'];
-                $response['nextPage'] = $results['nextPage'];
-                // $db->addUserActivityLog( $app->username, $app->fullname,  'Get notifications', 'notifications');
-                // clear new notifications so counter will reset to zero - no longer used - now clear individual notifications after they have been viewed
-                // $db->clearNewNotifications($app->username);
+      if ($results) {
+          $response['success']    = true;
+          $response['username'] = $app->username;
+          $response['count']    = (int)$db->newNotificationsCount($app->username);
+          $response['results']  = $results['results'];
+          $response['nextPage'] = $results['nextPage'];
+          // $db->addUserActivityLog( $app->username, $app->fullname,  'Get notifications', 'notifications');
+          // clear new notifications so counter will reset to zero - no longer used - now clear individual notifications after they have been viewed
+          // $db->clearNewNotifications($app->username);
 
-            } else {
-                $response['error']    = true;
-                $response['results']  = array();
-                $response['nextPage'] = null;
-                $response['message']  = 'No notifications found!';
-            }
+      } else {
+          $response['error']    = true;
+          $response['results']  = array();
+          $response['nextPage'] = null;
+          $response['message']  = 'No notifications found!';
+      }
 
-            echoResponse(200, $response);
+      echoResponse(200, $response);
 
-            $db = NULL;
-          });
+      $db = NULL;
+    });
 
   $app->get('/notifications/:id', 'authenticate', function($id) use($app) {
       $response = array();

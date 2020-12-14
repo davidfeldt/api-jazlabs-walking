@@ -996,6 +996,28 @@ table.list .center {
         $stmt->execute();
       }
 
+      // add image
+      if (!empty($data['images']) && array_key_exists('mime',$data['images']) && array_key_exists('data', $data['images'])) {
+        $mime = $data['images']['mime'];
+        $data = $data['images']['data'];
+        if ($mime && $data) {
+          $extension = $this->returnFileExtension($mime);
+          $uploadDir  = $_ENV['DIR_PROFILE_IMAGE'];
+          $uploadPath = $_ENV['PATH_PROFILE_IMAGE'];
+          $img        = str_replace(' ', '+', $data);
+          $imgData    = base64_decode($img);
+          $filename   = $username . '_' . uniqid() . '.'. $extension;
+          $imgPath    = $uploadPath . $filename;
+          $file       = $uploadDir . $filename;
+          $success    = file_put_contents($file, $imgData);
+
+          if ($success) {
+          // update profilepic in wch_user
+            $this->updateProfilePhoto($username, $imgPath);
+          }
+        }
+      }
+
       return true;
     }
 
