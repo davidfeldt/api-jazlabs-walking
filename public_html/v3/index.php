@@ -1923,12 +1923,12 @@ $app->get('/users/profile', 'authenticate', function() use($app) {
                 $response['facebook']       = $result['facebook'];
                 $response['linkedin']       = $result['linkedin'];
                 $response['frontdesk']      = $result['frontdesk'] == '1';
-                $response['incident']       = $result['incident'] == '1',
-                $response['maintenance']    = $result['maintenance'] == '1',
-                $response['reservation']    = $result['reservation'] == '1',
-                $response['feed']           = $result['feed'] == '1',
-                $response['marketplace']    = $result['marketplace'] == '1',
-                $response['resident']       = $result['resident'] == '1',
+                $response['incident']       = $result['incident'] == '1';
+                $response['maintenance']    = $result['maintenance'] == '1';
+                $response['reservation']    = $result['reservation'] == '1';
+                $response['feed']           = $result['feed'] == '1';
+                $response['marketplace']    = $result['marketplace'] == '1';
+                $response['resident']       = $result['resident'] == '1';
                 $response['services']       = $services;
 
                 echoResponse(200, $response);
