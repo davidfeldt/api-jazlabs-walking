@@ -92,7 +92,7 @@ function generateJWT($username) {
 	          "bid"          => (int)$user['bid'],
 	           "privacy"     => $user['privacy'],
 	           "resident_type"	=> $user['resident_type'],
-	           "avatar"      => $_ENV['HTTP_SERVER'].$user['profilepic']
+	           "avatar"      => $_ENV['HTTP_SERVER'].$user['avatar']
 	);
 
 	$db = NULL;
@@ -124,7 +124,7 @@ function authenticate(\Slim\Route $route) {
             $app->bid           = $decoded->bid;
             $app->privacy       = !empty($decoded->privacy) ? $decoded->privacy : 'p';
             $app->resident_type	= !empty($decoded->resident_type) ? $decoded->resident_type : '';
-            $app->avatar        = !empty($decoded->profilepic) ? $decoded->profilepic : '';
+            $app->avatar        = !empty($decoded->avatar) ? $decoded->avatar : '';
         } else {
             $response['error']   = true;
             $response['message'] = 'Access Denied. Invalid API token';
@@ -454,7 +454,7 @@ $app->post('/profilephotos', 'authenticate', function() use($app) {
             if ($res) {
                 $response['error'] = false;
                 $response['message'] = "File uploaded successfully!";
-                $response['profilepic'] = $_ENV['HTTP_IMAGE'].'profile/'.$res;
+                $response['avatars'] = $_ENV['HTTP_IMAGE'].'profile/'.$res;
                 echoResponse(201, $response);
             } else {
                 $response['error'] = true;
@@ -1916,7 +1916,7 @@ $app->get('/users/profile', 'authenticate', function() use($app) {
         				$response['mobilephone']	   = $result['mobilephone'];
         				$response['resident_type']	= $result['resident_type'];
         				$response['unit']			      = $result['unit'];
-        				$response['avatar']         = $_ENV['HTTP_SERVER'].$result['profilepic'];
+        				$response['avatar']         = $_ENV['HTTP_SERVER'].$result['avatar'];
         				$response['privacy']        = $result['privacy'];
                 $response['bio']            = $result['bio'];
                 $response['twitter']        = $result['twitter'];
