@@ -286,19 +286,28 @@ $app->post('/users/auth', function() use($app) {
     $db-> registerAPICall($username, 'login', 'post', $result);
 
     if ($result == 'valid') {
-        // get the user by username
+      $menu = $db->getProfileByUsername($username);
 
-        $app->username = $username;
-        $profile        = $db->getProfileByUsername($username);
+      $services = ($menu['frontdesk'] == '1' || $menu['incident'] == '1' || $menu['maintenance'] == '1' || $menu['reservation'] == '1');
 
-        $response = array (
-        	'success'		=> true,
-        	'token'			=> generateJWT($username),
-          'username'  => $username,
-          'avatar'    => $_ENV['HTTP_SERVER'].$profile['profilepic'],
-          'fullname'  => $profile['fullname']
+      $app->username = $username;
 
-        );
+      $response = array (
+        'success'		  => true,
+        'username'    => $username,
+        'token'			  => generateJWT($username),
+        "frontdesk"   => $user['frontdesk'] == '1',
+        "incident"    => $menu['incident'] == '1',
+        "maintenance" => $menu['maintenance'] == '1',
+        "reservation" => $menu['reservation'] == '1',
+        "feed"        => $menu['feed'] == '1',
+        "marketplace" => $menu['marketplace'] == '1',
+        "resident"    => $menu['resident'] == '1',
+        "avatar"      => $menu['avatar'],
+        "fullname"    => $menu['fullname'],
+        "unit"        => $menu['unit'],
+        "services"    => $services
+      );
 
     }
 
