@@ -296,7 +296,7 @@ $app->post('/users/auth', function() use($app) {
         'success'		  => true,
         'username'    => $username,
         'token'			  => generateJWT($username),
-        "frontdesk"   => $user['frontdesk'] == '1',
+        "frontdesk"   => $menu['frontdesk'] == '1',
         "incident"    => $menu['incident'] == '1',
         "maintenance" => $menu['maintenance'] == '1',
         "reservation" => $menu['reservation'] == '1',
