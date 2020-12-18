@@ -299,7 +299,7 @@ class DbHandler {
 	}
 
 	public function addProfilePhoto($username){
-		$upload_dir = $_ENV['DIR_PROFILE'];
+		$upload_dir = $_ENV['DIR_PROFILE_IMAGE'];
 
 		$size_bytes = 10240000; // File Size in bytes
 
@@ -925,7 +925,7 @@ table.list .center {
 
 
     public function getProfileByUsername($username) {
-        $stmt = $this->conn->prepare('SELECT username, bid, firstname, lastname, fullname, email, phone, mobilephone, profilepic, resident_type, privacy, unit, bio, twitter, facebook, linkedin FROM user WHERE username = :username');
+        $stmt = $this->conn->prepare('SELECT u.username, u.bid, u.firstname, u.lastname, u.fullname, u.email, u.phone, u.mobilephone, u.profilepic, u.resident_type, u.privacy, u.unit, u.bio, u.twitter, u.facebook, u.linkedin, ap.frontdesk, ap.incident, ap.maintenance, ap.reservation, ap.feed, ap.marketplace, ap.resident FROM user u LEFT JOIN account_preference ap ON u.bid = ap.bid WHERE u.username = :username');
         $stmt->bindParam(':username', $username);
         if ($stmt->execute()) {
         	$stmt->setFetchMode(PDO::FETCH_ASSOC);
@@ -1009,12 +1009,10 @@ table.list .center {
           $filename   = $username . '_' . uniqid() . '.'. $extension;
           $imgPath    = $uploadPath . $filename;
           $file       = $uploadDir . $filename;
-          $success    = file_put_contents($file, $imgData);
-
-          if ($success) {
+          file_put_contents($file, $imgData);
           // update profilepic in wch_user
-            $this->updateProfilePhoto($username, $imgPath);
-          }
+          $this->updateProfilePhoto($username, $imgPath);
+
         }
       }
 

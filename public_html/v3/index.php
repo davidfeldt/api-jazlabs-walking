@@ -80,19 +80,19 @@ function generateJWT($username) {
 	$user 		= $db->getProfileByUsername($username);
 
 	$payload 	= array(
-				    "iss" 			=> "https://myjazlife.com",
-				    "aud" 			=> "http://myjazlife.com",
-				    "iat" 			=> time(),
-				    "nbf" 			=> time(),
-	    			"username" 		=> $username,
-	          "firstname"		=> $user['firstname'],
-	          "lastname"      => $user['lastname'],
-	          "fullname"      => $user['fullname'],
-	          "unit"     		=> $user['unit'],
-	          "bid"    		=> (int)$user['bid'],
-	           "privacy" 		=> $user['privacy'],
+				    "iss" 			   => "https://myjazlife.com",
+				    "aud" 			   => "http://myjazlife.com",
+				    "iat" 			   => time(),
+				    "nbf" 			   => time(),
+	    			"username" 		 => $username,
+	          "firstname"    => $user['firstname'],
+	          "lastname"     => $user['lastname'],
+	          "fullname"     => $user['fullname'],
+	          "unit"         => $user['unit'],
+	          "bid"          => (int)$user['bid'],
+	           "privacy"     => $user['privacy'],
 	           "resident_type"	=> $user['resident_type'],
-	           "avatar"        => $_ENV['HTTP_SERVER'].$user['profilepic'],
+	           "avatar"      => $_ENV['HTTP_SERVER'].$user['profilepic']
 	);
 
 	$db = NULL;
@@ -116,13 +116,13 @@ function authenticate(\Slim\Route $route) {
         $decoded = JWT::decode($token, $key, array('HS256'));
 
         if (!empty($decoded)) {
-            $app->username 		= $decoded->username;
+            $app->username      = $decoded->username;
             $app->firstname     = $decoded->firstname;
             $app->lastname      = $decoded->lastname;
             $app->fullname      = $decoded->fullname;
-            $app->unit     		= $decoded->unit;
-            $app->bid    		= $decoded->bid;
-            $app->privacy 		= !empty($decoded->privacy) ? $decoded->privacy : 'p';
+            $app->unit          = $decoded->unit;
+            $app->bid           = $decoded->bid;
+            $app->privacy       = !empty($decoded->privacy) ? $decoded->privacy : 'p';
             $app->resident_type	= !empty($decoded->resident_type) ? $decoded->resident_type : '';
             $app->avatar        = !empty($decoded->profilepic) ? $decoded->profilepic : '';
         } else {
@@ -213,87 +213,103 @@ $app->post('/pusher/authPresence', 'authenticate', function() use($app) {
 });
 
 $app->post('/login', function() use($app) {
-            // check for required params
-            verifyRequiredParams(array('username'));
+    // check for required params
+    verifyRequiredParams(array('username'));
 
-            $response = array();
+    $response = array();
 
-            // reading post params
-        	parse_str($app->request()->getBody(), $request_params);
+    // reading post params
+    parse_str($app->request()->getBody(), $request_params);
 
-            $username = $request_params['username'];
+    $username = $request_params['username'];
 
-    		$password = $request_params['password'];
+    $password = $request_params['password'];
 
-            $response = array();
+    $response = array();
 
-            $db = new DbHandler();
-            $result = $db->checkLogin($username,$password);
+    $db = new DbHandler();
+    $result = $db->checkLogin($username,$password);
 
-            $db-> registerAPICall($username, 'login', 'post', $result);
+    $db-> registerAPICall($username, 'login', 'post', $result);
 
-            if ($result == 'valid') {
-                // get the user by username
+    if ($result == 'valid') {
+        // get the user by username
 
-                $app->username = $username;
+        $menu = $db->getProfileByUsername($username);
 
-                $response = array (
-                	'success'		=> true,
-                	'token'			=> generateJWT($username)
-                );
+        $services = ($menu['frontdesk'] == '1' || $menu['incident'] == '1' || $menu['maintenance'] == '1' || $menu['reservation'] == '1');
 
-            }
+        $app->username = $username;
 
-            if ($result == 'not_username' || $result == 'not_password') {
-            	$response['error'] 		= true;
-                $response['message'] 	= 'Incorrect username or password';
-            }
+        $response = array (
+        	'success'		  => true,
+          'username'    => $username,
+        	'token'			  => generateJWT($username),
+          "frontdesk"   => $user['frontdesk'] == '1',
+          "incident"    => $menu['incident'] == '1',
+          "maintenance" => $menu['maintenance'] == '1',
+          "reservation" => $menu['reservation'] == '1',
+          "feed"        => $menu['feed'] == '1',
+          "marketplace" => $menu['marketplace'] == '1',
+          "resident"    => $menu['resident'] == '1',
+          "avatar"      => $menu['avatar'],
+          "fullname"    => $menu['fullname'],
+          "unit"        => $menu['unit'],
+          "services"    => $services
+        );
 
- 			$db = NULL;
-            echoResponse(200, $response);
-        });
+    }
+
+    if ($result == 'not_username' || $result == 'not_password') {
+    	$response['error'] 		= true;
+        $response['message'] 	= 'Incorrect username or password';
+    }
+
+ 		$db = NULL;
+    echoResponse(200, $response);
+});
 
 
 $app->post('/users/auth', function() use($app) {
-            // body passed as JSON
+    // body passed as JSON
 
-            $json = $app->request->getBody();
-    		$data = json_decode($json, true);
-    		$username = $data['username'];
-    		$password = $data['password'];
+    $json = $app->request->getBody();
+		$data = json_decode($json, true);
+		$username = $data['username'];
+		$password = $data['password'];
 
-            $response = array();
+    $response = array();
 
-            $db = new DbHandler();
-            $result = $db->checkLogin($username,$password);
+    $db = new DbHandler();
+    $result = $db->checkLogin($username,$password);
 
-            $db-> registerAPICall($username, 'login', 'post', $result);
+    $db-> registerAPICall($username, 'login', 'post', $result);
 
-            if ($result == 'valid') {
-                // get the user by username
+    if ($result == 'valid') {
+        // get the user by username
 
-                $app->username = $username;
-                $profile        = $db->getProfileByUsername($username);
+        $app->username = $username;
+        $profile        = $db->getProfileByUsername($username);
 
-                $response = array (
-                	'success'		=> true,
-                	'token'			=> generateJWT($username),
-                    'username'      => $username,
-                    'avatar'        => $_ENV['HTTP_SERVER'].$profile['profilepic'],
-                    'fullname'      => $profile['fullname']
+        $response = array (
+        	'success'		=> true,
+        	'token'			=> generateJWT($username),
+          'username'  => $username,
+          'avatar'    => $_ENV['HTTP_SERVER'].$profile['profilepic'],
+          'fullname'  => $profile['fullname']
 
-                );
+        );
 
-            }
+    }
 
-            if ($result == 'not_username' || $result == 'not_password') {
-            	$response['error'] 		= true;
-                $response['message'] 	= 'Incorrect username or password';
-            }
+    if ($result == 'not_username' || $result == 'not_password') {
+    	$response['error'] 		= true;
+        $response['message'] 	= 'Incorrect username or password';
+    }
 
- 			$db = NULL;
-            echoResponse(200, $response);
-        });
+		  $db = NULL;
+    echoResponse(200, $response);
+  });
 
 $app->post('/users/password/forgot', function() use($app) {
             // check for required params
