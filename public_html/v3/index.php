@@ -252,7 +252,7 @@ $app->post('/login', function() use($app) {
           "feed"        => $menu['feed'] == '1',
           "marketplace" => $menu['marketplace'] == '1',
           "resident"    => $menu['resident'] == '1',
-          "avatar"      => $menu['avatar'],
+          "avatar"      => $_ENV['HTTP_SERVER'].$menu['avatar'],
           "fullname"    => $menu['fullname'],
           "unit"        => $menu['unit'],
           "services"    => $services
@@ -303,7 +303,7 @@ $app->post('/users/auth', function() use($app) {
         "feed"        => $menu['feed'] == '1',
         "marketplace" => $menu['marketplace'] == '1',
         "resident"    => $menu['resident'] == '1',
-        "avatar"      => $menu['avatar'],
+        "avatar"      => $_ENV['HTTP_SERVER'].$menu['avatar'],
         "fullname"    => $menu['fullname'],
         "unit"        => $menu['unit'],
         "services"    => $services
@@ -1900,6 +1900,8 @@ $app->get('/users/profile', 'authenticate', function() use($app) {
             // fetch task
             $result = $db->getProfileByUsername($app->username);
 
+            $services = ($result['frontdesk'] == '1' || $result['incident'] == '1' || $result['maintenance'] == '1' || $result['reservation'] == '1');
+
             $db->registerAPICall( $app->username, 'profile/', 'get', json_encode($result));
 
             if ($result != NULL) {
@@ -1920,6 +1922,14 @@ $app->get('/users/profile', 'authenticate', function() use($app) {
                 $response['twitter']        = $result['twitter'];
                 $response['facebook']       = $result['facebook'];
                 $response['linkedin']       = $result['linkedin'];
+                $response['frontdesk']      = $result['frontdesk'] == '1';
+                $response['incident']       = $result['incident'] == '1',
+                $response['maintenance']    = $result['maintenance'] == '1',
+                $response['reservation']    = $result['reservation'] == '1',
+                $response['feed']           = $result['feed'] == '1',
+                $response['marketplace']    = $result['marketplace'] == '1',
+                $response['resident']       = $result['resident'] == '1',
+                $response['services']       = $services;
 
                 echoResponse(200, $response);
             } else {
