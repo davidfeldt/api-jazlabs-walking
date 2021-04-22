@@ -923,11 +923,31 @@ table.list .center {
       return $result;
     }
 
+    private function generateUniqueUsername($firstname, $lastname){
+        $new_username   = $firstname.$lastname;
+        $count = $this->howManyUsernamesLike($new_username);
+
+        if(!empty($count)) {
+            $new_username = $new_username . $count;
+        }
+
+        return $new_username;
+    }
+
     public function addUser($firstName, $lastName, $email, $mobilephone, $password) {
       date_default_timezone_set($_ENV['TIMEZONE']);
       $now = date('Y-m-d H:i:s');
-      $stmt = $this->conn->prepare("INSERT INTO registrants SET name = :name, email = :email, mobilephone = :mobilephone, dateAdded = :now, dateModified = :now, username = :username, password = :password, profileVisible = '0'");
+      $password_hash = password_hash(trim($password), PASSWORD_DEFAULT);
+      $username = $this->generateUniqueUsername($firstName, $lastName);
+      $fullName = ucwords($firstName)." ".ucwords($lastName);
+      $stmt = $this->conn->prepare("INSERT INTO registrants SET firstName = :firstName, lastName = :lastName, fullName = :fullName, email = :email, mobilephone = :mobilephone, dateAdded = :now, dateModified = :now, username = :username, password = :password, profileVisible = '0'");
       $stmt->bindParam(':username', $username);
+      $stmt->bindParam(':password', $password_hash);
+      $stmt->bindParam(':firstName', $firstName);
+      $stmt->bindParam(':lastName', $lastName);
+      $stmt->bindParam(':fullName', $fullName);
+      $stmt->bindParam(':email', $email);
+      $stmt->bindParam(':mobilephone', $mobilephone);
       if ($stmt->execute()) {
         $profile = $this->getProfileByUsername($username);
         $profile['success'] = true;
@@ -1519,6 +1539,21 @@ table.list .center {
 
     return $timeslots;
 
+  }
+
+  private function howManyUsernamesLike($username) {
+    $username = "%".$username."%";
+    $sql = "SELECT COUNT(*) AS total FROM registrants WHERE username LIKE :username";
+    $stmt     = $this->conn->prepare($sql);
+    $stmt->bindParam(':username', $username);
+
+    if ($stmt->execute()) {
+      $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      return $row['total'];
+    } else {
+      return '';
+    }
   }
 
     function isTimeSlotAvailable($resource_id, $date, $label) {

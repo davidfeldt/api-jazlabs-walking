@@ -244,9 +244,9 @@ $app->post('/users/signup', function() use($app) {
 		$data = json_decode($json, true);
 		$firstName = !empty($data['firstName']) ? ucwords($data['firstName']) : '';
 		$lastName = !empty($data['lastName']) ? ucwords($data['lastName']) : '';
-		$email = $data['email'];
-		$mobilephone = $data['mobilephone'];
-		$password = $data['password'];
+		$email = !empty($data['email']) ? strtolower(trim($data['email'])) : '';
+		$mobilephone = !empty($data['mobilephone']) ? $this->formatPhoneNumber($data['mobilephone']) : '';
+		$password = !empty($data['password']) ? $data['password'] : '';
 
     $response = array();
 
