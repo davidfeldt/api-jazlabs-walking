@@ -839,7 +839,7 @@ table.list .center {
 
     public function checkLogin($username, $password) {
         // fetching user by username
-        $stmt = $this->conn->prepare("SELECT username, password FROM user WHERE username = :username AND status = '1'");
+        $stmt = $this->conn->prepare("SELECT username, password FROM registrants WHERE username = :username");
 
         $stmt->bindParam(':username', $username);
         $stmt->execute();
