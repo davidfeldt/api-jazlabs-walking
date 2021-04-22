@@ -145,7 +145,7 @@ function formatPhoneNumber($sPhone){
 $app->get('/', function() {
 
 	$response['success'] = true;
-	$response['message'] = 'JazLife Community Platform v3';
+	$response['message'] = 'Spectacular Apps Platform v1';
 
 	echoResponse(200, $response);
 
@@ -211,7 +211,7 @@ $app->post('/users/auth', function() use($app) {
     $db = new DbHandler();
     $result = $db->checkLogin($username,$password);
 
-    $db-> registerAPICall($username, 'login', 'post', $result);
+    // $db-> registerAPICall($username, 'login', 'post', $result);
 
     if ($result == 'valid') {
       $menu = $db->getProfileByUsername($username);
@@ -253,7 +253,7 @@ $app->post('/users/signup', function() use($app) {
     $db = new DbHandler();
     $result = $db->addUser($firstName, $lastName, $email, $mobilephone, $password);
 
-    $db-> registerAPICall($username, 'login', 'post', $result);
+    // $db-> registerAPICall($username, 'login', 'post', $result);
 
     if ($result['success']) {
       $response = array (
