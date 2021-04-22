@@ -214,23 +214,23 @@ $app->post('/users/auth', function() use($app) {
     // $db-> registerAPICall($username, 'login', 'post', $result);
 
     if ($result == 'valid') {
-      $menu = $db->getProfileByUsername($username);
+      $profile = $db->getProfileByUsername($username);
       $app->username = $username;
       $response = array (
         'success'		      => true,
-        'username'        => $result['username'],
-        'token'			      => generateJWT($result['username']),
-        "fullName"        => $result['fullName'],
-        "email"           => $result['email'],
-        "mobilephone"     => $result['mobilephone'],
-        "profileVisible"  => $result['profileVisible'] == 1
+        'username'        => $profile['username'],
+        'token'			      => generateJWT($profile['username']),
+        "fullName"        => $profile['fullName'],
+        "email"           => $profile['email'],
+        "mobilephone"     => $profile['mobilephone'],
+        "profileVisible"  => $profile['profileVisible'] == 1
       );
 
     }
 
     if ($result == 'not_username' || $result == 'not_password') {
     	$response['error'] 		= true;
-        $response['message'] 	= 'Incorrect username or password';
+      $response['message'] 	= 'Incorrect username or password';
     }
 
 		  $db = NULL;
