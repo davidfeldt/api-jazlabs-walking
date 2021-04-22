@@ -14,8 +14,6 @@ use Pusher\Pusher;
 $dotenv = new Dotenv\Dotenv('../../');
 $dotenv->load();
 $dotenv->required('DB_USERNAME', 'DB_PASSWORD', 'DB_HOST', 'DB_NAME')->notEmpty();
-$dotenv->required('PUSHER_APP_ID', 'PUSHER_APP_KEY', 'PUSHER_APP_SECRET')->notEmpty();
-$dotenv->required('TWILIO_SID', 'TWILIO_TOKEN', 'TWILIO_NUMBER')->notEmpty();
 $dotenv->required('JWT_SECRET', 'JWT_LEEWAY')->notEmpty();
 
 $app = new \Slim\Slim();
