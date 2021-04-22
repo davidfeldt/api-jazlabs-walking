@@ -133,13 +133,13 @@ class DbHandler {
 
           $response [] = array (
               'eventId'       => $row['eventId'],
-              'startDate'    => date('m/d/Y',strtotime($row['startDate'])),
-              'endDate'      => date('m/d/Y',strtotime($row['endDate'])),
+              'startDate'     => date('m/d/Y',strtotime($row['startDate'])),
+              'endDate'       => date('m/d/Y',strtotime($row['endDate'])),
               'location'      => $row['location'],
               'orgId'         => $row['orgId'],
               'orgName'       => $this->getOrganizationName($row['orgId']),
               'name'          => $row['name'],
-              'blurb'         => html_entity_decode($row['description'])), 0, 100).'...',
+              'blurb'			    => html_entity_decode(strip_tags(substr($row['description'],0,100)).'...', ENT_QUOTES, 'UTF-8'),
               'description'   => $row['description'],
               'meetings'      => $this->getMeetingsForEvent($row['eventId']),
               'attendeeTotal' => $this->getAttendeeTotal($row['eventId'])
