@@ -245,7 +245,7 @@ $app->post('/users/signup', function() use($app) {
 		$firstName = !empty($data['firstName']) ? ucwords($data['firstName']) : '';
 		$lastName = !empty($data['lastName']) ? ucwords($data['lastName']) : '';
 		$email = !empty($data['email']) ? strtolower(trim($data['email'])) : '';
-		$mobilephone = !empty($data['mobilephone']) ? $this->formatPhoneNumber($data['mobilephone']) : '';
+		$mobilephone = !empty($data['mobilephone']) ? formatPhoneNumber($data['mobilephone']) : '';
 		$password = !empty($data['password']) ? $data['password'] : '';
 
     $response = array();
