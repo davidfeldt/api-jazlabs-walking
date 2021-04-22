@@ -152,18 +152,17 @@ class DbHandler {
     }
 
     private function getAttendeeTotal($eventId) {
-          $stmt     = $this->conn->prepare('SELECT COUNT(*) AS total FROM attendees WHERE eventId = :eventId');
-          $stmt->bindParam(':eventId', $username);
-          $stmt->bindParam(':bid', $bid);
-          $post_data = array();
-          if ($stmt->execute()) {
-            $stmt->setFetchMode(PDO::FETCH_ASSOC);
-            $row = $stmt->fetch();
-            return (int)$row['total'];
-          } else {
-            return 0;
-          }
-        }
+      $stmt     = $this->conn->prepare('SELECT COUNT(*) AS total FROM attendees WHERE eventId = :eventId');
+      $stmt->bindParam(':eventId', $username);
+      $post_data = array();
+      if ($stmt->execute()) {
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch();
+        return (int)$row['total'];
+      } else {
+        return 0;
+      }
+    }
 
 
 
