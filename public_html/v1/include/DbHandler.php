@@ -925,7 +925,7 @@ table.list .center {
 
 
     public function getProfileByUsername($username) {
-        $stmt = $this->conn->prepare('SELECT u.username, u.profilepic AS avatar, u.bid, u.firstname, u.lastname, u.fullname, u.email, u.phone, u.mobilephone, u.profilepic, u.resident_type, u.privacy, u.unit, u.bio, u.twitter, u.facebook, u.linkedin, ap.frontdesk, ap.incident, ap.maintenance, ap.reservation, ap.feed, ap.marketplace, ap.resident FROM user u LEFT JOIN account_preference ap ON u.bid = ap.bid WHERE u.username = :username');
+        $stmt = $this->conn->prepare('SELECT username, name, email, mobilephone, profileVisible FROM registrants WHERE username = :username');
         $stmt->bindParam(':username', $username);
         if ($stmt->execute()) {
         	$stmt->setFetchMode(PDO::FETCH_ASSOC);

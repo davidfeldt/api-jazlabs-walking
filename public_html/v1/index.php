@@ -17,7 +17,6 @@ $dotenv->required('DB_USERNAME', 'DB_PASSWORD', 'DB_HOST', 'DB_NAME')->notEmpty(
 $dotenv->required('PUSHER_APP_ID', 'PUSHER_APP_KEY', 'PUSHER_APP_SECRET')->notEmpty();
 $dotenv->required('TWILIO_SID', 'TWILIO_TOKEN', 'TWILIO_NUMBER')->notEmpty();
 $dotenv->required('JWT_SECRET', 'JWT_LEEWAY')->notEmpty();
-$dotenv->required('MAILGUN_API_KEY')->notEmpty();
 
 $app = new \Slim\Slim();
 
@@ -77,22 +76,18 @@ function generateJWT($username) {
 
 	$key 		= $_ENV['JWT_SECRET'];
 	$db 		= new DbHandler();
-	$user 		= $db->getProfileByUsername($username);
+	$result = $db->getProfileByUsername($username);
 
-	$payload 	= array(
-				    "iss" 			   => "https://myjazlife.com",
-				    "aud" 			   => "http://myjazlife.com",
-				    "iat" 			   => time(),
-				    "nbf" 			   => time(),
-	    			"username" 		 => $username,
-	          "firstname"    => $user['firstname'],
-	          "lastname"     => $user['lastname'],
-	          "fullname"     => $user['fullname'],
-	          "unit"         => $user['unit'],
-	          "bid"          => (int)$user['bid'],
-	           "privacy"     => $user['privacy'],
-	           "resident_type"	=> $user['resident_type'],
-	           "avatar"      => $_ENV['HTTP_SERVER'].$user['avatar']
+	$payload= array(
+	    "iss" 			     => "https://spectacularapps.us",
+	    "aud" 			     => "http://spectacularapps.us",
+	    "iat" 			     => time(),
+	    "nbf" 			     => time(),
+			"username" 		   => $username,
+      "fullName"       => $result['fullName'],
+      "email"          => $result['email'],
+      "mobilephone"    => $result['mobilephone'],
+      "profileVisible" => $result['profileVisible'] == 1
 	);
 
 	$db = NULL;
@@ -117,14 +112,7 @@ function authenticate(\Slim\Route $route) {
 
         if (!empty($decoded)) {
             $app->username      = $decoded->username;
-            $app->firstname     = $decoded->firstname;
-            $app->lastname      = $decoded->lastname;
-            $app->fullname      = $decoded->fullname;
-            $app->unit          = $decoded->unit;
-            $app->bid           = $decoded->bid;
-            $app->privacy       = !empty($decoded->privacy) ? $decoded->privacy : 'p';
-            $app->resident_type	= !empty($decoded->resident_type) ? $decoded->resident_type : '';
-            $app->avatar        = !empty($decoded->avatar) ? $decoded->avatar : '';
+
         } else {
             $response['error']   = true;
             $response['message'] = 'Access Denied. Invalid API token';
@@ -212,64 +200,6 @@ $app->post('/pusher/authPresence', 'authenticate', function() use($app) {
 
 });
 
-$app->post('/login', function() use($app) {
-    // check for required params
-    verifyRequiredParams(array('username'));
-
-    $response = array();
-
-    // reading post params
-    parse_str($app->request()->getBody(), $request_params);
-
-    $username = $request_params['username'];
-
-    $password = $request_params['password'];
-
-    $response = array();
-
-    $db = new DbHandler();
-    $result = $db->checkLogin($username,$password);
-
-    $db-> registerAPICall($username, 'login', 'post', $result);
-
-    if ($result == 'valid') {
-        // get the user by username
-
-        $menu = $db->getProfileByUsername($username);
-
-        $services = ($menu['frontdesk'] == '1' || $menu['incident'] == '1' || $menu['maintenance'] == '1' || $menu['reservation'] == '1');
-
-        $app->username = $username;
-
-        $response = array (
-        	'success'		  => true,
-          'username'    => $username,
-        	'token'			  => generateJWT($username),
-          "frontdesk"   => $user['frontdesk'] == '1',
-          "incident"    => $menu['incident'] == '1',
-          "maintenance" => $menu['maintenance'] == '1',
-          "reservation" => $menu['reservation'] == '1',
-          "feed"        => $menu['feed'] == '1',
-          "marketplace" => $menu['marketplace'] == '1',
-          "resident"    => $menu['resident'] == '1',
-          "avatar"      => $_ENV['HTTP_SERVER'].$menu['avatar'],
-          "fullname"    => $menu['fullname'],
-          "unit"        => $menu['unit'],
-          "services"    => $services
-        );
-
-    }
-
-    if ($result == 'not_username' || $result == 'not_password') {
-    	$response['error'] 		= true;
-        $response['message'] 	= 'Incorrect username or password';
-    }
-
- 		$db = NULL;
-    echoResponse(200, $response);
-});
-
-
 $app->post('/users/auth', function() use($app) {
     // body passed as JSON
 
@@ -287,26 +217,15 @@ $app->post('/users/auth', function() use($app) {
 
     if ($result == 'valid') {
       $menu = $db->getProfileByUsername($username);
-
-      $services = ($menu['frontdesk'] == '1' || $menu['incident'] == '1' || $menu['maintenance'] == '1' || $menu['reservation'] == '1');
-
       $app->username = $username;
-
       $response = array (
-        'success'		  => true,
-        'username'    => $username,
-        'token'			  => generateJWT($username),
-        "frontdesk"   => $menu['frontdesk'] == '1',
-        "incident"    => $menu['incident'] == '1',
-        "maintenance" => $menu['maintenance'] == '1',
-        "reservation" => $menu['reservation'] == '1',
-        "feed"        => $menu['feed'] == '1',
-        "marketplace" => $menu['marketplace'] == '1',
-        "resident"    => $menu['resident'] == '1',
-        "avatar"      => $_ENV['HTTP_SERVER'].$menu['avatar'],
-        "fullname"    => $menu['fullname'],
-        "unit"        => $menu['unit'],
-        "services"    => $services
+        'success'		      => true,
+        'username'        => $result['username'],
+        'token'			      => generateJWT($result['username']),
+        "fullName"        => $result['fullName'],
+        "email"           => $result['email'],
+        "mobilephone"     => $result['mobilephone'],
+        "profileVisible"  => $result['profileVisible'] == 1
       );
 
     }
@@ -317,6 +236,44 @@ $app->post('/users/auth', function() use($app) {
     }
 
 		  $db = NULL;
+    echoResponse(200, $response);
+  });
+
+$app->post('/users/signup', function() use($app) {
+    // body passed as JSON
+
+    $json = $app->request->getBody();
+		$data = json_decode($json, true);
+		$firstName = !empty($data['firstName']) ? ucwords($data['firstName']) : '';
+		$lastName = !empty($data['lastName']) ? ucwords($data['lastName']) : '';
+		$email = $data['email'];
+		$mobilephone = $data['mobilephone'];
+		$password = $data['password'];
+
+    $response = array();
+
+    $db = new DbHandler();
+    $result = $db->addUser($firstName, $lastName, $email, $mobilephone, $password);
+
+    $db-> registerAPICall($username, 'login', 'post', $result);
+
+    if ($result['success']) {
+      $response = array (
+        'success'		      => true,
+        'username'        => $result['username'],
+        'token'			      => generateJWT($result['username']),
+        "fullName"        => $result['fullName'],
+        "email"           => $result['email'],
+        "mobilephone"     => $result['mobilephone'],
+        "profileVisible"  => $result['profileVisible'] == 1
+      );
+
+    } else {
+      $response['error'] 		= true;
+      $response['message'] 	= 'Something went wrong. Try again later!';
+    }
+
+		$db = NULL;
     echoResponse(200, $response);
   });
 
