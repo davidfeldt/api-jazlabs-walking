@@ -948,6 +948,7 @@ table.list .center {
       $stmt->bindParam(':fullName', $fullName);
       $stmt->bindParam(':email', $email);
       $stmt->bindParam(':mobilephone', $mobilephone);
+      $stmt->bindParam(':now', $now);
       if ($stmt->execute()) {
         $profile = $this->getProfileByUsername($username);
         $profile['success'] = true;
