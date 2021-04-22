@@ -923,14 +923,27 @@ table.list .center {
       return $result;
     }
 
+    public function addUser($firstName, $lastName, $email, $mobilephone, $password) {
+      date_default_timezone_set($_ENV['TIMEZONE']);
+      $now = date('Y-m-d H:i:s');
+      $stmt = $this->conn->prepare("INSERT INTO registrants SET name = :name, email = :email, mobilephone = :mobilephone, dateAdded = :now, dateModified = :now, username = :username, password = :password, profileVisible = '0'");
+      $stmt->bindParam(':username', $username);
+      if ($stmt->execute()) {
+        $profile = $this->getProfileByUsername($username);
+        $profile['success'] = true;
+      } else {
+        return false;
+      }
+    }
+
 
     public function getProfileByUsername($username) {
-        $stmt = $this->conn->prepare('SELECT username, name, email, mobilephone, profileVisible FROM registrants WHERE username = :username');
+        $stmt = $this->conn->prepare('SELECT username, fullName, email, mobilephone, profileVisible FROM registrants WHERE username = :username');
         $stmt->bindParam(':username', $username);
         if ($stmt->execute()) {
         	$stmt->setFetchMode(PDO::FETCH_ASSOC);
-            $row = $stmt->fetch();
-            return $row;
+          $row = $stmt->fetch();
+          return $row;
         } else {
             return NULL;
         }
