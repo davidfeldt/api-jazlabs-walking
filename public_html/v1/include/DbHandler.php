@@ -924,7 +924,7 @@ table.list .center {
     }
 
     private function generateUniqueUsername($firstname, $lastname){
-        $new_username   = $firstname.$lastname;
+        $new_username   = strtolower($firstname.$lastname);
         $count = $this->howManyUsernamesLike($new_username);
 
         if(!empty($count)) {
@@ -952,6 +952,7 @@ table.list .center {
       if ($stmt->execute()) {
         $profile = $this->getProfileByUsername($username);
         $profile['success'] = true;
+        return $profile;
       } else {
         return false;
       }

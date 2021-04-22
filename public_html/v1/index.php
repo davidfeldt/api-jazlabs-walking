@@ -255,7 +255,7 @@ $app->post('/users/signup', function() use($app) {
 
     // $db-> registerAPICall($username, 'login', 'post', $result);
 
-    if ($result['success']) {
+    if (array_key_exists('success', $result) && $result['success']) {
       $response = array (
         'success'		      => true,
         'username'        => $result['username'],
