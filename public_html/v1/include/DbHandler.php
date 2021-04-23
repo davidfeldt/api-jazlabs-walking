@@ -187,9 +187,23 @@ class DbHandler {
 
     }
 
+    private function isRegisteredFor($eventId, $registrantId) {
+      $stmt = $this->conn->prepare('SELECT COUNT(*) AS total FROM attendees WHERE eventId = :eventId AND registrantId = :registrantId');
+      $stmt->bindParam(':eventId', $eventId);
+      $stmt->bindParam(':registrantId', $registrantId);
+      $post_data = array();
+      if ($stmt->execute()) {
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch();
+        return $row['total'] > 0;
+      } else {
+        return false;
+      }
+    }
+
     private function getAttendeeTotal($eventId) {
       $stmt     = $this->conn->prepare('SELECT COUNT(*) AS total FROM attendees WHERE eventId = :eventId');
-      $stmt->bindParam(':eventId', $username);
+      $stmt->bindParam(':eventId', $eventId);
       $post_data = array();
       if ($stmt->execute()) {
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
