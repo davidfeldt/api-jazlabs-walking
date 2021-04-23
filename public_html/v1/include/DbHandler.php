@@ -116,8 +116,8 @@ class DbHandler {
               'eventName'     => $this->getEventName($row['eventId']),
               'name'          => $row['name'],
               'capacity'      => $row['capacity'],
-              'isRegistered'  => $this->isRegisteredForMeeting($meetingId, $registrantId),
-              'isCheckedIn'   => $this->isCheckedInForMeeting($meetingId, $registrantId)
+              'isRegistered'  => $this->isRegisteredForMeeting($row['meetingId'], $registrantId),
+              'isCheckedIn'   => $this->isCheckedInForMeeting($row['meetingId'], $registrantId)
             );
         }
       }
