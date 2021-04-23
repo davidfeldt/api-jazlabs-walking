@@ -182,7 +182,7 @@ class DbHandler {
               'name'          => $row['name'],
               'blurb'			    => html_entity_decode(strip_tags(substr($row['description'],0,100)).'...', ENT_QUOTES, 'UTF-8'),
               'description'   => $row['description'],
-              'meetings'      => $this->getMeetingsForEvent($row['eventId']),
+              'meetings'      => $this->getMeetingsForEvent($row['eventId'], $registrantId),
               'attendeeTotal' => $this->getAttendeeTotal($row['eventId']),
               'isCheckedIn'   => $row['checkedIn'] == 1,
               'checkedInDate' => $row['checkedIn'] == 1 ? date('m/d/Y h:i a', strtotime($row['checkedInDate'])) : ''
