@@ -2,23 +2,15 @@
 
 class DbHandler {
 
-    private $conn;
+  private $conn;
 
-    function __construct() {
-        require_once 'DbConnect.php';
-        require_once 'Thumbnail.php';
-        // opening db connection
-        $db = new DbConnect();
-        $this->conn = $db->connect();
-    }
-
-
-	private function dateDiff($start, $end) {
-  		$start_ts = strtotime($start);
-  		$end_ts = strtotime($end);
-  		$diff = $end_ts - $start_ts;
-  		return round($diff / 86400);
-	}
+  function __construct() {
+      require_once 'DbConnect.php';
+      require_once 'Thumbnail.php';
+      // opening db connection
+      $db = new DbConnect();
+      $this->conn = $db->connect();
+  }
 
   public function dateTimeDiff($dt) {
     date_default_timezone_set($_ENV['TIMEZONE']);
@@ -71,30 +63,42 @@ class DbHandler {
   }
 
   public function getOrganizationName($orgId) {
-          $stmt = $this->conn->prepare('SELECT name FROM organizations WHERE orgId = :orgId');
-          $stmt->bindParam(':orgId', $orgId);
-          if ($stmt->execute()) {
-          $stmt->setFetchMode(PDO::FETCH_ASSOC);
-            $row = $stmt->fetch();
-            return !empty($row['name']) ? $row['name'] : 'N/A';
-          } else {
-            return '';
-          }
-      }
+    $stmt = $this->conn->prepare('SELECT name FROM organizations WHERE orgId = :orgId');
+    $stmt->bindParam(':orgId', $orgId);
+    if ($stmt->execute()) {
+    $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      return !empty($row['name']) ? $row['name'] : 'N/A';
+    } else {
+      return '';
+    }
+  }
 
-      public function getEventName($eventId) {
-          $stmt = $this->conn->prepare('SELECT name FROM events WHERE eventId = :eventId');
-          $stmt->bindParam(':eventId', $eventId);
-          if ($stmt->execute()) {
-          $stmt->setFetchMode(PDO::FETCH_ASSOC);
-            $row = $stmt->fetch();
-            return !empty($row['name']) ? $row['name'] : 'N/A';
-          } else {
-            return '';
-          }
-      }
+  public function getEventName($eventId) {
+    $stmt = $this->conn->prepare('SELECT name FROM events WHERE eventId = :eventId');
+    $stmt->bindParam(':eventId', $eventId);
+    if ($stmt->execute()) {
+    $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      return !empty($row['name']) ? $row['name'] : 'N/A';
+    } else {
+      return '';
+    }
+  }
 
-  public function getMeetingsForEvent($eventId) {
+  public function getMeetingName($meetingId) {
+    $stmt = $this->conn->prepare('SELECT name FROM meetings WHERE meetingId = :meetingId');
+    $stmt->bindParam(':meetingId', $meetingId);
+    if ($stmt->execute()) {
+    $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      return !empty($row['name']) ? $row['name'] : 'N/A';
+    } else {
+      return '';
+    }
+  }
+
+  public function getMeetingsForEvent($eventId, $registrantId) {
       $response = array ();
 
       $stmt = $this->conn->prepare("SELECT * FROM meetings WHERE eventId = :eventId ORDER BY startDate ASC");
@@ -111,7 +115,9 @@ class DbHandler {
               'endDate'       => date('m/d/Y',strtotime($row['endDate'])),
               'eventName'     => $this->getEventName($row['eventId']),
               'name'          => $row['name'],
-              'capacity'      => $row['capacity']
+              'capacity'      => $row['capacity'],
+              'isRegistered'  => $this->isRegisteredForMeeting($meetingId, $registrantId),
+              'isCheckedIn'   => $this->isCheckedInForMeeting($meetingId, $registrantId)
             );
         }
       }
@@ -141,9 +147,10 @@ class DbHandler {
               'name'          => $row['name'],
               'blurb'			    => html_entity_decode(strip_tags(substr($row['description'],0,100)).'...', ENT_QUOTES, 'UTF-8'),
               'description'   => $row['description'],
-              'meetings'      => $this->getMeetingsForEvent($row['eventId']),
+              'meetings'      => $this->getMeetingsForEvent($row['eventId'], $registrantId),
               'attendeeTotal' => $this->getAttendeeTotal($row['eventId']),
-              'isRegistered'  => $this->isRegisteredFor($row['eventId'], $registrantId)
+              'isRegistered'  => $this->isRegisteredForEvent($row['eventId'], $registrantId),
+              'isCheckedIn'   => $this->isCheckedInForEvent($row['eventId'], $registrantId)
             );
         }
       }
@@ -177,7 +184,7 @@ class DbHandler {
               'description'   => $row['description'],
               'meetings'      => $this->getMeetingsForEvent($row['eventId']),
               'attendeeTotal' => $this->getAttendeeTotal($row['eventId']),
-              'checkedIn'     => $row['checkedIn'] == 1,
+              'isCheckedIn'   => $row['checkedIn'] == 1,
               'checkedInDate' => $row['checkedIn'] == 1 ? date('m/d/Y h:i a', strtotime($row['checkedInDate'])) : ''
             );
         }
@@ -187,8 +194,8 @@ class DbHandler {
 
     }
 
-    private function isRegisteredFor($eventId, $registrantId) {
-      $stmt = $this->conn->prepare('SELECT COUNT(*) AS total FROM attendees WHERE eventId = :eventId AND registrantId = :registrantId');
+    private function isRegisteredForEvent($eventId, $registrantId) {
+      $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM attendees WHERE eventId = :eventId AND registrantId = :registrantId AND meetingId = '0'");
       $stmt->bindParam(':eventId', $eventId);
       $stmt->bindParam(':registrantId', $registrantId);
       $post_data = array();
@@ -196,6 +203,128 @@ class DbHandler {
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
         $row = $stmt->fetch();
         return $row['total'] > 0;
+      } else {
+        return false;
+      }
+    }
+
+    private function isRegisteredForMeeting($meetingId, $registrantId) {
+      $stmt = $this->conn->prepare('SELECT COUNT(*) AS total FROM attendees WHERE meetingId = :meetingId AND registrantId = :registrantId');
+      $stmt->bindParam(':meetingId', $meetingId);
+      $stmt->bindParam(':registrantId', $registrantId);
+      $post_data = array();
+      if ($stmt->execute()) {
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch();
+        return $row['total'] > 0;
+      } else {
+        return false;
+      }
+    }
+
+    private function isCheckedInForEvent($eventId, $registrantId) {
+      $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM attendees WHERE eventId = :eventId AND registrantId = :registrantId AND meetingId = '0' AND checkedIn = '1'");
+      $stmt->bindParam(':eventId', $eventId);
+      $stmt->bindParam(':registrantId', $registrantId);
+      $post_data = array();
+      if ($stmt->execute()) {
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch();
+        return $row['total'] > 0;
+      } else {
+        return false;
+      }
+    }
+
+    private function isCheckedInForMeeting($meetingId, $registrantId) {
+      $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM attendees WHERE meetingId = :meetingId AND registrantId = :registrantId AND checkedIn ='1'");
+      $stmt->bindParam(':meetingId', $meetingId);
+      $stmt->bindParam(':registrantId', $registrantId);
+      $post_data = array();
+      if ($stmt->execute()) {
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch();
+        return $row['total'] > 0;
+      } else {
+        return false;
+      }
+    }
+
+    public function checkInToEvent($eventId, $registrantId) {
+      date_default_timezone_set($_ENV['TIMEZONE']);
+      $now = date('Y-m-d H:i:s');
+      if ($this->isRegisteredForEvent($eventId, $registrantId)) {
+        $sql = "UPDATE attendees SET checkedIn = '1', checkedInDate = :checkedInDate, dateModified = :dateModified WHERE eventId = :eventId AND registrantId = :registrantId AND meetingId = '0'";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':checkedInDate', $now);
+        $stmt->bindParam(':dateModified', $now);
+        $stmt->bindParam(':eventId', $eventId);
+        $stmt->bindParam(':registrantId', $registrantId);
+        if ($stmt->execute()) {
+          return true;
+        } else {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    }
+
+    public function checkInToMeeting($meetingId, $registrantId) {
+      date_default_timezone_set($_ENV['TIMEZONE']);
+      $now = date('Y-m-d H:i:s');
+      if ($this->isRegisteredForMeeting($meetingId, $registrantId)) {
+        $sql = "UPDATE attendees SET checkedIn = '1', checkedInDate = :checkedInDate, dateModified = :dateModified WHERE meetingId = :meetingId AND registrantId = :registrantId";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':checkedInDate', $now);
+        $stmt->bindParam(':dateModified', $now);
+        $stmt->bindParam(':meetingId', $meetingId);
+        $stmt->bindParam(':registrantId', $registrantId);
+        if ($stmt->execute()) {
+          return true;
+        } else {
+          return false;
+        }
+      } else {
+        return true;
+      }
+    }
+
+    public function registerForEvent($eventId, $registrantId) {
+      date_default_timezone_set($_ENV['TIMEZONE']);
+      $now = date('Y-m-d H:i:s');
+      if (!$this->isRegisteredForEvent($eventId, $registrantId)) {
+        $sql = "INSERT INTO attendees SET registrantId = :registrantId, eventId = :eventId, meetingId = '0', dateAdded = :dateAdded, dateModified = :dateModified";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':dateAdded', $now);
+        $stmt->bindParam(':dateModified', $now);
+        $stmt->bindParam(':eventId', $eventId);
+        $stmt->bindParam(':registrantId', $registrantId);
+        if ($stmt->execute()) {
+          return true;
+        } else {
+          return false;
+        }
+      } else {
+        return true;
+      }
+    }
+
+    public function registerForMeeting($meetingId, $registrantId) {
+      date_default_timezone_set($_ENV['TIMEZONE']);
+      $now = date('Y-m-d H:i:s');
+      if (!$this->isRegisteredForMeeting($meetingId, $registrantId)) {
+        $sql = "INSERT INTO attendees SET registrantId = :registrantId, meetingId = :meetingId, dateAdded = :dateAdded, dateModified = :dateModified";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':dateAdded', $now);
+        $stmt->bindParam(':dateModified', $now);
+        $stmt->bindParam(':meetingId', $meetingId);
+        $stmt->bindParam(':registrantId', $registrantId);
+        if ($stmt->execute()) {
+          return true;
+        } else {
+          return false;
+        }
       } else {
         return false;
       }
@@ -230,7 +359,7 @@ class DbHandler {
       $settings = serialize($updates);
     }
 
-    $stmt = $this->conn->prepare('UPDATE user_preference SET settings = :settings, date_modified = NOW() WHERE username = :username ');
+    $stmt = $this->conn->prepare('UPDATE user_preference SET settings = :settings, dateModified = NOW() WHERE username = :username ');
     $stmt->bindParam(':settings', $settings);
     $stmt->bindParam(':username', $username);
 
@@ -281,7 +410,7 @@ class DbHandler {
 
 	public function forgotPassword($username) {
     date_default_timezone_set($_ENV['TIMEZONE']);
-      	$stmt = $this->conn->prepare('SELECT username, email, mobilephone FROM user WHERE username = :username');
+      	$stmt = $this->conn->prepare('SELECT username, email, mobilephone FROM registrants WHERE username = :username');
 
         $stmt->bindParam(':username', $username);
         $stmt->execute();
@@ -289,7 +418,7 @@ class DbHandler {
         $row = $stmt->fetch();
 
         if (isset($row) && $row) {
-          	// Found user with the username
+          	// Found registrant with the username
           	// Generate new reset code
           	$email		         = $row['email'];
           	$mobilephone       = $row['mobilephone'];
@@ -300,7 +429,7 @@ class DbHandler {
             $reset_dt = date('Y-m-d H:i:s');
             $reset_code_active = 1;
 
-            $stmt = $this->conn->prepare('UPDATE user SET reset_code = :reset_code, reset_code_short = :reset_code_short, reset_code_active = :reset_code_active, reset_dt = :reset_dt, date_modified = NOW() WHERE username = :username');
+            $stmt = $this->conn->prepare('UPDATE registrants SET reset_code = :reset_code, reset_code_short = :reset_code_short, reset_code_active = :reset_code_active, reset_dt = :reset_dt, dateModified = NOW() WHERE username = :username');
             $stmt->bindParam(':username',$username);
             $stmt->bindParam(':reset_code',$reset_code);
             $stmt->bindParam(':reset_code_short',$reset_code_short);
@@ -325,14 +454,14 @@ class DbHandler {
             }
 
         } else {
-            // user not existed with the email
+            // registrant not existed with the email
             return 'not_username';
         }
    }
 
    private function getUsernameFromResetCode($reset_code) {
     date_default_timezone_set($_ENV['TIMEZONE']);
-    $sql = "SELECT username FROM user WHERE (reset_code = :reset_code OR reset_code_short = :reset_code) AND reset_code_active = '1' AND reset_dt >= DATE_SUB(NOW(), INTERVAL 30 MINUTE)";
+    $sql = "SELECT username FROM registrants WHERE (reset_code = :reset_code OR reset_code_short = :reset_code) AND reset_code_active = '1' AND reset_dt >= DATE_SUB(NOW(), INTERVAL 30 MINUTE)";
     $stmt = $this->conn->prepare($sql);
 
     $stmt->bindParam(':reset_code', $reset_code);
@@ -354,7 +483,7 @@ class DbHandler {
     if ($username) {
       $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
-      $stmt = $this->conn->prepare("UPDATE user SET password = :password, reset_code = '', reset_code_short = '', reset_code_active = '0', date_modified = NOW() WHERE username = :username");
+      $stmt = $this->conn->prepare("UPDATE registrants SET password = :password, reset_code = '', reset_code_short = '', reset_code_active = '0', dateModified = NOW() WHERE username = :username");
 
       $stmt->bindParam(':username', $username);
       $stmt->bindParam(':password', $password_hash);
@@ -393,7 +522,7 @@ class DbHandler {
 
 		$tracker 		= $from_url.'/track.php?log=true&campaign_id='.$id.'&date='.date('Y-m-d').'&email=' . urlencode( $email );
 
-		$fullname		= isset($resident_info['fullname']) ? $resident_info['fullname'] : 'Resident';
+		$fullName		= isset($resident_info['fullName']) ? $resident_info['fullName'] : 'Resident';
 
 		$html = '
 			<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -515,10 +644,10 @@ table.list .center {
         </table>';
 
 
-	    $html .= '<br/><p>Dear '.$fullname.',</p><p>'.html_entity_decode($message, ENT_QUOTES, 'UTF-8').'</p>
+	    $html .= '<br/><p>Dear '.$fullName.',</p><p>'.html_entity_decode($message, ENT_QUOTES, 'UTF-8').'</p>
 
 	    <br/>
-<div class="footer"><hr><i>Copyright &copy; '.date('Y').' '.$from_name. ', All rights reserved.</i><br/><br/>Private and Confidential: This email was sent to '.$fullname.' at '.$email.' who is a registered resident/owner at '.$from_name.'<br/><br/>Our mailing address is:<br/>'.$from_address.'
+<div class="footer"><hr><i>Copyright &copy; '.date('Y').' '.$from_name. ', All rights reserved.</i><br/><br/>Private and Confidential: This email was sent to '.$fullName.' at '.$email.' who is a registered resident/owner at '.$from_name.'<br/><br/>Our mailing address is:<br/>'.$from_address.'
 <br/><br/>
 	    </div>
 
@@ -577,193 +706,183 @@ table.list .center {
 
 
 
-    public function changePassword($username, $current_password, $new_password) {
-        $response = array();
+  public function changePassword($username, $current_password, $new_password) {
+    $response = array();
 
-       	  if ($this->checkLogin($username,$current_password) != 'valid') {
-       	  	return 'not_password';
-       	  } else {
+   	  if ($this->checkLogin($username,$current_password) != 'valid') {
+   	  	return 'not_password';
+   	  } else {
 
-            // Generating password hash
-            $password_hash = password_hash($new_password, PASSWORD_DEFAULT);
+        // Generating password hash
+        $password_hash = password_hash($new_password, PASSWORD_DEFAULT);
 
-            // Generating new API key
-            //$api_key = $this->generateApiKey();
-
-
-            // insert query
-            $stmt = $this->conn->prepare('UPDATE user SET password = :password WHERE username = :username');
-            $stmt->bindParam(':username',$username);
-            $stmt->bindParam(':password',$password_hash);
-            //$stmt->bindParam(':apiKey',$api_key);
-
-            $result = $stmt->execute();
-
-            // Check for successful insertion
-            if ($result) {
-                // User successfully inserted
-                return 'valid';
-            } else {
-                // Failed to create user
-                return 'not_done';
-            }
-        }
-    }
+        // Generating new API key
+        //$api_key = $this->generateApiKey();
 
 
-    public function checkLogin($username, $password) {
-        // fetching user by username
-        $stmt = $this->conn->prepare("SELECT username, password FROM registrants WHERE username = :username");
+        // insert query
+        $stmt = $this->conn->prepare('UPDATE registrants SET password = :password WHERE username = :username');
+        $stmt->bindParam(':username',$username);
+        $stmt->bindParam(':password',$password_hash);
+        //$stmt->bindParam(':apiKey',$api_key);
 
-        $stmt->bindParam(':username', $username);
-        $stmt->execute();
-        $stmt->setFetchMode(PDO::FETCH_ASSOC);
-        $row = $stmt->fetch();
+        $result = $stmt->execute();
 
-        if (isset($row) && $row) {
-            // Found user with the username
-            // Now verify the password
-
-            if (password_verify($password,$row['password'])) {
-                // User password is correct
-                return 'valid';
-            } else {
-                // user password is incorrect
-                return 'not_password';
-            }
+        // Check for successful insertion
+        if ($result) {
+            // User successfully inserted
+            return 'valid';
         } else {
-            // user not existed with the email
-            return 'not_username';
+            // Failed to create user
+            return 'not_done';
         }
     }
+  }
 
 
-    private function isUserExists($email) {
-        $stmt = $this->conn->prepare('SELECT username FROM user WHERE email = :email');
-        $stmt->bindParam(':email', $email);
-        $stmt->execute();
-        $row = $stmt->fetch();
-        if ($row) { return TRUE; } else { return FALSE; }
+  public function checkLogin($username, $password) {
+    $stmt = $this->conn->prepare("SELECT username, password FROM registrants WHERE username = :username");
 
-    }
+    $stmt->bindParam(':username', $username);
+    $stmt->execute();
+    $stmt->setFetchMode(PDO::FETCH_ASSOC);
+    $row = $stmt->fetch();
 
-    private function generateUniqueUsername($firstname, $lastname){
-        $new_username   = strtolower($firstname.$lastname);
-        $count = $this->howManyUsernamesLike($new_username);
+    if (isset($row) && $row) {
+        // Found registrant with the username
+        // Now verify the password
 
-        if(!empty($count)) {
-            $new_username = $new_username . $count;
+        if (password_verify($password,$row['password'])) {
+            // User password is correct
+            return 'valid';
+        } else {
+            // registrant password is incorrect
+            return 'not_password';
         }
+    } else {
+        // registrant not existed with the email
+        return 'not_username';
+    }
+  }
 
-        return $new_username;
+
+  private function generateUniqueUsername($firstName, $lastName){
+    $new_username   = strtolower($firstName.$lastName);
+    $count = $this->howManyUsernamesLike($new_username);
+
+    if(!empty($count)) {
+        $new_username = $new_username . $count;
     }
 
-    public function addUser($firstName, $lastName, $email, $mobilephone, $password) {
-      date_default_timezone_set($_ENV['TIMEZONE']);
-      $now = date('Y-m-d H:i:s');
-      $password_hash = password_hash(trim($password), PASSWORD_DEFAULT);
-      $username = $this->generateUniqueUsername($firstName, $lastName);
-      $fullName = ucwords($firstName)." ".ucwords($lastName);
-      $stmt = $this->conn->prepare("INSERT INTO registrants SET firstName = :firstName, lastName = :lastName, fullName = :fullName, email = :email, mobilephone = :mobilephone, dateAdded = :now, dateModified = :now, username = :username, password = :password, profileVisible = '0'");
+    return $new_username;
+  }
+
+  public function addUser($firstName, $lastName, $email, $mobilephone, $password) {
+    date_default_timezone_set($_ENV['TIMEZONE']);
+    $now = date('Y-m-d H:i:s');
+    $password_hash = password_hash(trim($password), PASSWORD_DEFAULT);
+    $username = $this->generateUniqueUsername($firstName, $lastName);
+    $fullName = ucwords($firstName)." ".ucwords($lastName);
+    $stmt = $this->conn->prepare("INSERT INTO registrants SET firstName = :firstName, lastName = :lastName, fullName = :fullName, email = :email, mobilephone = :mobilephone, dateAdded = :now, dateModified = :now, username = :username, password = :password, profileVisible = '0'");
+    $stmt->bindParam(':username', $username);
+    $stmt->bindParam(':password', $password_hash);
+    $stmt->bindParam(':firstName', $firstName);
+    $stmt->bindParam(':lastName', $lastName);
+    $stmt->bindParam(':fullName', $fullName);
+    $stmt->bindParam(':email', $email);
+    $stmt->bindParam(':mobilephone', $mobilephone);
+    $stmt->bindParam(':now', $now);
+    if ($stmt->execute()) {
+      $profile = $this->getProfileByUsername($username);
+      $profile['success'] = true;
+      return $profile;
+    } else {
+      return false;
+    }
+  }
+
+
+  public function getProfileByUsername($username) {
+      $stmt = $this->conn->prepare('SELECT registrantId, username, fullName, email, mobilephone, profileVisible FROM registrants WHERE username = :username');
       $stmt->bindParam(':username', $username);
-      $stmt->bindParam(':password', $password_hash);
-      $stmt->bindParam(':firstName', $firstName);
-      $stmt->bindParam(':lastName', $lastName);
-      $stmt->bindParam(':fullName', $fullName);
-      $stmt->bindParam(':email', $email);
-      $stmt->bindParam(':mobilephone', $mobilephone);
-      $stmt->bindParam(':now', $now);
       if ($stmt->execute()) {
-        $profile = $this->getProfileByUsername($username);
-        $profile['success'] = true;
-        return $profile;
+      	$stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch();
+        return $row;
       } else {
-        return false;
+          return NULL;
+      }
+  }
+
+  public function updateProfile($username, $data) {
+    date_default_timezone_set($_ENV['TIMEZONE']);
+
+    if (!empty($data['firstName']) && !empty($data['lastName'])) {
+      $firstName = ucwords(trim($data['firstName']));
+      $lastName = ucwords(trim($data['lastName']));
+      $fullName = $firstName." ".$lastName;
+
+      $stmt = $this->conn->prepare('UPDATE registrants SET firstName = :firstName, lastName = :lastName, fullName = :fullName, dateModified=NOW()  WHERE username = :username');
+      $stmt->bindParam(':username',$username);
+      $stmt->bindParam(':firstName',$firstName);
+      $stmt->bindParam(':lastName',$lastName);
+      $stmt->bindParam(':fullName',$fullName);
+      $stmt->execute();
+
+    }
+
+    if (!empty($data['email'])) {
+      $email = strtolower($data['email']);
+      $stmt = $this->conn->prepare('UPDATE registrants SET email = :email, dateModified=NOW() WHERE username = :username');
+      $stmt->bindParam(':username',$username);
+      $stmt->bindParam(':email',$email);
+      $stmt->execute();
+    }
+
+    if (!empty($data['phone'])) {
+      $phone = $data['phone'];
+      $stmt = $this->conn->prepare('UPDATE registrants SET phone = :phone, dateModified=NOW() WHERE username = :username');
+      $stmt->bindParam(':username',$username);
+      $stmt->bindParam(':phone',$phone);
+      $stmt->execute();
+    }
+
+    if (!empty($data['mobilephone'])) {
+      $stmt = $this->conn->prepare('UPDATE registrants SET mobilephone = :mobilephone, dateModified=NOW() WHERE username = :username');
+      $stmt->bindParam(':username',$username);
+      $stmt->bindParam(':mobilephone',$data['mobilephone']);
+      $stmt->execute();
+    }
+
+    if (!empty($data['privacy'])) {
+      $stmt = $this->conn->prepare('UPDATE registrants SET privacy = :privacy, dateModified=NOW() WHERE username = :username');
+      $stmt->bindParam(':username',$username);
+      $stmt->bindParam(':privacy',$data['privacy']);
+      $stmt->execute();
+    }
+
+    // add image
+    if (!empty($data['images']) && array_key_exists('mime',$data['images']) && array_key_exists('data', $data['images'])) {
+      $mime = $data['images']['mime'];
+      $data = $data['images']['data'];
+      if ($mime && $data) {
+        $extension = $this->returnFileExtension($mime);
+        $uploadDir  = $_ENV['DIR_PROFILE_IMAGE'];
+        $uploadPath = $_ENV['PATH_PROFILE_IMAGE'];
+        $img        = str_replace(' ', '+', $data);
+        $imgData    = base64_decode($img);
+        $filename   = $username . '_' . uniqid() . '.'. $extension;
+        $imgPath    = $uploadPath . $filename;
+        $file       = $uploadDir . $filename;
+        file_put_contents($file, $imgData);
+        // update profilepic in wch_user
+        $this->updateProfilePhoto($username, $imgPath);
+
       }
     }
 
-
-    public function getProfileByUsername($username) {
-        $stmt = $this->conn->prepare('SELECT registrantId, username, fullName, email, mobilephone, profileVisible FROM registrants WHERE username = :username');
-        $stmt->bindParam(':username', $username);
-        if ($stmt->execute()) {
-        	$stmt->setFetchMode(PDO::FETCH_ASSOC);
-          $row = $stmt->fetch();
-          return $row;
-        } else {
-            return NULL;
-        }
-    }
-
-    public function updateProfile($username, $data) {
-      date_default_timezone_set($_ENV['TIMEZONE']);
-
-      if (!empty($data['firstname']) && !empty($data['lastname'])) {
-        $firstname = ucwords(trim($data['firstname']));
-        $lastname = ucwords(trim($data['lastname']));
-        $fullname = $firstname." ".$lastname;
-
-        $stmt = $this->conn->prepare('UPDATE user SET firstname = :firstname, lastname = :lastname, fullname = :fullname, date_modified=NOW()  WHERE username = :username');
-        $stmt->bindParam(':username',$username);
-        $stmt->bindParam(':firstname',$firstname);
-        $stmt->bindParam(':lastname',$lastname);
-        $stmt->bindParam(':fullname',$fullname);
-        $stmt->execute();
-
-      }
-
-      if (!empty($data['email'])) {
-        $email = strtolower($data['email']);
-        $stmt = $this->conn->prepare('UPDATE user SET email = :email, date_modified=NOW() WHERE username = :username');
-        $stmt->bindParam(':username',$username);
-        $stmt->bindParam(':email',$email);
-        $stmt->execute();
-      }
-
-      if (!empty($data['phone'])) {
-        $phone = $data['phone'];
-        $stmt = $this->conn->prepare('UPDATE user SET phone = :phone, date_modified=NOW() WHERE username = :username');
-        $stmt->bindParam(':username',$username);
-        $stmt->bindParam(':phone',$phone);
-        $stmt->execute();
-      }
-
-      if (!empty($data['mobilephone'])) {
-        $stmt = $this->conn->prepare('UPDATE user SET mobilephone = :mobilephone, date_modified=NOW() WHERE username = :username');
-        $stmt->bindParam(':username',$username);
-        $stmt->bindParam(':mobilephone',$data['mobilephone']);
-        $stmt->execute();
-      }
-
-      if (!empty($data['privacy'])) {
-        $stmt = $this->conn->prepare('UPDATE user SET privacy = :privacy, date_modified=NOW() WHERE username = :username');
-        $stmt->bindParam(':username',$username);
-        $stmt->bindParam(':privacy',$data['privacy']);
-        $stmt->execute();
-      }
-
-      // add image
-      if (!empty($data['images']) && array_key_exists('mime',$data['images']) && array_key_exists('data', $data['images'])) {
-        $mime = $data['images']['mime'];
-        $data = $data['images']['data'];
-        if ($mime && $data) {
-          $extension = $this->returnFileExtension($mime);
-          $uploadDir  = $_ENV['DIR_PROFILE_IMAGE'];
-          $uploadPath = $_ENV['PATH_PROFILE_IMAGE'];
-          $img        = str_replace(' ', '+', $data);
-          $imgData    = base64_decode($img);
-          $filename   = $username . '_' . uniqid() . '.'. $extension;
-          $imgPath    = $uploadPath . $filename;
-          $file       = $uploadDir . $filename;
-          file_put_contents($file, $imgData);
-          // update profilepic in wch_user
-          $this->updateProfilePhoto($username, $imgPath);
-
-        }
-      }
-
-      return true;
-    }
+    return true;
+  }
 
 
 

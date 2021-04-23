@@ -169,8 +169,6 @@ $app->post('/users/auth', function() use($app) {
     $db = new DbHandler();
     $result = $db->checkLogin($username,$password);
 
-    // $db-> registerAPICall($username, 'login', 'post', $result);
-
     if ($result == 'valid') {
       $profile = $db->getProfileByUsername($username);
       $app->username = $username;
@@ -211,8 +209,6 @@ $app->post('/users/signup', function() use($app) {
     $db = new DbHandler();
     $result = $db->addUser($firstName, $lastName, $email, $mobilephone, $password);
 
-    // $db-> registerAPICall($username, 'login', 'post', $result);
-
     if (array_key_exists('success', $result) && $result['success']) {
       $response = array (
         'success'		      => true,
@@ -243,7 +239,6 @@ $app->post('/users/password/forgot', function() use($app) {
 
             $db = new DbHandler();
             $res = $db->forgotPassword($username);
- 			$db->registerAPICall($username, 'forgot', 'post', $res);
 
             if ($res == 'not_username') {
                 $response['error'] = true;
@@ -338,6 +333,116 @@ $app->get('/myevents', 'authenticate', function() use($app) {
     $db = NULL;
 });
 
+// register for events
+$app->post('/events', 'authenticate', function() use($app) {
+
+     $json = $app->request->getBody();
+     $data = json_decode($json, true);
+     $eventId = $data['eventId'];
+     $registrantId = $app->registrantId;
+
+     $db = new DbHandler();
+     $res = $db->registerForEvent($registrantId, $eventId);
+
+     if ($res) {
+         $response['error'] 		= false;
+         $response['success'] 	= true;
+         $response['username'] 	= $app->username;
+         $response['message'] 	= "You have registered for the event!";
+         echoResponse(201, $response);
+     } else {
+         $response['error'] 		= true;
+         $response['username'] 	= $app->username;
+         $response['message'] 	= "An error occurred while registering for the event. Try again later!";
+         echoResponse(200, $response);
+     }
+
+     $db = null;
+ });
+
+ // check in to event
+ $app->put('/events', 'authenticate', function() use($app) {
+
+      $json = $app->request->getBody();
+      $data = json_decode($json, true);
+      $eventId = $data['eventId'];
+      $registrantId = $app->registrantId;
+
+      $db = new DbHandler();
+      $res = $db->checkInToEvent($registrantId, $eventId);
+
+      if ($res) {
+          $response['error'] 		= false;
+          $response['success'] 	= true;
+          $response['username'] 	= $app->username;
+          $response['message'] 	= "You have successfully checked in to the event!";
+          echoResponse(201, $response);
+      } else {
+          $response['error'] 		= true;
+          $response['username'] 	= $app->username;
+          $response['message'] 	= "An error occurred while checking in to the event. Try again later!";
+          echoResponse(200, $response);
+      }
+
+      $db = null;
+  });
+
+// register for meetings
+ $app->post('/meetings', 'authenticate', function() use($app) {
+
+      $json = $app->request->getBody();
+      $data = json_decode($json, true);
+      $meetingId = $data['meetingId'];
+      $registrantId = $app->registrantId;
+
+      $db = new DbHandler();
+      $res = $db->registerForMeeting($registrantId, $eventId);
+
+      if ($res) {
+          $response['error'] 		= false;
+          $response['success'] 	= true;
+          $response['username'] 	= $app->username;
+          $response['message'] 	= "You have registered for the meeting!";
+          echoResponse(201, $response);
+      } else {
+          $response['error'] 		= true;
+          $response['username'] 	= $app->username;
+          $response['message'] 	= "An error occurred while registering for the event. Try again later!";
+          echoResponse(200, $response);
+      }
+
+      $db = null;
+  });
+
+  // check in to meeting
+  $app->put('/meetings', 'authenticate', function() use($app) {
+
+       $json = $app->request->getBody();
+       $data = json_decode($json, true);
+       $meetingId = $data['meetingId'];
+       $registrantId = $app->registrantId;
+
+       $db = new DbHandler();
+       $res = $db->checkInToMeeting($registrantId, $meetingId);
+
+       if ($res) {
+           $response['error'] 		= false;
+           $response['success'] 	= true;
+           $response['username'] 	= $app->username;
+           $response['message'] 	= "You have successfully checked in to the meeting!";
+           echoResponse(201, $response);
+       } else {
+           $response['error'] 		= true;
+           $response['username'] 	= $app->username;
+           $response['message'] 	= "An error occurred while checking in to the meeting. Try again later!";
+           echoResponse(200, $response);
+       }
+
+       $db = null;
+   });
+
+// preferences
+
 
  $app->get('/users/preferences', 'authenticate', function() use($app) {
  		$response = array();
@@ -345,8 +450,6 @@ $app->get('/myevents', 'authenticate', function() use($app) {
 
       // fetch task
       $result = $db->getPermissionsByUsername($app->username);
-
-      $db->registerAPICall( $app->username, 'preferences', 'get', json_encode($result));
 
       if ($result != NULL) {
           $response['error'] 				    = false;
@@ -376,8 +479,6 @@ $app->get('/myevents', 'authenticate', function() use($app) {
 
       $db = new DbHandler();
       $res = $db->updateUserPreferences($app->username, $data);
-
- 			$db->registerAPICall($app->username, 'permissions', 'put', $json);
 
       if ($res) {
           $response['error'] 		= false;
