@@ -81,6 +81,7 @@ function generateJWT($username) {
 	    "iat" 			     => time(),
 	    "nbf" 			     => time(),
 			"username" 		   => $username,
+      "registrantId"   => $result['registrantId'],
       "fullName"       => $result['fullName'],
       "email"          => $result['email'],
       "mobilephone"    => $result['mobilephone'],
@@ -109,6 +110,9 @@ function authenticate(\Slim\Route $route) {
 
         if (!empty($decoded)) {
             $app->username      = $decoded->username;
+            $app->registrantId  = $decoded->registrantId;
+            $app->email         = $decoded->email;
+            $app->mobilephone   = $decoded->mobilephone;
 
         } else {
             $response['error']   = true;
@@ -296,7 +300,28 @@ $app->get('/events', 'authenticate', function() use($app) {
     $response = array();
     $db = new DbHandler();
 
-    $results   = $db->getAllEvents();
+    $results   = $db->getAllEvents($app->registrantId);
+
+    if ($results) {
+        $response['success']    = true;
+        $response['username'] = $app->username;
+        $response['results']  = $results;
+    } else {
+        $response['error'] = true;
+        $response['results'] = array();
+        $response['message'] = 'No events found!';
+    }
+
+    echoResponse(200, $response);
+
+    $db = NULL;
+});
+
+$app->get('/myevents', 'authenticate', function() use($app) {
+    $response = array();
+    $db = new DbHandler();
+
+    $results   = $db->getAllMyEvents($app->registrantId);
 
     if ($results) {
         $response['success']    = true;

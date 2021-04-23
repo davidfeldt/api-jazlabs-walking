@@ -119,7 +119,7 @@ class DbHandler {
       return $response;
     }
 
-    public function getAllEvents() {
+    public function getAllEvents($registrantId) {
       date_default_timezone_set($_ENV['TIMEZONE']);
       $now = date('Y-m-d');
       $response = array ();
@@ -142,7 +142,43 @@ class DbHandler {
               'blurb'			    => html_entity_decode(strip_tags(substr($row['description'],0,100)).'...', ENT_QUOTES, 'UTF-8'),
               'description'   => $row['description'],
               'meetings'      => $this->getMeetingsForEvent($row['eventId']),
-              'attendeeTotal' => $this->getAttendeeTotal($row['eventId'])
+              'attendeeTotal' => $this->getAttendeeTotal($row['eventId']),
+              'isRegistered'  => $this->isRegisteredFor($row['eventId'], $registrantId)
+            );
+        }
+      }
+
+      return $response;
+
+    }
+
+    public function getAllMyEvents($registrantId) {
+      date_default_timezone_set($_ENV['TIMEZONE']);
+      $now = date('Y-m-d');
+      $response = array ();
+
+      $stmt = $this->conn->prepare("SELECT e.*, a.checkedIn, a.checkedInDate FROM events e LEFT JOIN attendees a ON e.eventId = a.eventId WHERE e.endDate >= :endDate AND a.registrantId = :registrantId ORDER BY e.startDate ASC");
+      $stmt->bindParam(':endDate', $now);
+      $stmt->bindParam(':registrantId', $registrantId);
+
+      if ($stmt->execute()) {
+        $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($events AS $row) {
+
+          $response [] = array (
+              'eventId'       => $row['eventId'],
+              'startDate'     => date('m/d/Y',strtotime($row['startDate'])),
+              'endDate'       => date('m/d/Y',strtotime($row['endDate'])),
+              'location'      => $row['location'],
+              'orgId'         => $row['orgId'],
+              'orgName'       => $this->getOrganizationName($row['orgId']),
+              'name'          => $row['name'],
+              'blurb'			    => html_entity_decode(strip_tags(substr($row['description'],0,100)).'...', ENT_QUOTES, 'UTF-8'),
+              'description'   => $row['description'],
+              'meetings'      => $this->getMeetingsForEvent($row['eventId']),
+              'attendeeTotal' => $this->getAttendeeTotal($row['eventId']),
+              'checkedIn'     => $row['checkedIn'] == 1,
+              'checkedInDate' => $row['checkedIn'] == 1 ? date('m/d/Y h:i a', strtotime($row['checkedInDate'])) : ''
             );
         }
       }
@@ -634,7 +670,7 @@ table.list .center {
 
 
     public function getProfileByUsername($username) {
-        $stmt = $this->conn->prepare('SELECT username, fullName, email, mobilephone, profileVisible FROM registrants WHERE username = :username');
+        $stmt = $this->conn->prepare('SELECT registrantId, username, fullName, email, mobilephone, profileVisible FROM registrants WHERE username = :username');
         $stmt->bindParam(':username', $username);
         if ($stmt->execute()) {
         	$stmt->setFetchMode(PDO::FETCH_ASSOC);
