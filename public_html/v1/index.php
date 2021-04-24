@@ -177,6 +177,7 @@ $app->post('/users/auth', function() use($app) {
         'username'        => $profile['username'],
         'token'			      => generateJWT($profile['username']),
         "fullName"        => $profile['fullName'],
+        "registrantId"    => $profile['registrantId'],
         "email"           => $profile['email'],
         "mobilephone"     => $profile['mobilephone'],
         "profileVisible"  => $profile['profileVisible'] == 1
@@ -215,6 +216,7 @@ $app->post('/users/signup', function() use($app) {
         'username'        => $result['username'],
         'token'			      => generateJWT($result['username']),
         "fullName"        => $result['fullName'],
+        "registrantId"    => $result['registrantId'],
         "email"           => $result['email'],
         "mobilephone"     => $result['mobilephone'],
         "profileVisible"  => $result['profileVisible'] == 1
