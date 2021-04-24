@@ -140,6 +140,7 @@ class DbHandler {
 
           $response [] = array (
               'eventId'       => $row['eventId'],
+              'registrantId'  => $registrantId,
               'startDate'     => date('m/d/Y',strtotime($row['startDate'])),
               'endDate'       => date('m/d/Y',strtotime($row['endDate'])),
               'location'      => $row['location'],
@@ -175,6 +176,7 @@ class DbHandler {
 
           $response [] = array (
               'eventId'       => $row['eventId'],
+              'registrantId'  => $registrantId,
               'startDate'     => date('m/d/Y',strtotime($row['startDate'])),
               'endDate'       => date('m/d/Y',strtotime($row['endDate'])),
               'location'      => $row['location'],
@@ -959,9 +961,6 @@ table.list .center {
        return NULL;
       }
 	 }
-
-
-
 
 }
 
