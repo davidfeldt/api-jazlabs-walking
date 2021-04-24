@@ -111,8 +111,8 @@ class DbHandler {
           $response [] = array (
               'meetingId'     => $row['meetingId'],
               'eventId'       => $row['eventId'],
-              'startDate'     => date('m/d h:i a',strtotime($row['startDate'])),
-              'endDate'       => date('m/d h:i a',strtotime($row['endDate'])),
+              'startDate'     => date('m/d g:i a',strtotime($row['startDate'])),
+              'endDate'       => date('m/d g:i a',strtotime($row['endDate'])),
               'location'      => $row['location'],
               'eventName'     => $this->getEventName($row['eventId']),
               'name'          => $row['name'],
