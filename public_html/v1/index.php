@@ -106,7 +106,7 @@ function generateAdminJWT($username) {
 	    "iat" 			     => time(),
 	    "nbf" 			     => time(),
 			"username" 		   => $username,
-      "ordId"          => $result['orgId'],
+      "orgId"          => $result['orgId'],
       "name"           => $result['name'],
       "email"          => $result['email'],
       "mobilephone"    => $result['mobilephone']
