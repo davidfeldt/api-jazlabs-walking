@@ -987,7 +987,6 @@ table.list .center {
             'registrantId'	  => $p['registrantId'],
             'fullName'        => $p['fullName'],
             'email'           => $p['email'],
-            'phone'           => $p['phone'],
             'mobilephone'     => $p['mobilephone'],
             'address'         => $p['address']. ' '. $p['city']. ' ' . $p['state'] . ' ' . $p['zip'],
             'eventsData'      => $this->getEventsForAttendeeForOrgId($orgId, $p['registrantId'])
