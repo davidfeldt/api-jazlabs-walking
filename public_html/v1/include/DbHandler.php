@@ -768,6 +768,31 @@ table.list .center {
     }
   }
 
+  public function checkAdminLogin($username, $password) {
+    $stmt = $this->conn->prepare("SELECT username, password FROM admins WHERE username = :username");
+
+    $stmt->bindParam(':username', $username);
+    $stmt->execute();
+    $stmt->setFetchMode(PDO::FETCH_ASSOC);
+    $row = $stmt->fetch();
+
+    if (isset($row) && $row) {
+        // Found registrant with the username
+        // Now verify the password
+
+        if (password_verify($password,$row['password'])) {
+            // User password is correct
+            return 'valid';
+        } else {
+            // registrant password is incorrect
+            return 'not_password';
+        }
+    } else {
+        // registrant not existed with the email
+        return 'not_username';
+    }
+  }
+
 
   private function generateUniqueUsername($firstName, $lastName){
     $new_username   = strtolower($firstName.$lastName);
@@ -815,6 +840,18 @@ table.list .center {
       } else {
           return NULL;
       }
+  }
+
+  public function getAdminProfileByUsername($username) {
+    $stmt = $this->conn->prepare('SELECT orgId, username, name, company, email, mobilephone FROM admins WHERE username = :username');
+    $stmt->bindParam(':username', $username);
+    if ($stmt->execute()) {
+      $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      return $row;
+    } else {
+        return NULL;
+    }
   }
 
   public function updateProfile($username, $data) {
@@ -902,6 +939,64 @@ table.list .center {
     } else {
       return '';
     }
+  }
+
+  public function getEventsForAttendeeForOrgId($orgId, $registrantId) {
+    $sql = "SELECT e.* FROM events e LEFT JOIN attendees a ON e.eventId =  a.eventId WHERE e.orgId = :orgId AND a.registrantId = :registrantId";
+    $eventsData = array();
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':orgId', $orgId);
+    $stmt->bindParam(':registrantId', $registrantId);
+    if ($stmt->execute()) {
+      $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+      if ($events) {
+        foreach ($events AS $e) {
+          $eventsData[] = array (
+            'eventId'	  => $e['eventId'],
+            'name'      => $e['name'],
+            'startDate' => $e['startDate'],
+            'endDate'   => $e['endDate'],
+            'location'  => $e['location'],
+            'city'      => $e['city'],
+            'zip'       => $e['zip']
+          );
+        }
+      }
+    }
+
+    return $eventsData;
+  }
+
+  public function getPeopleForAdmins($orgId = 1, $string = '') {
+
+    if ($string == '') { return array(); }
+
+    $query = '%'. strtolower($string) . '%';
+    $peeps = array();
+    $stmt = $this->conn->prepare("SELECT r.* FROM attendees a LEFT JOIN events e ON a.eventID = e.eventId LEFT JOIN registrants r ON a.registrantId = r.registrantId WHERE e.orgId = :orgId AND LOWER(r.fullName) LIKE :query");
+    $stmt->bindParam(':query', $query);
+    $stmt->bindParam(':orgId', $orgId);
+
+    if ($stmt->execute()) {
+      $people = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+      if ($people) {
+        foreach ($people AS $p) {
+          $peeps[] = array (
+            'registrantId'	  => $p['registrantId'],
+            'fullName'        => $p['fullName'],
+            'email'           => $p['email'],
+            'phone'           => $p['phone'],
+            'mobilephone'     => $p['mobilephone'],
+            'address'         => $p['address']. ' '. $p['city']. ' ' . $p['state'] . ' ' . $p['zip'],
+            'eventsData'      => $this->getEventsForAttendeeForOrgId($orgId, $p['registrantId'])
+          );
+        }
+      }
+    }
+
+    return $peeps;
   }
 
 

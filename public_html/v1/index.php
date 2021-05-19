@@ -94,6 +94,30 @@ function generateJWT($username) {
 
 }
 
+function generateAdminJWT($username) {
+
+	$key 		= $_ENV['JWT_SECRET'];
+	$db 		= new DbHandler();
+	$result = $db->getAdminProfileByUsername($username);
+
+	$payload= array(
+	    "iss" 			     => "https://spectacularapps.us",
+	    "aud" 			     => "http://spectacularapps.us",
+	    "iat" 			     => time(),
+	    "nbf" 			     => time(),
+			"username" 		   => $username,
+      "ordId"          => $result['orgId'],
+      "name"           => $result['name'],
+      "email"          => $result['email'],
+      "mobilephone"    => $result['mobilephone']
+	);
+
+	$db = NULL;
+
+	return JWT::encode($payload, $key);
+
+}
+
 
 function authenticate(\Slim\Route $route) {
     $response = array();
@@ -129,6 +153,39 @@ function authenticate(\Slim\Route $route) {
     }
 }
 
+function authenticateAdmin(\Slim\Route $route) {
+    $response = array();
+    $app = \Slim\Slim::getInstance();
+	// Get the X_AUTHORIZATION header
+	$headers = $app->request->headers;
+	$token = isset($headers['x-authorization']) ? $headers['x-authorization'] : '';
+    // Verifying Authorization Header As Valid JWT Token
+    try {
+        // give 60 seconds leeway for JWT token
+        JWT::$leeway = $_ENV['JWT_LEEWAY'];
+        $key = $_ENV['JWT_SECRET'];
+        $decoded = JWT::decode($token, $key, array('HS256'));
+
+        if (!empty($decoded)) {
+            $app->username      = $decoded->username;
+            $app->orgId         = $decoded->orgId;
+            $app->email         = $decoded->email;
+            $app->mobilephone   = $decoded->mobilephone;
+
+        } else {
+            $response['error']   = true;
+            $response['message'] = 'Access Denied. Invalid API token';
+            echoResponse(401, $response);
+            $app->stop();
+        }
+    } catch (Exception $e) {
+        // api key is missing in header
+        $response['error']   = true;
+        $response['message'] = 'Token error: '.$e->getMessage();
+        echoResponse(401, $response);
+        $app->stop();
+    }
+}
 
 function formatPhoneNumber($sPhone){
 	if (empty($sPhone)) return "";
@@ -193,6 +250,68 @@ $app->post('/users/auth', function() use($app) {
 		  $db = NULL;
     echoResponse(200, $response);
   });
+
+$app->post('/admins/auth', function() use($app) {
+    // body passed as JSON
+
+    $json = $app->request->getBody();
+		$data = json_decode($json, true);
+		$username = $data['username'];
+		$password = $data['password'];
+
+    $response = array();
+
+    $db = new DbHandler();
+    $result = $db->checkAdminLogin($username,$password);
+
+    if ($result == 'valid') {
+      $profile = $db->getAdminProfileByUsername($username);
+      $app->username = $username;
+      $response = array (
+        'success'		      => true,
+        'username'        => $profile['username'],
+        'token'			      => generateAdminJWT($profile['username']),
+        "name"            => $profile['name'],
+        "company"         => $profile['company'],
+        "orgId"           => $profile['orgId'],
+        "email"           => $profile['email'],
+        "mobilephone"     => $profile['mobilephone']
+      );
+
+    }
+
+    if ($result == 'not_username' || $result == 'not_password') {
+    	$response['error'] 		= true;
+      $response['message'] 	= 'Incorrect username or password';
+    }
+
+		  $db = NULL;
+    echoResponse(200, $response);
+  });
+
+$app->get('/admins/people/:query', 'authenticateAdmin', function($query) use($app) {
+    $response = array();
+    $db = new DbHandler();
+
+    $people = $db->getPeopleForAdmins($app->orgId, $query);
+
+    if ($people) {
+        $response['success'] = true;
+        $response['error'] = false;
+        $response['results'] = $people;
+        $response['message'] = 'People found';
+    } else {
+        $response['error'] = true;
+        $response['success'] = false;
+        $response['results'] = array();
+        $response['message'] = 'No people found';
+    }
+
+
+    echoResponse(200, $response);
+
+    $db = NULL;
+});
 
 $app->post('/users/signup', function() use($app) {
     // body passed as JSON
