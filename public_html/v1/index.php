@@ -338,9 +338,9 @@ $app->put('/admins/checkins', 'authenticateAdmin', function() use($app) {
 
      $json = $app->request->getBody();
      $data = json_decode($json, true);
-     $eventId = $data['eventId'];
-     $meetingId = $data['meetingId'];
-     $registrantId = $data['registrantId'];
+     $eventId = array_key_exists('eventId',$data) ? $data['eventId'] : null;
+     $meetingId = array_key_exists('meetingId',$data) ? $data['meetingId'] : null;
+     $registrantId = array_key_exists('registrantId',$data) ? $data['registrantId'] : null;
 
      $db = new DbHandler();
 
