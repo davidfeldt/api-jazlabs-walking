@@ -351,11 +351,14 @@ $app->put('/admins/checkins', 'authenticateAdmin', function() use($app) {
      }
 
      if ($res) {
-         $response['error'] 		= false;
-         $response['success'] 	= true;
-         $response['username'] 	= $app->username;
-         $response['message'] 	= "Successfully checked in!";
-         $response['result']    = $res;
+         $response['error'] 		      = false;
+         $response['success'] 	      = true;
+         $response['username'] 	      = $app->username;
+         $response['message'] 	      = "Successfully checked in!";
+         $response['result']          = $res;
+         $response['registrantId']    = $registrantId;
+         $response['meetingId']       = $meetingId;
+         $response['eventId']         = $eventId;
          echoResponse(201, $response);
      } else {
          $response['error'] 		= true;

@@ -364,15 +364,29 @@ class DbHandler {
       }
     }
 
+    private function getOrgIdForEvent($eventId) {
+      $stmt = $this->conn->prepare('SELECT orgId FROM events WHERE eventId = :eventId');
+      $stmt->bindParam(':eventId', $eventId);
+      if ($stmt->execute()) {
+      $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch();
+        return !empty($row['orgId']) ? $row['orgId'] : '0';
+      } else {
+        return '0';
+      }
+    }
+
     public function registerForEvent($eventId, $registrantId) {
       date_default_timezone_set($_ENV['TIMEZONE']);
       $now = date('Y-m-d H:i:s');
       if (!$this->isRegisteredForEvent($eventId, $registrantId)) {
-        $sql = "INSERT INTO attendees SET registrantId = :registrantId, eventId = :eventId, meetingId = '0', dateAdded = :dateAdded, dateModified = :dateModified";
+        $orgId = $this->getOrgIdForEvent($eventId);
+        $sql = "INSERT INTO attendees SET registrantId = :registrantId, eventId = :eventId, orgId = :orgId, meetingId = '0', dateAdded = :dateAdded, dateModified = :dateModified";
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':dateAdded', $now);
         $stmt->bindParam(':dateModified', $now);
         $stmt->bindParam(':eventId', $eventId);
+        $stmt->bindParam(':orgId', $orgId);
         $stmt->bindParam(':registrantId', $registrantId);
         if ($stmt->execute()) {
           return true;
