@@ -98,6 +98,18 @@ class DbHandler {
     }
   }
 
+  public function getFullName($registrantId) {
+    $stmt = $this->conn->prepare('SELECT fullName FROM registrants WHERE registrantId = :registrantId');
+    $stmt->bindParam(':registrantId', $registrantId);
+    if ($stmt->execute()) {
+    $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      return !empty($row['fullName']) ? $row['fullName'] : 'N/A';
+    } else {
+      return '';
+    }
+  }
+
   public function getMeetingsForEvent($eventId, $registrantId) {
       $response = array ();
 
@@ -153,6 +165,65 @@ class DbHandler {
               'attendeeTotal' => $this->getAttendeeTotal($row['eventId']),
               'isRegistered'  => $this->isRegisteredForEvent($row['eventId'], $registrantId),
               'isCheckedIn'   => $this->isCheckedInForEvent($row['eventId'], $registrantId)
+            );
+        }
+      }
+
+      return $response;
+
+    }
+
+    public function whoIsRegisteredForEvent($eventId) {
+      date_default_timezone_set($_ENV['TIMEZONE']);
+      $response = array();
+      $stmt = $this->conn->prepare("SELECT * FROM attendees WHERE eventId = :eventId");
+      $stmt->bindParam(':eventId', $eventId);
+
+      if ($stmt->execute()) {
+        $registrants = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($registrants AS $row) {
+
+          $response [] = array (
+              'attendeeId'      => $row['attendeeId'],
+              'fullName'        => $this->getFullName($row['registrantId']),
+              'meetingId'       => $row['meetingId'],
+              'location'        => $row['location'],
+              'checkedIn'       => $row['checkedIn'] == '1',
+              'checkedInDate'   => $row['checkedInDate'] ? date('m/d/Y h:i a', strtotime($row['checkedInDate'])) : '',
+              'meetings'        => $this->getMeetingsForEvent($row['eventId'], $row['registrantId']),
+            );
+        }
+      }
+
+      return $response;
+
+    }
+
+    public function getAllEventsForAdmin($orgId) {
+      date_default_timezone_set($_ENV['TIMEZONE']);
+      $now = date('Y-m-d');
+      $response = array ();
+
+      $stmt = $this->conn->prepare("SELECT * FROM events WHERE orgId = :orgId ORDER BY startDate ASC");
+      $stmt->bindParam(':orgId', $orgId);
+
+      if ($stmt->execute()) {
+        $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($events AS $row) {
+
+          $response [] = array (
+              'eventId'         => $row['eventId'],
+              'startDate'       => date('m/d/Y',strtotime($row['startDate'])),
+              'endDate'         => date('m/d/Y',strtotime($row['endDate'])),
+              'location'        => $row['location'],
+              'orgId'           => $row['orgId'],
+              'orgName'         => $this->getOrganizationName($row['orgId']),
+              'name'            => $row['name'],
+              'blurb'			      => html_entity_decode(strip_tags(substr($row['description'],0,100)).'...', ENT_QUOTES, 'UTF-8'),
+              'description'     => $row['description'],
+              'meetings'        => $this->getMeetingsForEvent($row['eventId'], $registrantId),
+              'attendeeTotal'   => $this->getAttendeeTotal($row['eventId']),
+              'whoIsRegistered' => $this->whoIsRegisteredForEvent($row['eventId']),
             );
         }
       }
@@ -462,9 +533,74 @@ class DbHandler {
         }
    }
 
+   public function forgotAdminPassword($username) {
+     date_default_timezone_set($_ENV['TIMEZONE']);
+       	$stmt = $this->conn->prepare('SELECT username, email, mobilephone FROM admins WHERE username = :username');
+
+         $stmt->bindParam(':username', $username);
+         $stmt->execute();
+         $stmt->setFetchMode(PDO::FETCH_ASSOC);
+         $row = $stmt->fetch();
+
+         if (isset($row) && $row) {
+           $email		         = $row['email'];
+           $mobilephone       = $row['mobilephone'];
+
+           $reset_code_short  = mt_rand(100000,999999);
+           $reset_code = sha1(uniqid(rand(), true));
+           date_default_timezone_set($_ENV['TIMEZONE']);
+           $reset_dt = date('Y-m-d H:i:s');
+           $reset_code_active = 1;
+
+           $stmt = $this->conn->prepare('UPDATE admins SET reset_code = :reset_code, reset_code_short = :reset_code_short, reset_code_active = :reset_code_active, reset_dt = :reset_dt, dateModified = NOW() WHERE username = :username');
+           $stmt->bindParam(':username',$username);
+           $stmt->bindParam(':reset_code',$reset_code);
+           $stmt->bindParam(':reset_code_short',$reset_code_short);
+           $stmt->bindParam(':reset_code_active',$reset_code_active);
+           $stmt->bindParam(':reset_dt',$reset_dt);
+           $stmt->execute();
+
+           $from_name 	= $this->getSetting('config_name');
+           $from_url	= $_ENV['HTTP_CATALOG'];
+ 	     	   $subject 	= 'Password Reset';
+ 	     	   $message 	= '<p>Someone just requested that the password be reset for your account at '.$from_name.'.</p><p>If this was a mistake, just ignore this email and nothing will happen.</p><p>To reset your password, click the following link:</p>
+ 	   <p><a href="'.$from_url.'reset?c='.$reset_code.'">Reset My Password</a></p>';
+
+           if ($mobilephone) {
+             $this->sendSMS($mobilephone, 'Reset code is: '.$reset_code_short);
+             return 'mobile';
+           } else if ($email) {
+             $this->sendEmail($username, $email, $subject, $message, 0);
+             return 'email';
+           } else {
+             return false;
+           }
+
+         } else {
+             // registrant not existed with the email
+             return 'not_username';
+         }
+    }
+
    private function getUsernameFromResetCode($reset_code) {
     date_default_timezone_set($_ENV['TIMEZONE']);
     $sql = "SELECT username FROM registrants WHERE (reset_code = :reset_code OR reset_code_short = :reset_code) AND reset_code_active = '1' AND reset_dt >= DATE_SUB(NOW(), INTERVAL 30 MINUTE)";
+    $stmt = $this->conn->prepare($sql);
+
+    $stmt->bindParam(':reset_code', $reset_code);
+    if ($stmt->execute()) {
+      $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      return $row['username'];
+    } else {
+      return false;
+    }
+
+   }
+
+   private function getAdminUsernameFromResetCode($reset_code) {
+    date_default_timezone_set($_ENV['TIMEZONE']);
+    $sql = "SELECT username FROM admins WHERE (reset_code = :reset_code OR reset_code_short = :reset_code) AND reset_code_active = '1' AND reset_dt >= DATE_SUB(NOW(), INTERVAL 30 MINUTE)";
     $stmt = $this->conn->prepare($sql);
 
     $stmt->bindParam(':reset_code', $reset_code);
@@ -487,6 +623,31 @@ class DbHandler {
       $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
       $stmt = $this->conn->prepare("UPDATE registrants SET password = :password, reset_code = '', reset_code_short = '', reset_code_active = '0', dateModified = NOW() WHERE username = :username");
+
+      $stmt->bindParam(':username', $username);
+      $stmt->bindParam(':password', $password_hash);
+      if ($stmt->execute()) {
+        return true;
+      } else {
+        return false;
+      }
+
+    } else {
+      return false;
+
+    }
+
+  }
+
+  public function resetAdminPassword($reset_code, $password) {
+    date_default_timezone_set($_ENV['TIMEZONE']);
+
+    $username = $this->getAdminUsernameFromResetCode($reset_code);
+
+    if ($username) {
+      $password_hash = password_hash($password, PASSWORD_DEFAULT);
+
+      $stmt = $this->conn->prepare("UPDATE admins SET password = :password, reset_code = '', reset_code_short = '', reset_code_active = '0', dateModified = NOW() WHERE username = :username");
 
       $stmt->bindParam(':username', $username);
       $stmt->bindParam(':password', $password_hash);
@@ -765,6 +926,70 @@ table.list .center {
     } else {
         // registrant not existed with the email
         return 'not_username';
+    }
+  }
+
+  private function hasCheckedInForEvent($registrantId, $eventId) {
+    $sql = "SELECT COUNT(*) AS total FROM attendees WHERE registrantId = :registrantId AND eventId = :eventId AND meetingId = '0'";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':registrantId', $registrantId);
+    $stmt->bindParam(':eventId', $eventId);
+
+    if ($stmt->execute()) {
+      $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      return $row['total'] > 0;
+    } else {
+      return false;
+    }
+  }
+
+  public function checkinForEventAdmin($registrantId, $eventId) {
+    date_default_timezone_set($_ENV['TIMEZONE']);
+    $now = date('Y-m-d H:i:s');
+    if ($this->hasCheckedInForEvent($registrantId, $eventId) {
+      return true;
+    }
+    $stmt = $this->conn->prepare("UPDATE attendees SET checkedIn = '1', checkedInDate = :now, dateModified = :now WHERE registrantId = :registrantId AND eventId = :eventId AND meetingId = '0'");
+    $stmt->bindParam(':now', $now);
+    $stmt->bindParam(':registrantId', $registrantId);
+    $stmt->bindParam(':eventId', $eventId);
+    if ($stmt->execute()) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  private function hasCheckedInForMeeting($registrantId, $meetingId) {
+    $sql = "SELECT COUNT(*) AS total FROM attendees WHERE registrantId = :registrantId AND meetingId = :meetingId";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':registrantId', $registrantId);
+    $stmt->bindParam(':meetingId', $meetingId);
+
+    if ($stmt->execute()) {
+      $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      return $row['total'] > 0;
+    } else {
+      return false;
+    }
+  }
+
+  public function checkinForMeetingAdmin($registrantId, $meetingId) {
+    date_default_timezone_set($_ENV['TIMEZONE']);
+    $now = date('Y-m-d H:i:s');
+    if ($this->hasCheckedInForEvent($registrantId, $meetingId) {
+      return true;
+    }
+    $stmt = $this->conn->prepare("UPDATE attendees SET checkedIn = '1', checkedInDate = :now, dateModified = :now WHERE registrantId = :registrantId AND meetingId = :meetingId");
+    $stmt->bindParam(':now', $now);
+    $stmt->bindParam(':registrantId', $registrantId);
+    $stmt->bindParam(':meetingId', $meetingId);
+    if ($stmt->execute()) {
+      return true;
+    } else {
+      return false;
     }
   }
 

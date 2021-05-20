@@ -313,6 +313,62 @@ $app->get('/admins/people/:query', 'authenticateAdmin', function($query) use($ap
     $db = NULL;
 });
 
+$app->get('/admins/events', 'authenticateAdmin', function() use($app) {
+    $response = array();
+    $db = new DbHandler();
+
+    $results   = $db->getAllEventsForAdmin($app->orgId);
+
+    if ($results) {
+        $response['success']    = true;
+        $response['username'] = $app->username;
+        $response['results']  = $results;
+    } else {
+        $response['error'] = true;
+        $response['results'] = array();
+        $response['message'] = 'No events found!';
+    }
+
+    echoResponse(200, $response);
+
+    $db = NULL;
+});
+
+$app->put('/admins/checkins', 'authenticateAdmin', function() use($app) {
+
+     $json = $app->request->getBody();
+     $data = json_decode($json, true);
+     $eventId = $data['eventId'];
+     $meetingId = $data['meetingId'];
+     $registrantId = $data['registrantId'];
+
+     $db = new DbHandler();
+
+     if (!empty($meetingId)) {
+       $res = $db->checkinForMeetingAdmin($registrantId, $meetingId);
+     } else {
+       $res = $db->checkinForEventAdmin($registrantId, $eventId);
+     }
+
+     if ($res) {
+         $response['error'] 		= false;
+         $response['success'] 	= true;
+         $response['username'] 	= $app->username;
+         $response['message'] 	= "Successfully checked in!";
+         $response['result']    = $res;
+         echoResponse(201, $response);
+     } else {
+         $response['error'] 		= true;
+         $response['username'] 	= $app->username;
+         $response['message'] 	= "An error occurred while checking in. Try again later!";
+         echoResponse(200, $response);
+     }
+
+     $db = null;
+ });
+
+
+
 $app->post('/users/signup', function() use($app) {
     // body passed as JSON
 
@@ -382,33 +438,90 @@ $app->post('/users/password/forgot', function() use($app) {
             echoResponse(200, $response);
         });
 
+$app->post('/admins/password/forgot', function() use($app) {
+        // check for required params
+        $json = $app->request->getBody();
+    		$data = json_decode($json, true);
+    		$username = $data['username'];
 
-$app->post('/users/password/reset', function() use($app) {
-            // check for required params
-            $json = $app->request->getBody();
-            $data = json_decode($json, true);
-            $resetcode = $data['resetcode'];
-            $password = $data['password'];
+        $response = array();
 
-            $response = array();
+        $db = new DbHandler();
+        $res = $db->forgotAdminPassword($username);
 
-            $db = new DbHandler();
-            $res = $db->resetPassword($resetcode, $password);
-
-            if ($res) {
-                $response['error'] = false;
-                $response['success'] = true;
-                $response['message'] = 'Password reset successfully. You can now login in with your new password!';
-                echoResponse(201, $response);
-            } else {
-                $response['error'] = true;
-                $response['message'] = 'An error occurred while resetting password';
-                echoResponse(200, $response);
+        if ($res == 'not_username') {
+            $response['error'] = true;
+            $response['message'] = 'No such username: '.$username;
+        } else {
+            $response['error'] = false;
+            $response['success'] = true;
+            $response['type'] = $res;
+            if ($res == 'mobile') {
+                $message = 'Please enter short code we just sent via SMS';
             }
 
-            $db = NULL;
-        });
+            if ($res == 'email') {
+                $message = 'Please click on the reset password link in the email we just sent you to reset your password';
+            }
+            $response['message'] = $message;
+        }
 
+        $db = NULL;
+        echoResponse(200, $response);
+    });
+
+
+$app->post('/users/password/reset', function() use($app) {
+    // check for required params
+    $json = $app->request->getBody();
+    $data = json_decode($json, true);
+    $resetcode = $data['resetcode'];
+    $password = $data['password'];
+
+    $response = array();
+
+    $db = new DbHandler();
+    $res = $db->resetPassword($resetcode, $password);
+
+    if ($res) {
+        $response['error'] = false;
+        $response['success'] = true;
+        $response['message'] = 'Password reset successfully. You can now login in with your new password!';
+        echoResponse(201, $response);
+    } else {
+        $response['error'] = true;
+        $response['message'] = 'An error occurred while resetting password';
+        echoResponse(200, $response);
+    }
+
+    $db = NULL;
+});
+
+$app->post('/admins/password/reset', function() use($app) {
+    // check for required params
+    $json = $app->request->getBody();
+    $data = json_decode($json, true);
+    $resetcode = $data['resetcode'];
+    $password = $data['password'];
+
+    $response = array();
+
+    $db = new DbHandler();
+    $res = $db->resetAdminPassword($resetcode, $password);
+
+    if ($res) {
+        $response['error'] = false;
+        $response['success'] = true;
+        $response['message'] = 'Password reset successfully. You can now login in with your new password!';
+        echoResponse(201, $response);
+    } else {
+        $response['error'] = true;
+        $response['message'] = 'An error occurred while resetting password';
+        echoResponse(200, $response);
+    }
+
+    $db = NULL;
+});
 
 // Calls that require authentication
 
