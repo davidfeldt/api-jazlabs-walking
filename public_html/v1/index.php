@@ -342,15 +342,15 @@ $app->put('/admins/checkins', 'authenticateAdmin', function() use($app) {
      $meetingId = array_key_exists('meetingId',$data) ? $data['meetingId'] : null;
      $registrantId = array_key_exists('registrantId',$data) ? $data['registrantId'] : null;
      $message = '';
-     
+
      $db = new DbHandler();
 
      if (!empty($meetingId)) {
        $res = $db->checkinForMeetingAdmin($registrantId, $meetingId);
-       $message = 'meeting!'
+       $message = 'meeting!';
      } else {
        $res = $db->checkinForEventAdmin($registrantId, $eventId);
-       $message = 'event!'
+       $message = 'event!';
      }
 
      if ($res) {
