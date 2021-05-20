@@ -353,13 +353,13 @@ $app->put('/admins/checkins', 'authenticateAdmin', function() use($app) {
        $message = 'meeting!';
        $meetingName = $db->getMeetingName($meetingId);
        $fullName = $db->getFullName($registrantId);
-       $result = $fullname. ' is now checked in for meeting: ' . $meetingName;
+       $result = $fullName. ' is now checked in for meeting: ' . $meetingName;
      } else {
        $res = $db->checkinForEventAdmin($registrantId, $eventId);
        $message = 'event!';
        $eventName = $db->getEventName($eventId);
        $fullName = $db->getFullName($registrantId);
-       $result = $fullname. ' is now checked in for event: ' . $eventName;
+       $result = $fullName. ' is now checked in for event: ' . $eventName;
      }
 
      if ($res) {
