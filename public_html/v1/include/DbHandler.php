@@ -947,7 +947,7 @@ table.list .center {
   public function checkinForEventAdmin($registrantId, $eventId) {
     date_default_timezone_set($_ENV['TIMEZONE']);
     $now = date('Y-m-d H:i:s');
-    if ($this->hasCheckedInForEvent($registrantId, $eventId) {
+    if ($this->hasCheckedInForEvent($registrantId, $eventId)) {
       return true;
     }
     $stmt = $this->conn->prepare("UPDATE attendees SET checkedIn = '1', checkedInDate = :now, dateModified = :now WHERE registrantId = :registrantId AND eventId = :eventId AND meetingId = '0'");
@@ -979,7 +979,7 @@ table.list .center {
   public function checkinForMeetingAdmin($registrantId, $meetingId) {
     date_default_timezone_set($_ENV['TIMEZONE']);
     $now = date('Y-m-d H:i:s');
-    if ($this->hasCheckedInForEvent($registrantId, $meetingId) {
+    if ($this->hasCheckedInForEvent($registrantId, $meetingId)) {
       return true;
     }
     $stmt = $this->conn->prepare("UPDATE attendees SET checkedIn = '1', checkedInDate = :now, dateModified = :now WHERE registrantId = :registrantId AND meetingId = :meetingId");
