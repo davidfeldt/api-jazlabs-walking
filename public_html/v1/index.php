@@ -342,15 +342,24 @@ $app->put('/admins/checkins', 'authenticateAdmin', function() use($app) {
      $meetingId = array_key_exists('meetingId',$data) ? $data['meetingId'] : null;
      $registrantId = array_key_exists('registrantId',$data) ? $data['registrantId'] : null;
      $message = '';
+     $eventName = '';
+     $meetingName = '';
+     $fullName = '';
 
      $db = new DbHandler();
 
      if (!empty($meetingId)) {
        $res = $db->checkinForMeetingAdmin($registrantId, $meetingId);
        $message = 'meeting!';
+       $meetingName = $db->getMeetingName($meetingId);
+       $fullName = $db->getFullName($registrantId);
+       $result = $fullname. ' is now checked in for meeting: ' . $meetingName;
      } else {
        $res = $db->checkinForEventAdmin($registrantId, $eventId);
        $message = 'event!';
+       $eventName = $db->getEventName($eventId);
+       $fullName = $db->getFullName($registrantId);
+       $result = $fullname. ' is now checked in for event: ' . $eventName;
      }
 
      if ($res) {
@@ -358,10 +367,7 @@ $app->put('/admins/checkins', 'authenticateAdmin', function() use($app) {
          $response['success'] 	      = true;
          $response['username'] 	      = $app->username;
          $response['message'] 	      = 'Successfully checked into '.$message;
-         $response['result']          = $res;
-         $response['registrantId']    = $registrantId;
-         $response['meetingId']       = $meetingId;
-         $response['eventId']         = $eventId;
+         $response['result']          = $result;
          echoResponse(201, $response);
      } else {
          $response['error'] 		= true;
