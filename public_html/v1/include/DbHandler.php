@@ -944,7 +944,7 @@ table.list .center {
   }
 
   private function hasCheckedInForEvent($registrantId, $eventId) {
-    $sql = "SELECT COUNT(*) AS total FROM attendees WHERE registrantId = :registrantId AND eventId = :eventId AND meetingId = '0'";
+    $sql = "SELECT COUNT(*) AS total FROM attendees WHERE registrantId = :registrantId AND eventId = :eventId AND meetingId = '0' AND checkedIn = '1'";
     $stmt = $this->conn->prepare($sql);
     $stmt->bindParam(':registrantId', $registrantId);
     $stmt->bindParam(':eventId', $eventId);
@@ -976,7 +976,7 @@ table.list .center {
   }
 
   private function hasCheckedInForMeeting($registrantId, $meetingId) {
-    $sql = "SELECT COUNT(*) AS total FROM attendees WHERE registrantId = :registrantId AND meetingId = :meetingId";
+    $sql = "SELECT COUNT(*) AS total FROM attendees WHERE registrantId = :registrantId AND meetingId = :meetingId AND checkedIn = '1'";
     $stmt = $this->conn->prepare($sql);
     $stmt->bindParam(':registrantId', $registrantId);
     $stmt->bindParam(':meetingId', $meetingId);

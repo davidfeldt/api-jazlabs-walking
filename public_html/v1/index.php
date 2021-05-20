@@ -341,20 +341,23 @@ $app->put('/admins/checkins', 'authenticateAdmin', function() use($app) {
      $eventId = array_key_exists('eventId',$data) ? $data['eventId'] : null;
      $meetingId = array_key_exists('meetingId',$data) ? $data['meetingId'] : null;
      $registrantId = array_key_exists('registrantId',$data) ? $data['registrantId'] : null;
-
+     $message = '';
+     
      $db = new DbHandler();
 
      if (!empty($meetingId)) {
        $res = $db->checkinForMeetingAdmin($registrantId, $meetingId);
+       $message = 'meeting!'
      } else {
        $res = $db->checkinForEventAdmin($registrantId, $eventId);
+       $message = 'event!'
      }
 
      if ($res) {
          $response['error'] 		      = false;
          $response['success'] 	      = true;
          $response['username'] 	      = $app->username;
-         $response['message'] 	      = "Successfully checked in!";
+         $response['message'] 	      = 'Successfully checked into '.$message;
          $response['result']          = $res;
          $response['registrantId']    = $registrantId;
          $response['meetingId']       = $meetingId;
@@ -363,7 +366,7 @@ $app->put('/admins/checkins', 'authenticateAdmin', function() use($app) {
      } else {
          $response['error'] 		= true;
          $response['username'] 	= $app->username;
-         $response['message'] 	= "An error occurred while checking in. Try again later!";
+         $response['message'] 	= "An error occurred while checking into ".$message. " Try again later!";
          echoResponse(200, $response);
      }
 
