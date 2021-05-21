@@ -1213,7 +1213,7 @@ table.list .center {
 
     $query = '%'. strtolower($string) . '%';
     $peeps = array();
-    $stmt = $this->conn->prepare("SELECT r.* FROM attendees a LEFT JOIN events e ON a.eventID = e.eventId LEFT JOIN registrants r ON a.registrantId = r.registrantId WHERE e.orgId = :orgId AND LOWER(r.fullName) LIKE :query");
+    $stmt = $this->conn->prepare("SELECT r.* FROM attendees a LEFT JOIN events e ON a.eventID = e.eventId LEFT JOIN registrants r ON a.registrantId = r.registrantId WHERE a.meetingId = '0' AND e.orgId = :orgId AND LOWER(r.fullName) LIKE :query");
     $stmt->bindParam(':query', $query);
     $stmt->bindParam(':orgId', $orgId);
 

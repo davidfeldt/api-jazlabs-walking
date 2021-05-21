@@ -335,18 +335,37 @@ $app->get('/admins/events', 'authenticateAdmin', function() use($app) {
 });
 
 $app->put('/admins/checkins', 'authenticateAdmin', function() use($app) {
+   $res = false;
+   $result = '';
+   $message = '';
+   $eventName = '';
+   $meetingName = '';
+   $fullName = '';
 
-     $json = $app->request->getBody();
-     $data = json_decode($json, true);
-     $eventId = array_key_exists('eventId',$data) ? $data['eventId'] : null;
-     $meetingId = array_key_exists('meetingId',$data) ? $data['meetingId'] : null;
-     $registrantId = array_key_exists('registrantId',$data) ? $data['registrantId'] : null;
-     $message = '';
-     $eventName = '';
-     $meetingName = '';
-     $fullName = '';
+   $db = new DbHandler();
 
-     $db = new DbHandler();
+   $json = $app->request->getBody();
+   $data = json_decode($json, true);
+
+   if (array_key_exists('eventId',$data)) {
+     $eventId = $data['eventId'];
+   } else {
+     $eventId = null;
+   }
+
+   if (array_key_exists('meetingId',$data)) {
+     $meetingId = $data['meetingId'];
+   } else {
+     $meetingId = null;
+   }
+
+   if (array_key_exists('registrantId',$data)) {
+     $registrantId = $data['registrantId'];
+   } else {
+     $registrantId = null;
+   }
+
+   if ((!empty($eventId) || !empty($meetingId)) && !empty($registrantId)) {
 
      if (!empty($meetingId)) {
        $res = $db->checkinForMeetingAdmin($registrantId, $meetingId);
@@ -361,25 +380,24 @@ $app->put('/admins/checkins', 'authenticateAdmin', function() use($app) {
        $fullName = $db->getFullName($registrantId);
        $result = $fullName. ' is now checked in for event: ' . $eventName;
      }
+   }
 
-     if ($res) {
-         $response['error'] 		      = false;
-         $response['success'] 	      = true;
-         $response['username'] 	      = $app->username;
-         $response['message'] 	      = 'Successfully checked into '.$message;
-         $response['result']          = $result;
-         echoResponse(201, $response);
-     } else {
-         $response['error'] 		= true;
-         $response['username'] 	= $app->username;
-         $response['message'] 	= "An error occurred while checking into ".$message. " Try again later!";
-         echoResponse(200, $response);
-     }
+   if ($res) {
+       $response['error'] 		      = false;
+       $response['success'] 	      = true;
+       $response['username'] 	      = $app->username;
+       $response['message'] 	      = 'Successfully checked into '.$message;
+       $response['result']          = $result;
+       echoResponse(201, $response);
+   } else {
+       $response['error'] 		= true;
+       $response['username'] 	= $app->username;
+       $response['message'] 	= "An error occurred while checking into ".$message. ". Try again later!";
+       echoResponse(200, $response);
+   }
 
-     $db = null;
+   $db = null;
  });
-
-
 
 $app->post('/users/signup', function() use($app) {
     // body passed as JSON
