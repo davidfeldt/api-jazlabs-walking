@@ -221,7 +221,7 @@ class DbHandler {
               'name'            => $row['name'],
               'blurb'			      => html_entity_decode(strip_tags(substr($row['description'],0,100)).'...', ENT_QUOTES, 'UTF-8'),
               'description'     => $row['description'],
-              'meetings'        => $this->getMeetingsForEvent($row['eventId'], $registrantId),
+              'meetings'        => $this->getMeetingsForEvent($row['eventId'], 0),
               'attendeeTotal'   => $this->getAttendeeTotal($row['eventId']),
               'whoIsRegistered' => $this->whoIsRegisteredForEvent($row['eventId']),
             );

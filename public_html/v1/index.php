@@ -7,7 +7,7 @@ require_once 'include/DbHandler.php';
 use \Firebase\JWT\JWT;
 use \Slim\Slim;
 use GuzzleHttp\Client;
-use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Psr7\Request; 
 
 
 $dotenv = new Dotenv\Dotenv('../../');
