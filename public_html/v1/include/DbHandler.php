@@ -176,7 +176,7 @@ class DbHandler {
     public function whoIsRegisteredForEvent($eventId) {
       date_default_timezone_set($_ENV['TIMEZONE']);
       $response = array();
-      $stmt = $this->conn->prepare("SELECT * FROM attendees WHERE eventId = :eventId");
+      $stmt = $this->conn->prepare("SELECT * FROM attendees WHERE eventId = :eventId AND meetingId = '0'");
       $stmt->bindParam(':eventId', $eventId);
 
       if ($stmt->execute()) {
@@ -187,10 +187,9 @@ class DbHandler {
               'attendeeId'      => $row['attendeeId'],
               'fullName'        => $this->getFullName($row['registrantId']),
               'meetingId'       => $row['meetingId'],
-              'location'        => $row['location'],
               'checkedIn'       => $row['checkedIn'] == '1',
-              'checkedInDate'   => $row['checkedInDate'] ? date('m/d/Y h:i a', strtotime($row['checkedInDate'])) : '',
-              'meetings'        => $this->getMeetingsForEvent($row['eventId'], $row['registrantId']),
+              'checkedInDate'   => $row['checkedInDate'] ? date('m/d/Y h:i a', strtotime($row['checkedInDate'])) : ''
+              // 'meetings'        => $this->getMeetingsForEvent($row['eventId'], $row['registrantId']),
             );
         }
       }
@@ -1194,8 +1193,8 @@ table.list .center {
           $eventsData[] = array (
             'eventId'	  => $e['eventId'],
             'name'      => $e['name'],
-            'startDate' => $e['startDate'],
-            'endDate'   => $e['endDate'],
+            'startDate' => date('m/d/Y h:i a', strtotime($e['startDate'])),
+            'endDate'   => date('m/d/Y h:i a', strtotime($e['endDate'])),
             'location'  => $e['location'],
             'city'      => $e['city'],
             'zip'       => $e['zip']
