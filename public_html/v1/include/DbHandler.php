@@ -218,7 +218,7 @@ class DbHandler {
               'orgId'           => $row['orgId'],
               'orgName'         => $this->getOrganizationName($row['orgId']),
               'name'            => $row['name'],
-              'blurb'			      => html_entity_decode(strip_tags(substr($row['description'],0,100)).'...', ENT_QUOTES, 'UTF-8'),
+              'blurb'			      => $row['description'] ? html_entity_decode(strip_tags(substr($row['description'],0,100)).'...', ENT_QUOTES, 'UTF-8') : '',
               'description'     => $row['description'],
               'meetings'        => $this->getMeetingsForEvent($row['eventId'], 0),
               'attendeeTotal'   => $this->getAttendeeTotal($row['eventId']),
@@ -418,7 +418,7 @@ class DbHandler {
     }
 
     private function getAttendeeTotal($eventId) {
-      $stmt     = $this->conn->prepare('SELECT COUNT(*) AS total FROM attendees WHERE eventId = :eventId');
+      $stmt     = $this->conn->prepare("SELECT COUNT(*) AS total FROM attendees WHERE eventId = :eventId AND meetingId = '0'");
       $stmt->bindParam(':eventId', $eventId);
       $post_data = array();
       if ($stmt->execute()) {
