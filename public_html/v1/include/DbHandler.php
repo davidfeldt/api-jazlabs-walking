@@ -1362,6 +1362,119 @@ table.list .center {
     }
   }
 
+  public function getCalendarMarkedDatesAdmin($startDate, $endDate, $orgId = 0)  {
+    $dates_data  = array();
+    date_default_timezone_set($_ENV['TIMEZONE']);
+    $startDate = date('Y-m-d', strtotime($startDate);
+    $endDate = date('Y-m-d', strtotime($endDate);
+
+    $stmt = $this->conn->prepare("SELECT startDate, endDate FROM events WHERE DATE(startDate) >= :startDate AND DATE(endDate) <= :endDate AND orgId = :orgId ORDER BY startDate ASC");
+    $stmt->bindParam(':startDate', $startDate);
+    $stmt->bindParam(':endDate', $endDate);
+    $stmt->bindParam(':orgId', $orgId);
+
+    if ($stmt->execute()) {
+      $dates = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+      if ($dates) {
+        foreach ($dates AS $date) {
+            $start_date = date('Y-m-d', strtotime($date['startDate']);
+            $end_date = date('Y-m-d', strtotime($date['endDate']);
+            $dates_data[$start_date] = array (
+              'startingDay'  => true,
+              'color' => 'green'
+            );
+            $dates_data[$end_date] = array (
+              'selected'  => true,
+              'endingDay' => true,
+              'color'     => 'green',
+              'textColor' => 'gray'
+            );
+        }
+      }
+    }
+    return $dates_data;
+  }
+
+  public function deleteCalendarItem($eventId) {
+      $stmt = $this->conn->prepare("DELETE FROM events WHERE eventId = :eventId");
+      $stmt->bindParam(':eventId', $eventId);
+      if ($stmt->execute()) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+
+    private function guidv4($data = null) {
+      $data = $data ?? random_bytes(16);
+
+      $data[6] = chr(ord($data[6]) & 0x0f | 0x40); // set version to 0100
+      $data[8] = chr(ord($data[8]) & 0x3f | 0x80); // set bits 6-7 to 10
+
+      return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
+    }
+
+   	public function addCalendarEvent($username, $orgId, $data) {
+   		date_default_timezone_set($_ENV['TIMEZONE']);
+
+   		$name = array_key_exists('name', $data) ? $data['name'] : '';
+
+   		$startDate = date('Y-m-d', strtotime($data['startDate']));
+   		$endDate = date('Y-m-d', strtotime($data['endDate']));
+
+      $description = array_key_exists('description', $data) ? $data['description'] : '';
+      $location = array_key_exists('description', $data) ? $data['description'] : '';
+      $city = array_key_exists('city', $data) ? $data['city'] : '';
+      $state = array_key_exists('state', $data) ? $data['state'] : '';
+      $zip = array_key_exists('zip', $data) ? $data['zip'] : '';
+      $eventCode = $this->guidv4();
+
+      $stmt = $this->conn->prepare("INSERT INTO events SET orgId = :orgId, name = :name, description = :description, startDate = :startDate, endDate = :endDate, location = :location, city = :city, state = :state, zip = :zip, eventCode = :eventCode");
+      $stmt->bindParam(':orgId', $orgId);
+      $stmt->bindParam(':name', $name);
+    	$stmt->bindParam(':description', $description);
+    	$stmt->bindParam(':startDate', $startDate);
+    	$stmt->bindParam(':endDate', $endDate);
+      $stmt->bindParam(':location', $location);
+    	$stmt->bindParam(':city', $city);
+    	$stmt->bindParam(':state', $state);
+    	$stmt->bindParam(':zip', $zip);
+    	$stmt->bindParam(':eventCode', $eventCode);
+
+    	return $stmt->execute();
+
+   	}
+
+    public function editCalendarEvent($data) {
+   		date_default_timezone_set($_ENV['TIMEZONE']);
+
+      $name = array_key_exists('name', $data) ? $data['name'] : '';
+
+   		$startDate = date('Y-m-d', strtotime($data['startDate']));
+   		$endDate = date('Y-m-d', strtotime($data['endDate']));
+
+      $description = array_key_exists('description', $data) ? $data['description'] : '';
+      $location = array_key_exists('description', $data) ? $data['description'] : '';
+      $city = array_key_exists('city', $data) ? $data['city'] : '';
+      $state = array_key_exists('state', $data) ? $data['state'] : '';
+      $zip = array_key_exists('zip', $data) ? $data['zip'] : '';
+
+   		$stmt = $this->conn->prepare("UPDATE events SET name = :name, description = :description, startDate = :startDate, endDate = :endDate, location = :location, city = :city, state = :state, zip = :zip WHERE eventId = :eventId");
+      $stmt->bindParam(':name', $name);
+    	$stmt->bindParam(':description', $description);
+    	$stmt->bindParam(':startDate', $startDate);
+    	$stmt->bindParam(':endDate', $endDate);
+      $stmt->bindParam(':location', $location);
+    	$stmt->bindParam(':city', $city);
+    	$stmt->bindParam(':state', $state);
+    	$stmt->bindParam(':zip', $zip);
+    	$stmt->bindParam(':eventId', $eventId);
+
+    	return $stmt->execute();
+
+   	}
+
   public function getEventsForAttendeeForOrgId($orgId, $registrantId) {
     $sql = "SELECT e.* FROM events e LEFT JOIN attendees a ON e.eventId =  a.eventId WHERE e.orgId = :orgId AND a.registrantId = :registrantId AND a.meetingId = '0'";
     $eventsData = array();

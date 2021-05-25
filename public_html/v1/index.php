@@ -313,6 +313,81 @@ $app->get('/admins/people/:query', 'authenticateAdmin', function($query) use($ap
     $db = NULL;
 });
 
+$app->get('/admins/calendars', 'authenticateAdmin', function() use($app) {
+	    date_default_timezone_set($_ENV['TIMEZONE']);
+      $days = $_ENV['CALENDAR_PERIOD'];
+	    $defaultStart = date('Y-m-01', strtotime('- '.$days.' DAYS'));
+	    $defaultEnd = date('Y-m-t', strtotime('+ '.$days.'  DAYS'));
+	    $response = array();
+
+	    $db = new DbHandler();
+
+	    $error = false;
+	    $response['error'] = false;
+	    $response['success'] = true;
+	    $response['results'] = $db->getCalendarMarkedDatesAdmin($defaultStart,$defaultEnd,$app->orgId);
+
+	    echoResponse(200, $response);
+
+	    $db = NULL;
+	});
+
+  $app->post('/admins/calendars', 'authenticateAdmin', function() use($app) {
+    $json           = $app->request->getBody();
+    $data           = json_decode($json, true);
+
+    $response = array();
+
+    $db = new DbHandler();
+    $res = $db->addCalendarEvent($app->username, $app->orgId, $data);
+
+    if (!$res) {
+        $response['error'] = true;
+        $response['success'] = false;
+        $response['message'] = $data;
+        $response['response'] = $res;
+        echoResponse(200, $response);
+    } else {
+        $response['error'] = false;
+        $response['success'] = true;
+        $response['message'] = 'Added '.$data['title'];
+        $response['username'] = $app->username;
+        $response['response'] = $res;
+        echoResponse(201, $response);
+    }
+
+    $db = NULL;
+
+});
+
+$app->put('/admins/calendars', 'authenticateAdmin', function() use($app) {
+    $json           = $app->request->getBody();
+    $data           = json_decode($json, true);
+
+    $response = array();
+
+    $db = new DbHandler();
+    $res = $db->editCalendarEvent($data);
+
+    if (!$res) {
+        $response['error'] = true;
+        $response['success'] = false;
+        $response['message'] = $data;
+        $response['response'] = $res;
+        echoResponse(200, $response);
+    } else {
+        $response['error'] = false;
+        $response['success'] = true;
+        $response['message'] = 'Added '.$data['title'];
+        $response['username'] = $app->username;
+        $response['response'] = $res;
+        echoResponse(201, $response);
+    }
+
+    $db = NULL;
+
+});
+
 $app->get('/admins/events', 'authenticateAdmin', function() use($app) {
     $response = array();
     $db = new DbHandler();
