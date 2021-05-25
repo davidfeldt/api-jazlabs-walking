@@ -176,7 +176,7 @@ class DbHandler {
     public function whoIsRegisteredForEvent($eventId) {
       date_default_timezone_set($_ENV['TIMEZONE']);
       $response = array();
-      $stmt = $this->conn->prepare("SELECT * FROM attendees WHERE eventId = :eventId");
+      $stmt = $this->conn->prepare("SELECT * FROM attendees WHERE eventId = :eventId AND meetingId = '0'");
       $stmt->bindParam(':eventId', $eventId);
 
       if ($stmt->execute()) {
@@ -187,10 +187,9 @@ class DbHandler {
               'attendeeId'      => $row['attendeeId'],
               'fullName'        => $this->getFullName($row['registrantId']),
               'meetingId'       => $row['meetingId'],
-              'location'        => $row['location'],
               'checkedIn'       => $row['checkedIn'] == '1',
-              'checkedInDate'   => $row['checkedInDate'] ? date('m/d/Y h:i a', strtotime($row['checkedInDate'])) : '',
-              'meetings'        => $this->getMeetingsForEvent($row['eventId'], $row['registrantId']),
+              'checkedInDate'   => $row['checkedInDate'] ? date('m/d/Y h:i a', strtotime($row['checkedInDate'])) : ''
+              // 'meetings'        => $this->getMeetingsForEvent($row['eventId'], $row['registrantId']),
             );
         }
       }
@@ -219,9 +218,9 @@ class DbHandler {
               'orgId'           => $row['orgId'],
               'orgName'         => $this->getOrganizationName($row['orgId']),
               'name'            => $row['name'],
-              'blurb'			      => html_entity_decode(strip_tags(substr($row['description'],0,100)).'...', ENT_QUOTES, 'UTF-8'),
+              'blurb'			      => $row['description'] ? html_entity_decode(strip_tags(substr($row['description'],0,100)).'...', ENT_QUOTES, 'UTF-8') : '',
               'description'     => $row['description'],
-              'meetings'        => $this->getMeetingsForEvent($row['eventId'], $registrantId),
+              'meetings'        => $this->getMeetingsForEvent($row['eventId'], 0),
               'attendeeTotal'   => $this->getAttendeeTotal($row['eventId']),
               'whoIsRegistered' => $this->whoIsRegisteredForEvent($row['eventId']),
             );
@@ -419,7 +418,7 @@ class DbHandler {
     }
 
     private function getAttendeeTotal($eventId) {
-      $stmt     = $this->conn->prepare('SELECT COUNT(*) AS total FROM attendees WHERE eventId = :eventId');
+      $stmt     = $this->conn->prepare("SELECT COUNT(*) AS total FROM attendees WHERE eventId = :eventId AND meetingId = '0'");
       $stmt->bindParam(':eventId', $eventId);
       $post_data = array();
       if ($stmt->execute()) {
@@ -1194,8 +1193,8 @@ table.list .center {
           $eventsData[] = array (
             'eventId'	  => $e['eventId'],
             'name'      => $e['name'],
-            'startDate' => $e['startDate'],
-            'endDate'   => $e['endDate'],
+            'startDate' => date('m/d/Y h:i a', strtotime($e['startDate'])),
+            'endDate'   => date('m/d/Y h:i a', strtotime($e['endDate'])),
             'location'  => $e['location'],
             'city'      => $e['city'],
             'zip'       => $e['zip']
