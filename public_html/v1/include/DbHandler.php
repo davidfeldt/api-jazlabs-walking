@@ -152,6 +152,60 @@ class DbHandler {
       return $response;
     }
 
+    public function getMeetingsForEventAdmin($eventId) {
+        $response = array ();
+
+        $stmt = $this->conn->prepare("SELECT * FROM meetings WHERE eventId = :eventId ORDER BY startDate ASC");
+        $stmt->bindParam(':eventId', $eventId);
+
+        if ($stmt->execute()) {
+          $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
+          foreach ($events AS $row) {
+
+            $response [] = array (
+                'meetingId'       => $row['meetingId'],
+                'eventId'         => $row['eventId'],
+                'startDate'       => date('m/d g:i a',strtotime($row['startDate'])),
+                'endDate'         => date('m/d g:i a',strtotime($row['endDate'])),
+                'location'        => $row['location'],
+                'eventName'       => $this->getEventName($row['eventId']),
+                'name'            => $row['name'],
+                'capacity'        => $row['capacity'],
+                'totalRegistered' => $this->totalRegisteredForMeeting($row['meetingId']),
+                'totalCheckedIn'  => $this->totalCheckedInForMeeting($row['meetingId']),
+              );
+          }
+        }
+
+        return $response;
+      }
+
+      private function totalRegisteredForMeeting($meetingId) {
+        $stmt = $this->conn->prepare('SELECT COUNT(*) AS total FROM attendees WHERE meetingId = :meetingId');
+        $stmt->bindParam(':meetingId', $meetingId);
+        $post_data = array();
+        if ($stmt->execute()) {
+          $stmt->setFetchMode(PDO::FETCH_ASSOC);
+          $row = $stmt->fetch();
+          return number_format($row['total']);
+        } else {
+          return false;
+        }
+      }
+
+      private function totalCheckedInForMeeting($meetingId) {
+        $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM attendees WHERE meetingId = :meetingId AND checkedIn = '1'");
+        $stmt->bindParam(':meetingId', $meetingId);
+        $post_data = array();
+        if ($stmt->execute()) {
+          $stmt->setFetchMode(PDO::FETCH_ASSOC);
+          $row = $stmt->fetch();
+          return number_format($row['total']);
+        } else {
+          return false;
+        }
+      }
+
     public function getAllEvents($registrantId) {
       date_default_timezone_set($_ENV['TIMEZONE']);
       $now = date('Y-m-d');
@@ -234,7 +288,7 @@ class DbHandler {
               'name'            => $row['name'],
               'blurb'			      => $row['description'] ? html_entity_decode(strip_tags(substr($row['description'],0,100)).'...', ENT_QUOTES, 'UTF-8') : '',
               'description'     => $row['description'],
-              'meetings'        => $this->getMeetingsForEvent($row['eventId'], 0),
+              'meetings'        => $this->getMeetingsForEventAdmin($row['eventId']),
               'attendeeTotal'   => $this->getAttendeeTotal($row['eventId']),
               'whoIsRegistered' => $this->whoIsRegisteredForEvent($row['eventId']),
             );
