@@ -313,7 +313,7 @@ $app->get('/admins/people/:query', 'authenticateAdmin', function($query) use($ap
     $db = NULL;
 });
 
-$app->get('/admins/calendars', 'authenticateAdmin', function() use($app) {
+$app->get('/admins/calendars/marked-dates', 'authenticateAdmin', function() use($app) {
 	    date_default_timezone_set($_ENV['TIMEZONE']);
       $days = $_ENV['CALENDAR_PERIOD'];
 	    $defaultStart = date('Y-m-01', strtotime('- '.$days.' DAYS'));
@@ -360,6 +360,22 @@ $app->get('/admins/calendars', 'authenticateAdmin', function() use($app) {
 
 });
 
+$app->get('/admins/calendar-items/:date', 'authenticateAdmin', function($date) use($app) {
+    date_default_timezone_set($_ENV['TIMEZONE']);
+    $response = array();
+
+    $db = new DbHandler();
+
+    $error = false;
+    $response['error'] = false;
+    $response['success'] = true;
+    $response['items'] = $db->getEventsAndMeetingsByDay($date, $app->orgId);
+
+    echoResponse(200, $response);
+
+    $db = NULL;
+});
+
 $app->put('/admins/calendars', 'authenticateAdmin', function() use($app) {
     $json           = $app->request->getBody();
     $data           = json_decode($json, true);
@@ -378,7 +394,7 @@ $app->put('/admins/calendars', 'authenticateAdmin', function() use($app) {
     } else {
         $response['error'] = false;
         $response['success'] = true;
-        $response['message'] = 'Added '.$data['title'];
+        $response['message'] = 'Added '.$data['name'];
         $response['username'] = $app->username;
         $response['response'] = $res;
         echoResponse(201, $response);

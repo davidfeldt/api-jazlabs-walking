@@ -1415,6 +1415,53 @@ table.list .center {
       return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
     }
 
+    private function getMeetingsByDay($day, $eventId) {
+      date_default_timezone_set($_ENV['TIMEZONE']);
+      $day = date('Y-m-d', strtotime($day));
+      $eventData = array();
+      $stmt = $this->conn->prepare("SELECT * FROM events WHERE startDate >= :day AND endDate <= :day AND meetingId != '0' AND eventId = :eventId ORDER BY startDate ASC");
+      $stmt->bindParam(':day', $day);
+      $stmt->bindParam(':eventId', $eventId;
+      if ($stmt->execute()) {
+        $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($events AS $event) {
+          $times = $event['startDate'] == $event['endDate'] ? date('m/d',strtotime($event['startDate'])) : date('m/d',strtotime($event['startDate']))." - ".date('m/d',strtotime($event['endDate']));
+          $eventData[] = array (
+            'name'		    => $event['name'],
+            'times'		    => $times,
+            'height'	    => 50,
+            'meetingId'		=> $event['meetingId']
+          );
+        }
+      }
+      return $eventData;
+    }
+
+    public function getEventsAndMeetingsByDay($day, $orgId) {
+   		date_default_timezone_set($_ENV['TIMEZONE']);
+      $day = date('Y-m-d', strtotime($day));
+   		$eventData = array();
+   		$stmt = $this->conn->prepare("SELECT * FROM events WHERE startDate >= :day AND endDate <= :day AND meetingId = '0' AND orgId = :orgId ORDER BY startDate ASC");
+  		$stmt->bindParam(':day', $day);
+  		$stmt->bindParam(':orgId', $orgId;
+  		if ($stmt->execute()) {
+  			$events = $stmt->fetchAll(PDO::FETCH_ASSOC);
+  			foreach ($events AS $event) {
+  				$times = $event['startDate'] == $event['endDate'] ? date('m/d',strtotime($event['startDate'])) : date('m/d',strtotime($event['startDate']))." - ".date('m/d',strtotime($event['endDate']));
+  				$eventData[] = array (
+  					'name'		    => $event['name'],
+  					'times'		    => $times,
+  					'height'	    => 50,
+  					'meetingId'		=> 0
+  				);
+          $eventData[] = $this->getMeetingsByDay($day, $event['eventId']);
+  			}
+  		}
+
+  		return $eventData;
+   	}
+
+
    	public function addCalendarEvent($username, $orgId, $data) {
    		date_default_timezone_set($_ENV['TIMEZONE']);
 
