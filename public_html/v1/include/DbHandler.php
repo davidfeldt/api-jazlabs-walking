@@ -1365,8 +1365,8 @@ table.list .center {
   public function getCalendarMarkedDatesAdmin($startDate, $endDate, $orgId = 0)  {
     $dates_data  = array();
     date_default_timezone_set($_ENV['TIMEZONE']);
-    $startDate = date('Y-m-d', strtotime($startDate);
-    $endDate = date('Y-m-d', strtotime($endDate);
+    $startDate = date('Y-m-d', strtotime($startDate));
+    $endDate = date('Y-m-d', strtotime($endDate));
 
     $stmt = $this->conn->prepare("SELECT startDate, endDate FROM events WHERE DATE(startDate) >= :startDate AND DATE(endDate) <= :endDate AND orgId = :orgId ORDER BY startDate ASC");
     $stmt->bindParam(':startDate', $startDate);
@@ -1378,8 +1378,8 @@ table.list .center {
 
       if ($dates) {
         foreach ($dates AS $date) {
-            $start_date = date('Y-m-d', strtotime($date['startDate']);
-            $end_date = date('Y-m-d', strtotime($date['endDate']);
+            $start_date = date('Y-m-d', strtotime($date['startDate']));
+            $end_date = date('Y-m-d', strtotime($date['endDate']));
             $dates_data[$start_date] = array (
               'startingDay'  => true,
               'color' => 'green'
