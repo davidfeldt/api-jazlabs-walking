@@ -1363,7 +1363,7 @@ table.list .center {
   }
 
   public function getEventsForAttendeeForOrgId($orgId, $registrantId) {
-    $sql = "SELECT e.* FROM events e LEFT JOIN attendees a ON e.eventId =  a.eventId WHERE e.orgId = :orgId AND a.registrantId = :registrantId";
+    $sql = "SELECT e.* FROM events e LEFT JOIN attendees a ON e.eventId =  a.eventId WHERE e.orgId = :orgId AND a.registrantId = :registrantId AND a.meetingId = '0'";
     $eventsData = array();
     $stmt = $this->conn->prepare($sql);
     $stmt->bindParam(':orgId', $orgId);
@@ -1376,10 +1376,11 @@ table.list .center {
           $eventsData[] = array (
             'eventId'	  => $e['eventId'],
             'name'      => $e['name'],
-            'startDate' => date('m/d/Y h:i a', strtotime($e['startDate'])),
-            'endDate'   => date('m/d/Y h:i a', strtotime($e['endDate'])),
+            'startDate' => date('m/d/Y', strtotime($e['startDate'])),
+            'endDate'   => date('m/d/Y', strtotime($e['endDate'])),
             'location'  => $e['location'],
             'city'      => $e['city'],
+            'state'     => $e['state'],
             'zip'       => $e['zip']
           );
         }
