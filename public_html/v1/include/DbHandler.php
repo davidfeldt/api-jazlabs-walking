@@ -433,10 +433,13 @@ class DbHandler {
       date_default_timezone_set($_ENV['TIMEZONE']);
       $now = date('Y-m-d H:i:s');
       if (!$this->isRegisteredForMeeting($meetingId, $registrantId)) {
-        $sql = "INSERT INTO attendees SET registrantId = :registrantId, meetingId = :meetingId, dateAdded = :dateAdded, dateModified = :dateModified";
+        $eventId = $this->getEventIdForMeeting($meetingId);
+        $orgId = $this->getOrgIdForEvent($eventId);
+        $sql = "INSERT INTO attendees SET orgId = :orgId, registrantId = :registrantId, meetingId = :meetingId, dateAdded = :dateAdded, dateModified = :dateModified";
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':dateAdded', $now);
         $stmt->bindParam(':dateModified', $now);
+        $stmt->bindParam(':orgId', $orgId);
         $stmt->bindParam(':meetingId', $meetingId);
         $stmt->bindParam(':registrantId', $registrantId);
         if ($stmt->execute()) {
@@ -1055,8 +1058,10 @@ table.list .center {
     } else {
       // need to register first before checking in to meeting
       $eventId = $this->getEventIdForMeeting($meetingId);
-      $stmt = $this->conn->prepare("INSERT INTO attendees SET dateAdded = :now, dateModified = :now, registrantId = :registrantId, eventId = :eventId, meetingId = :meetingId");
+      $orgId = $this->getOrgIdForEvent($eventId);
+      $stmt = $this->conn->prepare("INSERT INTO attendees SET dateAdded = :now, dateModified = :now, orgId = :orgId, registrantId = :registrantId, eventId = :eventId, meetingId = :meetingId");
       $stmt->bindParam(':now', $now);
+      $stmt->bindParam(':orgId', $orgId);
       $stmt->bindParam(':registrantId', $registrantId);
       $stmt->bindParam(':eventId', $eventId);
       $stmt->bindParam(':meetingId', $meetingId);
