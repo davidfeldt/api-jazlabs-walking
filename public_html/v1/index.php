@@ -335,14 +335,13 @@ $app->get('/admins/events', 'authenticateAdmin', function() use($app) {
 });
 
 $app->put('/admins/checkins', 'authenticateAdmin', function() use($app) {
+   $db = new DbHandler();
    $res = false;
    $result = '';
    $message = '';
    $eventName = '';
    $meetingName = '';
    $fullName = '';
-
-   $db = new DbHandler();
 
    $json = $app->request->getBody();
    $data = json_decode($json, true);
