@@ -1421,7 +1421,7 @@ table.list .center {
       $eventData = array();
       $stmt = $this->conn->prepare("SELECT * FROM events WHERE startDate >= :day AND endDate <= :day AND meetingId != '0' AND eventId = :eventId ORDER BY startDate ASC");
       $stmt->bindParam(':day', $day);
-      $stmt->bindParam(':eventId', $eventId;
+      $stmt->bindParam(':eventId', $eventId);
       if ($stmt->execute()) {
         $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach ($events AS $event) {
@@ -1443,7 +1443,7 @@ table.list .center {
    		$eventData = array();
    		$stmt = $this->conn->prepare("SELECT * FROM events WHERE startDate >= :day AND endDate <= :day AND meetingId = '0' AND orgId = :orgId ORDER BY startDate ASC");
   		$stmt->bindParam(':day', $day);
-  		$stmt->bindParam(':orgId', $orgId;
+  		$stmt->bindParam(':orgId', $orgId);
   		if ($stmt->execute()) {
   			$events = $stmt->fetchAll(PDO::FETCH_ASSOC);
   			foreach ($events AS $event) {
