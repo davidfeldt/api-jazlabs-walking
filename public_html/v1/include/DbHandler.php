@@ -131,7 +131,8 @@ class DbHandler {
               'capacity'      => $row['capacity'],
               'isRegistered'  => $this->isRegisteredForMeeting($row['meetingId'], $registrantId),
               'isCheckedIn'   => $this->isCheckedInForMeeting($row['meetingId'], $registrantId),
-              'checkedInDate' => $this->checkedInDateForMeeting($row['meetingId'], $registrantId)
+              'checkedInDate' => $this->checkedInDateForMeeting($row['meetingId'], $registrantId),
+              'qrCodeValue'   => '{"registrantId": "'.$registrantId.'", "meetingId": "'.$row['meetingId'].'"}'
             );
         }
       }
