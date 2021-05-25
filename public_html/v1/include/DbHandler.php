@@ -130,7 +130,8 @@ class DbHandler {
               'name'          => $row['name'],
               'capacity'      => $row['capacity'],
               'isRegistered'  => $this->isRegisteredForMeeting($row['meetingId'], $registrantId),
-              'isCheckedIn'   => $this->isCheckedInForMeeting($row['meetingId'], $registrantId)
+              'isCheckedIn'   => $this->isCheckedInForMeeting($row['meetingId'], $registrantId),
+              'checkedInDate' => $this->checkedInDateForMeeting($row['meetingId'], $registrantId)
             );
         }
       }
@@ -320,6 +321,24 @@ class DbHandler {
         return $row['total'] > 0;
       } else {
         return false;
+      }
+    }
+
+    private function checkedInDateForMeeting($meetingId, $registrantId) {
+      $stmt = $this->conn->prepare("SELECT checkedInDate FROM attendees WHERE meetingId = :meetingId AND registrantId = :registrantId AND checkedIn ='1'");
+      $stmt->bindParam(':meetingId', $meetingId);
+      $stmt->bindParam(':registrantId', $registrantId);
+      $post_data = array();
+      if ($stmt->execute()) {
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch();
+        if (!empty($row['checkedInDate'])) {
+          return date('m/d/Y h:i a', strtotime($row['checkedInDate']));
+        } else {
+          return '';
+        }
+      } else {
+        return '';
       }
     }
 
