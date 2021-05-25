@@ -193,9 +193,35 @@ class DbHandler {
         }
       }
 
+      private function totalRegisteredForEvent($eventId) {
+        $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM attendees WHERE eventId = :eventId AND meetingId = '0'");
+        $stmt->bindParam(':eventId', $eventId);
+        $post_data = array();
+        if ($stmt->execute()) {
+          $stmt->setFetchMode(PDO::FETCH_ASSOC);
+          $row = $stmt->fetch();
+          return number_format($row['total']);
+        } else {
+          return false;
+        }
+      }
+
       private function totalCheckedInForMeeting($meetingId) {
         $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM attendees WHERE meetingId = :meetingId AND checkedIn = '1'");
         $stmt->bindParam(':meetingId', $meetingId);
+        $post_data = array();
+        if ($stmt->execute()) {
+          $stmt->setFetchMode(PDO::FETCH_ASSOC);
+          $row = $stmt->fetch();
+          return number_format($row['total']);
+        } else {
+          return false;
+        }
+      }
+
+      private function totalCheckedInForEvent($eventId) {
+        $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM attendees WHERE eventId = :eventId AND meetingId = '0' AND checkedIn = '1'");
+        $stmt->bindParam(':eventId', $eventId);
         $post_data = array();
         if ($stmt->execute()) {
           $stmt->setFetchMode(PDO::FETCH_ASSOC);
@@ -266,6 +292,8 @@ class DbHandler {
 
     }
 
+
+
     public function getAllEventsForAdmin($orgId) {
       date_default_timezone_set($_ENV['TIMEZONE']);
       $now = date('Y-m-d');
@@ -291,6 +319,9 @@ class DbHandler {
               'meetings'        => $this->getMeetingsForEventAdmin($row['eventId']),
               'attendeeTotal'   => $this->getAttendeeTotal($row['eventId']),
               'whoIsRegistered' => $this->whoIsRegisteredForEvent($row['eventId']),
+              'whoIsCheckedIn'  => $this->whoIsCheckedInForEvent($row['eventId']),
+              'totalRegistered' => $this->totalRegisteredForEvent($row['eventId']),
+              'totalCheckedIn'  => $this->totalCheckedInForEvent($row['eventId']),
             );
         }
       }
