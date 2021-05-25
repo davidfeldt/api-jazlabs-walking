@@ -236,7 +236,7 @@ class DbHandler {
       $now = date('Y-m-d');
       $response = array ();
 
-      $stmt = $this->conn->prepare("SELECT e.*, a.checkedIn, a.checkedInDate FROM events e LEFT JOIN attendees a ON e.eventId = a.eventId WHERE e.endDate >= :endDate AND a.registrantId = :registrantId ORDER BY e.startDate ASC");
+      $stmt = $this->conn->prepare("SELECT e.*, a.checkedIn, a.checkedInDate FROM events e LEFT JOIN attendees a ON e.eventId = a.eventId WHERE e.endDate >= :endDate AND a.registrantId = :registrantId AND e.meetingId = '0' ORDER BY e.startDate ASC");
       $stmt->bindParam(':endDate', $now);
       $stmt->bindParam(':registrantId', $registrantId);
 
