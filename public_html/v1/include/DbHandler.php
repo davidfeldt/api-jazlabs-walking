@@ -292,6 +292,32 @@ class DbHandler {
 
     }
 
+    public function whoIsCheckedInForEvent($eventId) {
+      date_default_timezone_set($_ENV['TIMEZONE']);
+      $response = array();
+      $stmt = $this->conn->prepare("SELECT * FROM attendees WHERE eventId = :eventId AND meetingId = '0' AND checkedIn = '1'");
+      $stmt->bindParam(':eventId', $eventId);
+
+      if ($stmt->execute()) {
+        $registrants = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($registrants AS $row) {
+
+          $response [] = array (
+              'attendeeId'      => $row['attendeeId'],
+              'fullName'        => $this->getFullName($row['registrantId']),
+              'meetingId'       => $row['meetingId'],
+              'checkedIn'       => $row['checkedIn'] == '1',
+              'checkedInDate'   => $row['checkedInDate'] ? date('m/d/Y h:i a', strtotime($row['checkedInDate'])) : ''
+              // 'meetings'        => $this->getMeetingsForEvent($row['eventId'], $row['registrantId']),
+            );
+        }
+      }
+
+      return $response;
+
+    }
+
+
 
 
     public function getAllEventsForAdmin($orgId) {
