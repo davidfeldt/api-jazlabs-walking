@@ -90,11 +90,23 @@ class DbHandler {
     $stmt = $this->conn->prepare('SELECT name FROM meetings WHERE meetingId = :meetingId');
     $stmt->bindParam(':meetingId', $meetingId);
     if ($stmt->execute()) {
-    $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $stmt->setFetchMode(PDO::FETCH_ASSOC);
       $row = $stmt->fetch();
       return !empty($row['name']) ? $row['name'] : 'N/A';
     } else {
       return '';
+    }
+  }
+
+  public function getEventIdForMeeting($meetingId) {
+    $stmt = $this->conn->prepare('SELECT eventId FROM meetings WHERE meetingId = :meetingId');
+    $stmt->bindParam(':meetingId', $meetingId);
+    if ($stmt->execute()) {
+      $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      return !empty($row['eventId']) ? $row['eventId'] : '0';
+    } else {
+      return '0';
     }
   }
 
@@ -1009,20 +1021,55 @@ table.list .center {
     }
   }
 
+  private function hasRegisteredForMeeting($registrantId, $meetingId) {
+    $sql = "SELECT COUNT(*) AS total FROM attendees WHERE registrantId = :registrantId AND meetingId = :meetingId";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':registrantId', $registrantId);
+    $stmt->bindParam(':meetingId', $meetingId);
+
+    if ($stmt->execute()) {
+      $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      return $row['total'] > 0;
+    } else {
+      return false;
+    }
+  }
+
   public function checkinForMeetingAdmin($registrantId, $meetingId) {
     date_default_timezone_set($_ENV['TIMEZONE']);
     $now = date('Y-m-d H:i:s');
-    if ($this->hasCheckedInForEvent($registrantId, $meetingId)) {
+    if ($this->hasCheckedInForMeeting($registrantId, $meetingId)) {
       return true;
     }
-    $stmt = $this->conn->prepare("UPDATE attendees SET checkedIn = '1', checkedInDate = :now, dateModified = :now WHERE registrantId = :registrantId AND meetingId = :meetingId");
-    $stmt->bindParam(':now', $now);
-    $stmt->bindParam(':registrantId', $registrantId);
-    $stmt->bindParam(':meetingId', $meetingId);
-    if ($stmt->execute()) {
-      return true;
+    if ($this->hasRegisteredForMeeting($registrantId, $meetingId)) {
+      $stmt = $this->conn->prepare("UPDATE attendees SET checkedIn = '1', checkedInDate = :now, dateModified = :now WHERE registrantId = :registrantId AND meetingId = :meetingId");
+      $stmt->bindParam(':now', $now);
+      $stmt->bindParam(':registrantId', $registrantId);
+      $stmt->bindParam(':meetingId', $meetingId);
+      if ($stmt->execute()) {
+        return true;
+      } else {
+        return false;
+      }
     } else {
-      return false;
+      // need to register first before checking in to meeting
+      $eventId = $this->getEventIdForMeeting($meetingId);
+      $stmt = $this->conn->prepare("INSERT INTO attendees SET dateAdded = :now, dateModified = :now, registrantId = :registrantId, eventId = :eventId, meetingId = :meetingId");
+      $stmt->bindParam(':now', $now);
+      $stmt->bindParam(':registrantId', $registrantId);
+      $stmt->bindParam(':eventId', $eventId);
+      $stmt->bindParam(':meetingId', $meetingId);
+      $stmt->execute();
+      $stmt = $this->conn->prepare("UPDATE attendees SET checkedIn = '1', checkedInDate = :now, dateModified = :now WHERE registrantId = :registrantId AND meetingId = :meetingId");
+      $stmt->bindParam(':now', $now);
+      $stmt->bindParam(':registrantId', $registrantId);
+      $stmt->bindParam(':meetingId', $meetingId);
+      if ($stmt->execute()) {
+        return true;
+      } else {
+        return false;
+      }
     }
   }
 

@@ -7,7 +7,7 @@ require_once 'include/DbHandler.php';
 use \Firebase\JWT\JWT;
 use \Slim\Slim;
 use GuzzleHttp\Client;
-use GuzzleHttp\Psr7\Request; 
+use GuzzleHttp\Psr7\Request;
 
 
 $dotenv = new Dotenv\Dotenv('../../');
@@ -346,23 +346,9 @@ $app->put('/admins/checkins', 'authenticateAdmin', function() use($app) {
    $json = $app->request->getBody();
    $data = json_decode($json, true);
 
-   if (array_key_exists('eventId',$data)) {
-     $eventId = $data['eventId'];
-   } else {
-     $eventId = null;
-   }
-
-   if (array_key_exists('meetingId',$data)) {
-     $meetingId = $data['meetingId'];
-   } else {
-     $meetingId = null;
-   }
-
-   if (array_key_exists('registrantId',$data)) {
-     $registrantId = $data['registrantId'];
-   } else {
-     $registrantId = null;
-   }
+   $eventId = !empty($data['eventId']) ? $data['eventId']: null;
+   $meetingId = !empty($data['meetingId']) ? $data['meetingId']: null;
+   $registrantId = !empty($data['registrantId']) ? $data['registrantId']: null;
 
    if ((!empty($eventId) || !empty($meetingId)) && !empty($registrantId)) {
 
@@ -372,7 +358,9 @@ $app->put('/admins/checkins', 'authenticateAdmin', function() use($app) {
        $meetingName = $db->getMeetingName($meetingId);
        $fullName = $db->getFullName($registrantId);
        $result = $fullName. ' is now checked in for meeting: ' . $meetingName;
-     } else {
+     }
+
+     if (!empty($eventId)) {
        $res = $db->checkinForEventAdmin($registrantId, $eventId);
        $message = 'event!';
        $eventName = $db->getEventName($eventId);
