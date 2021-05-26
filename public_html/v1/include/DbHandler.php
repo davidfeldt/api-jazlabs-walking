@@ -1389,7 +1389,7 @@ table.list .center {
             if ($start_date == $end_date) {
               $dates_data[$start_date] = array(
                 'marked'    => true,
-                'dotColor'  => '$50cebb',
+                'dotColor'  => 'green',
                 'selected'  => $today == $start_date,
               );
             } else {
