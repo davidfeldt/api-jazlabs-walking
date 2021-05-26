@@ -336,6 +336,7 @@ class DbHandler {
               'eventId'         => $row['eventId'],
               'startDate'       => date('m/d/Y',strtotime($row['startDate'])),
               'endDate'         => date('m/d/Y',strtotime($row['endDate'])),
+              'avatar'          => !empty($row['img']) ? 'https://spectacularapps.us/img/'.$row['img'] : '',
               'location'        => $row['location'],
               'city'            => $row['city'],
               'state'           => $row['state'],
