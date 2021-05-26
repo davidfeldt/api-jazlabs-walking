@@ -332,14 +332,14 @@ $app->get('/admins/calendars/marked-dates', 'authenticateAdmin', function() use(
 	    $db = NULL;
 	});
 
-  $app->post('/admins/calendars', 'authenticateAdmin', function() use($app) {
+  $app->post('/admins/events', 'authenticateAdmin', function() use($app) {
     $json           = $app->request->getBody();
     $data           = json_decode($json, true);
 
     $response = array();
 
     $db = new DbHandler();
-    $res = $db->addCalendarEvent($app->username, $app->orgId, $data);
+    $res = $db->addNewEvent($app->orgId, $data);
 
     if (!$res) {
         $response['error'] = true;
@@ -350,8 +350,7 @@ $app->get('/admins/calendars/marked-dates', 'authenticateAdmin', function() use(
     } else {
         $response['error'] = false;
         $response['success'] = true;
-        $response['message'] = 'Added '.$data['title'];
-        $response['username'] = $app->username;
+        $response['message'] = 'Added '.$data['name'];
         $response['response'] = $res;
         echoResponse(201, $response);
     }
@@ -376,14 +375,14 @@ $app->get('/admins/calendar-items/:date', 'authenticateAdmin', function($date) u
     $db = NULL;
 });
 
-$app->put('/admins/calendars', 'authenticateAdmin', function() use($app) {
+$app->put('/admins/events', 'authenticateAdmin', function() use($app) {
     $json           = $app->request->getBody();
     $data           = json_decode($json, true);
 
     $response = array();
 
     $db = new DbHandler();
-    $res = $db->editCalendarEvent($data);
+    $res = $db->editEvent($data);
 
     if (!$res) {
         $response['error'] = true;
@@ -409,6 +408,27 @@ $app->get('/admins/events', 'authenticateAdmin', function() use($app) {
     $db = new DbHandler();
 
     $results   = $db->getAllEventsForAdmin($app->orgId);
+
+    if ($results) {
+        $response['success']    = true;
+        $response['username'] = $app->username;
+        $response['results']  = $results;
+    } else {
+        $response['error'] = true;
+        $response['results'] = array();
+        $response['message'] = 'No events found!';
+    }
+
+    echoResponse(200, $response);
+
+    $db = NULL;
+});
+
+$app->delete('/admins/events/:eventId', 'authenticateAdmin', function($eventId) use($app) {
+    $response = array();
+    $db = new DbHandler();
+
+    $results   = $db->deleteEventForAdmin($app->orgId, $eventId);
 
     if ($results) {
         $response['success']    = true;

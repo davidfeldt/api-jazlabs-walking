@@ -1396,9 +1396,10 @@ table.list .center {
     return $dates_data;
   }
 
-  public function deleteCalendarItem($eventId) {
-      $stmt = $this->conn->prepare("DELETE FROM events WHERE eventId = :eventId");
+  public function deleteEventForAdmin($orgId, $eventId) {
+      $stmt = $this->conn->prepare("DELETE FROM events WHERE eventId = :eventId AND orgId = :orgId");
       $stmt->bindParam(':eventId', $eventId);
+      $stmt->bindParam(':orgId', $orgId);
       if ($stmt->execute()) {
         return true;
       } else {
@@ -1462,7 +1463,7 @@ table.list .center {
    	}
 
 
-   	public function addCalendarEvent($username, $orgId, $data) {
+   	public function addNewEvent($orgId, $data) {
    		date_default_timezone_set($_ENV['TIMEZONE']);
 
    		$name = array_key_exists('name', $data) ? $data['name'] : '';
@@ -1493,7 +1494,7 @@ table.list .center {
 
    	}
 
-    public function editCalendarEvent($data) {
+    public function editEvent($data) {
    		date_default_timezone_set($_ENV['TIMEZONE']);
 
       $name = array_key_exists('name', $data) ? $data['name'] : '';
