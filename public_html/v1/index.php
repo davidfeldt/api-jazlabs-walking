@@ -317,7 +317,7 @@ $app->get('/admins/calendars/marked-dates', 'authenticateAdmin', function() use(
 	    date_default_timezone_set($_ENV['TIMEZONE']);
       $days = $_ENV['CALENDAR_PERIOD'];
 	    $defaultStart = date('Y-m-01', strtotime('- '.$days.' DAYS'));
-	    $defaultEnd = date('Y-m-t', strtotime('+ '.$days.'  DAYS'));
+	    $defaultEnd = date('Y-m-t', strtotime('+ 365 DAYS'));
 	    $response = array();
 
 	    $db = new DbHandler();
