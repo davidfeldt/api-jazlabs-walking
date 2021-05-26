@@ -1435,23 +1435,23 @@ table.list .center {
     private function getMeetingsByDay($day, $eventId) {
       date_default_timezone_set($_ENV['TIMEZONE']);
       $day = date('Y-m-d', strtotime($day));
-      $eventData = array();
+      $meetingData = array();
       $stmt = $this->conn->prepare("SELECT * FROM meetings WHERE DATE(startDate) <= :day AND DATE(endDate) >= :day AND eventId = :eventId ORDER BY startDate ASC");
       $stmt->bindParam(':day', $day);
       $stmt->bindParam(':eventId', $eventId);
       if ($stmt->execute()) {
-        $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($events AS $event) {
-          $times = $event['startDate'] == $event['endDate'] ? date('m/d',strtotime($event['startDate'])) : date('m/d',strtotime($event['startDate']))." - ".date('m/d',strtotime($event['endDate']));
-          $eventData[] = array (
-            'name'		    => $event['name'],
+        $meetings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($meetings AS $meet) {
+          $times = $meet['startDate'] == $meet['endDate'] ? date('m/d',strtotime($meet['startDate'])) : date('m/d',strtotime($meet['startDate']))." - ".date('m/d',strtotime($meet['endDate']));
+          $meetingData[] = array (
+            'name'		    => $meet['name'],
             'times'		    => $times,
             'height'	    => 50,
-            'meetingId'		=> $event['meetingId']
+            'meetingId'		=> $meet['meetingId']
           );
         }
       }
-      return $eventData;
+      return $meetingData;
     }
 
     public function getEventsAndMeetingsByDay($day, $orgId) {
@@ -1465,13 +1465,15 @@ table.list .center {
   			$events = $stmt->fetchAll(PDO::FETCH_ASSOC);
   			foreach ($events AS $event) {
   				$times = $event['startDate'] == $event['endDate'] ? date('m/d',strtotime($event['startDate'])) : date('m/d',strtotime($event['startDate']))." - ".date('m/d',strtotime($event['endDate']));
-  				$eventData[] = array (
+  				$eventData['events'][] = array (
   					'name'		    => $event['name'],
+            'eventId'     => $event['eventId'],
   					'times'		    => $times,
   					'height'	    => 50,
   					'meetingId'		=> 0
   				);
-          $eventData[] = $this->getMeetingsByDay($day, $event['eventId']);
+          $eventData['meetings'] = $this->getMeetingsByDay($day, $event['eventId']);
+
   			}
   		}
 
