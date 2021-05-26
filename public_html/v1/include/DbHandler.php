@@ -1436,7 +1436,7 @@ table.list .center {
       date_default_timezone_set($_ENV['TIMEZONE']);
       $day = date('Y-m-d', strtotime($day));
       $eventData = array();
-      $stmt = $this->conn->prepare("SELECT * FROM events WHERE startDate >= :day AND endDate <= :day AND meetingId != '0' AND eventId = :eventId ORDER BY startDate ASC");
+      $stmt = $this->conn->prepare("SELECT * FROM meetings WHERE startDate <= :day AND endDate >= :day AND eventId = :eventId ORDER BY startDate ASC");
       $stmt->bindParam(':day', $day);
       $stmt->bindParam(':eventId', $eventId);
       if ($stmt->execute()) {
@@ -1458,7 +1458,7 @@ table.list .center {
    		date_default_timezone_set($_ENV['TIMEZONE']);
       $day = date('Y-m-d', strtotime($day));
    		$eventData = array();
-   		$stmt = $this->conn->prepare("SELECT * FROM events WHERE startDate >= :day AND endDate <= :day AND meetingId = '0' AND orgId = :orgId ORDER BY startDate ASC");
+   		$stmt = $this->conn->prepare("SELECT * FROM events WHERE startDate <= :day AND endDate >= :day AND meetingId = '0' AND orgId = :orgId ORDER BY startDate ASC");
   		$stmt->bindParam(':day', $day);
   		$stmt->bindParam(':orgId', $orgId);
   		if ($stmt->execute()) {
