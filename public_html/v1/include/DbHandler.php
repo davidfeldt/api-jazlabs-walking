@@ -1372,6 +1372,7 @@ table.list .center {
     date_default_timezone_set($_ENV['TIMEZONE']);
     $startDate = date('Y-m-d', strtotime($startDate));
     $endDate = date('Y-m-d', strtotime($endDate));
+    $today = date('Y-m-d');
 
     $stmt = $this->conn->prepare("SELECT startDate, endDate FROM events WHERE DATE(startDate) >= :startDate AND DATE(endDate) <= :endDate AND orgId = :orgId ORDER BY startDate ASC");
     $stmt->bindParam(':startDate', $startDate);
@@ -1385,16 +1386,26 @@ table.list .center {
         foreach ($dates AS $date) {
             $start_date = date('Y-m-d', strtotime($date['startDate']));
             $end_date = date('Y-m-d', strtotime($date['endDate']));
-            $dates_data[$start_date] = array (
-              'startingDay'  => true,
-              'color' => 'green'
-            );
-            $dates_data[$end_date] = array (
-              'selected'  => true,
-              'endingDay' => true,
-              'color'     => 'green',
-              'textColor' => 'gray'
-            );
+            if ($start_date == $end_date) {
+              $dates_data[$start_date] = array(
+                'marked'    => true,
+                'dotColor'  => '$50cebb',
+                'selected'  => $today == $start_date,
+              );
+            } else {
+              $dates_data[$start_date] = array (
+                'startingDay'  => true,
+                'selected'     => $today == $start_date,
+                'color'        => 'green',
+                'textColor' => 'white'
+              );
+              $dates_data[$end_date] = array (
+                'selected'  => $today == $end_date,
+                'endingDay' => true,
+                'color'     => 'green',
+                'textColor' => 'white'
+              );
+            }
         }
       }
     }
