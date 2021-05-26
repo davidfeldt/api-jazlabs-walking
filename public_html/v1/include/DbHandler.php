@@ -1466,16 +1466,16 @@ table.list .center {
    	public function addNewEvent($orgId, $data) {
    		date_default_timezone_set($_ENV['TIMEZONE']);
 
-   		$name = array_key_exists('name', $data) ? trim(ucword($data['name'])) : '';
+   		$name = array_key_exists('name', $data) ? trim(ucwords($data['name'])) : '';
 
    		$startDate = date('Y-m-d', strtotime($data['startDate']));
    		$endDate = date('Y-m-d', strtotime($data['endDate']));
 
       $description = array_key_exists('description', $data) ? $data['description'] : '';
-      $location = array_key_exists('location', $data) ? trim(ucword($data['location'])) : '';
-      $city = array_key_exists('city', $data) ? trim(ucword($data['city'])) : '';
-      $state = array_key_exists('state', $data) ? trim(ucword($data['state'])) : '';
-      $zip = array_key_exists('zip', $data) ? trim(ucword($data['zip'])) : '';
+      $location = array_key_exists('location', $data) ? trim(ucwords($data['location'])) : '';
+      $city = array_key_exists('city', $data) ? trim(ucwords($data['city'])) : '';
+      $state = array_key_exists('state', $data) ? trim(ucwords($data['state'])) : '';
+      $zip = array_key_exists('zip', $data) ? trim(ucwords($data['zip'])) : '';
       $eventCode = $this->guidv4();
 
       $stmt = $this->conn->prepare("INSERT INTO events SET orgId = :orgId, name = :name, description = :description, startDate = :startDate, endDate = :endDate, location = :location, city = :city, state = :state, zip = :zip, eventCode = :eventCode");
