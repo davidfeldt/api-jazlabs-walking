@@ -237,7 +237,7 @@ class DbHandler {
       $now = date('Y-m-d');
       $response = array ();
 
-      $stmt = $this->conn->prepare("SELECT * FROM events WHERE endDate >= :endDate ORDER BY name ASC");
+      $stmt = $this->conn->prepare("SELECT * FROM events WHERE endDate >= :endDate ORDER BY startDate ASC");
       $stmt->bindParam(':endDate', $now);
 
       if ($stmt->execute()) {
@@ -249,11 +249,16 @@ class DbHandler {
               'registrantId'  => $registrantId,
               'startDate'     => date('m/d/Y',strtotime($row['startDate'])),
               'endDate'       => date('m/d/Y',strtotime($row['endDate'])),
+              'avatar'        => !empty($row['avatar']) ? 'https://spectacularapps.us/img/organizations/'.$row['avatar'] : 'https://jazlabs.com/img/logo_light.png',
+              'image'         => !empty($row['image']) ? 'https://spectacularapps.us/img/events/'.$row['image'] : '',
               'location'      => $row['location'],
+              'city'          => $row['city'],
+              'state'         => $row['state'],
+              'zip'           => $row['zip'],
               'orgId'         => $row['orgId'],
               'orgName'       => $this->getOrganizationName($row['orgId']),
               'name'          => $row['name'],
-              'blurb'			    => html_entity_decode(strip_tags(substr($row['description'],0,100)).'...', ENT_QUOTES, 'UTF-8'),
+              'blurb'			    => $row['description'] ? html_entity_decode(strip_tags(substr($row['description'],0,100)).'...', ENT_QUOTES, 'UTF-8') : '',
               'description'   => $row['description'],
               'meetings'      => $this->getMeetingsForEvent($row['eventId'], $registrantId),
               'attendeeTotal' => $this->getAttendeeTotal($row['eventId']),
