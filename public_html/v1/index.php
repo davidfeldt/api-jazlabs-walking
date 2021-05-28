@@ -674,6 +674,27 @@ $app->get('/events', 'authenticate', function() use($app) {
     $db = NULL;
 });
 
+$app->get('/events/:eventId', 'authenticate', function($eventId) use($app) {
+    $response = array();
+    $db = new DbHandler();
+
+    $result = $db->getEvent($app->registrantId, $eventId);
+
+    if ($result) {
+        $response['success']    = true;
+        $response['username'] = $app->username;
+        $response['result']  = $result;
+    } else {
+        $response['error'] = true;
+        $response['result'] = array();
+        $response['message'] = 'No events found!';
+    }
+
+    echoResponse(200, $response);
+
+    $db = NULL;
+});
+
 $app->get('/myevents', 'authenticate', function() use($app) {
     $response = array();
     $db = new DbHandler();
