@@ -566,12 +566,12 @@ class DbHandler {
       }
     }
 
-    public function registerForEvent($eventId, $registrantId) {
+    public function registerForEvent($registrantId, $eventId) {
       date_default_timezone_set($_ENV['TIMEZONE']);
       $now = date('Y-m-d H:i:s');
       if (!$this->isRegisteredForEvent($eventId, $registrantId)) {
         $orgId = $this->getOrgIdForEvent($eventId);
-        $sql = "INSERT INTO attendees SET registrantId = :registrantId, eventId = :eventId, orgId = :orgId, meetingId = '0', dateAdded = :dateAdded, dateModified = :dateModified";
+        $sql = "INSERT INTO attendees SET registrantId = :registrantId, eventId = :eventId, orgId = :orgId, meetingId = '0', checkedIn = '0', dateAdded = :dateAdded, dateModified = :dateModified";
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':dateAdded', $now);
         $stmt->bindParam(':dateModified', $now);
