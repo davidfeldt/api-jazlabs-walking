@@ -123,12 +123,12 @@ class DbHandler {
   }
 
   public function getAdminName($adminId) {
-    $stmt = $this->conn->prepare('SELECT fullName FROM admins WHERE adminId = :adminId');
+    $stmt = $this->conn->prepare('SELECT name FROM admins WHERE adminId = :adminId');
     $stmt->bindParam(':adminId', $adminId);
     if ($stmt->execute()) {
     $stmt->setFetchMode(PDO::FETCH_ASSOC);
       $row = $stmt->fetch();
-      return !empty($row['fullName']) ? $row['fullName'] : 'N/A';
+      return !empty($row['name']) ? $row['name'] : 'N/A';
     } else {
       return '';
     }

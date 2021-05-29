@@ -749,14 +749,14 @@ $app->get('/announcements', 'authenticate', function() use($app) {
     $results   = $db->getMyAnnouncements($app->registrantId, $page);
 
     if ($results) {
-        $response['success']    = true;
+        $response['success']  = true;
         $response['username'] = $app->username;
         $response['results']  = $results;
         $response['nextPage'] = $nextPage;
     } else {
         $response['error'] = true;
         $response['results'] = array();
-        $response['message'] = 'No events found!';
+        $response['message'] = 'No announcements found!';
     }
 
     echoResponse(200, $response);
