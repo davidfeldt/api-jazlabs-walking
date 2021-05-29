@@ -1274,13 +1274,20 @@ table.list .center {
     return $new_username;
   }
 
-  public function addUser($firstName, $lastName, $email, $mobilephone, $password) {
+  public function addUser($data) {
     date_default_timezone_set($_ENV['TIMEZONE']);
     $now = date('Y-m-d H:i:s');
+    $firstName = !empty($data['firstName']) ? ucwords($data['firstName']) : '';
+		$lastName = !empty($data['lastName']) ? ucwords($data['lastName']) : '';
+		$email = !empty($data['email']) ? strtolower(trim($data['email'])) : '';
+		$title = !empty($data['title']) ? ucwords(trim($data['title'])) : '';
+		$company = !empty($data['company']) ? ucwords(trim($data['company'])) : '';
+		$mobilephone = !empty($data['mobilephone']) ? formatPhoneNumber($data['mobilephone']) : '';
+		$password = !empty($data['password']) ? $data['password'] : '';
     $password_hash = password_hash(trim($password), PASSWORD_DEFAULT);
     $username = $this->generateUniqueUsername($firstName, $lastName);
     $fullName = ucwords($firstName)." ".ucwords($lastName);
-    $stmt = $this->conn->prepare("INSERT INTO registrants SET firstName = :firstName, lastName = :lastName, fullName = :fullName, email = :email, mobilephone = :mobilephone, dateAdded = :now, dateModified = :now, username = :username, password = :password, profileVisible = '0'");
+    $stmt = $this->conn->prepare("INSERT INTO registrants SET firstName = :firstName, lastName = :lastName, fullName = :fullName, email = :email, mobilephone = :mobilephone, title = :title, company = :company, dateAdded = :now, dateModified = :now, username = :username, password = :password, profileVisible = '0'");
     $stmt->bindParam(':username', $username);
     $stmt->bindParam(':password', $password_hash);
     $stmt->bindParam(':firstName', $firstName);
@@ -1288,6 +1295,8 @@ table.list .center {
     $stmt->bindParam(':fullName', $fullName);
     $stmt->bindParam(':email', $email);
     $stmt->bindParam(':mobilephone', $mobilephone);
+    $stmt->bindParam(':title', $title);
+    $stmt->bindParam(':company', $company);
     $stmt->bindParam(':now', $now);
     if ($stmt->execute()) {
       $profile = $this->getProfileByUsername($username);

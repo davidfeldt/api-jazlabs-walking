@@ -507,8 +507,8 @@ $app->post('/users/signup', function() use($app) {
 		$firstName = !empty($data['firstName']) ? ucwords($data['firstName']) : '';
 		$lastName = !empty($data['lastName']) ? ucwords($data['lastName']) : '';
 		$email = !empty($data['email']) ? strtolower(trim($data['email'])) : '';
-		$title = !empty($data['title']) ? strtolower(trim($data['title'])) : '';
-		$company = !empty($data['company']) ? strtolower(trim($data['company'])) : '';
+		$title = !empty($data['title']) ? ucwords(trim($data['title'])) : '';
+		$company = !empty($data['company']) ? ucwords(trim($data['company'])) : '';
 		$mobilephone = !empty($data['mobilephone']) ? formatPhoneNumber($data['mobilephone']) : '';
 		$password = !empty($data['password']) ? $data['password'] : '';
 
