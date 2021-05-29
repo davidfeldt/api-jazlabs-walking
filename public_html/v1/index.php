@@ -732,6 +732,38 @@ $app->get('/myevents', 'authenticate', function() use($app) {
     $db = NULL;
 });
 
+$app->get('/announcements', 'authenticate', function() use($app) {
+    $response = array();
+    $db = new DbHandler();
+
+    $page = $app->request()->get('page');
+
+    if (!isset($page) || $page < 1) { $page = 1;}
+    $limit = $_ENV['ANNOUNCEMENTS_LIMIT'];
+    $start = ($page - 1) * $limit;
+
+    $lastCount = $start + $limit;
+    $maxCount  = $db->numberOfAnnouncements($app->registrantId);
+    $nextPage  = ($lastCount < $maxCount) ? $page + 1 : null;
+
+    $results   = $db->getMyAnnouncements($app->registrantId, $page);
+
+    if ($results) {
+        $response['success']    = true;
+        $response['username'] = $app->username;
+        $response['results']  = $results;
+        $response['nextPage'] = $nextPage;
+    } else {
+        $response['error'] = true;
+        $response['results'] = array();
+        $response['message'] = 'No events found!';
+    }
+
+    echoResponse(200, $response);
+
+    $db = NULL;
+});
+
 // register for events
 $app->post('/events', 'authenticate', function() use($app) {
 

@@ -122,6 +122,18 @@ class DbHandler {
     }
   }
 
+  public function getAdminName($adminId) {
+    $stmt = $this->conn->prepare('SELECT fullName FROM admins WHERE adminId = :adminId');
+    $stmt->bindParam(':adminId', $adminId);
+    if ($stmt->execute()) {
+    $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      return !empty($row['fullName']) ? $row['fullName'] : 'N/A';
+    } else {
+      return '';
+    }
+  }
+
   public function getMeetingsForEvent($eventId, $registrantId) {
       $response = array ();
 
@@ -629,6 +641,52 @@ class DbHandler {
       }
     }
 
+    public function getMyAnnouncements($registrantId, $page = 1) {
+      date_default_timezone_set($_ENV['TIMEZONE']);
+      $now = date('Y-m-d');
+      $response = array ();
+
+      $limit = $_ENV['ANNOUNCEMENTS_LIMIT'];
+      $page = (isset($page)) ? $page : 1;
+      $start = ($page - 1) * $limit;
+
+      $stmt = $this->conn->prepare("SELECT * FROM announcements WHERE registrantId = :registrantId ORDER BY dateAdded DESC LIMIT $start, $limit");
+      $stmt->bindParam(':registrantId', $registrantId);
+
+      if ($stmt->execute()) {
+        $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($announcements AS $row) {
+
+          $response [] = array (
+              'id'            => $row['id'],
+              'registrantId'  => $registrantId,
+              'sentByName'    => $this->getAdminName($row['adminId']),
+              'sentByOrg'     => $this->getOrganizationName($row['orgId']),
+              'subject'       => $row['subject'],
+              'message'       => $row['message'],
+              'orgId'         => $row['orgId'],
+              'blurb'			    => $row['message'] ? html_entity_decode(strip_tags(substr($row['message'],0,100)).'...', ENT_QUOTES, 'UTF-8') : '',
+              'dateAdded'     => date('m/d/Y h:i a', strtotime($row['dateAdded']))
+            );
+        }
+      }
+
+      return $response;
+
+    }
+
+    public function numberOfAnnouncements($registrantId) {
+      $stmt     = $this->conn->prepare('SELECT COUNT(*) AS total FROM announcements WHERE registrantId = :registrantId');
+      $stmt->bindParam(':registrantId', $registrantId);
+      $post_data = array();
+      if ($stmt->execute()) {
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch();
+        return (int)$row['total'];
+      } else {
+        return 0;
+      }
+    }
 
 
   public function updateUserPreferences($username, $preferences) {
