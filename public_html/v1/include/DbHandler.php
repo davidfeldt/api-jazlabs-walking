@@ -1300,7 +1300,7 @@ table.list .center {
 
 
   public function getProfileByUsername($username) {
-      $stmt = $this->conn->prepare('SELECT registrantId, username, fullName, email, mobilephone, profileVisible FROM registrants WHERE username = :username');
+      $stmt = $this->conn->prepare('SELECT registrantId, username, fullName, email, mobilephone, title, company, profileVisible FROM registrants WHERE username = :username');
       $stmt->bindParam(':username', $username);
       if ($stmt->execute()) {
       	$stmt->setFetchMode(PDO::FETCH_ASSOC);

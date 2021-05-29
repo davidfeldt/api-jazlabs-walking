@@ -237,6 +237,8 @@ $app->post('/users/auth', function() use($app) {
         "registrantId"    => $profile['registrantId'],
         "email"           => $profile['email'],
         "mobilephone"     => $profile['mobilephone'],
+        "title"           => $profile['title'],
+        "company"         => $profile['company'],
         "profileVisible"  => $profile['profileVisible'] == 1
       );
 
@@ -505,13 +507,25 @@ $app->post('/users/signup', function() use($app) {
 		$firstName = !empty($data['firstName']) ? ucwords($data['firstName']) : '';
 		$lastName = !empty($data['lastName']) ? ucwords($data['lastName']) : '';
 		$email = !empty($data['email']) ? strtolower(trim($data['email'])) : '';
+		$title = !empty($data['title']) ? strtolower(trim($data['title'])) : '';
+		$company = !empty($data['company']) ? strtolower(trim($data['company'])) : '';
 		$mobilephone = !empty($data['mobilephone']) ? formatPhoneNumber($data['mobilephone']) : '';
 		$password = !empty($data['password']) ? $data['password'] : '';
+
+    $payload = array(
+      'firstName'   => $firstName,
+      'lastName'    => $lastName,
+      'email'       => $email,
+      'title'       => $title,
+      'company'     => $company,
+      'mobilephone' => $mobilephone,
+      'password'    => $password,
+    );
 
     $response = array();
 
     $db = new DbHandler();
-    $result = $db->addUser($firstName, $lastName, $email, $mobilephone, $password);
+    $result = $db->addUser($payload);
 
     if (array_key_exists('success', $result) && $result['success']) {
       $response = array (
@@ -522,6 +536,8 @@ $app->post('/users/signup', function() use($app) {
         "registrantId"    => $result['registrantId'],
         "email"           => $result['email'],
         "mobilephone"     => $result['mobilephone'],
+        "title"           => $result['title'],
+        "company"         => $result['company'],
         "profileVisible"  => $result['profileVisible'] == 1
       );
 
@@ -535,36 +551,36 @@ $app->post('/users/signup', function() use($app) {
   });
 
 $app->post('/users/password/forgot', function() use($app) {
-            // check for required params
-            $json = $app->request->getBody();
+        // check for required params
+        $json = $app->request->getBody();
     		$data = json_decode($json, true);
     		$username = $data['username'];
 
-            $response = array();
+        $response = array();
 
-            $db = new DbHandler();
-            $res = $db->forgotPassword($username);
+        $db = new DbHandler();
+        $res = $db->forgotPassword($username);
 
-            if ($res == 'not_username') {
-                $response['error'] = true;
-                $response['message'] = 'No such username: '.$username;
-            } else {
-                $response['error'] = false;
-                $response['success'] = true;
-                $response['type'] = $res;
-                if ($res == 'mobile') {
-                    $message = 'Please enter short code we just sent via SMS';
-                }
-
-                if ($res == 'email') {
-                    $message = 'Please click on the reset password link in the email we just sent you to reset your password';
-                }
-                $response['message'] = $message;
+        if ($res == 'not_username') {
+            $response['error'] = true;
+            $response['message'] = 'No such username: '.$username;
+        } else {
+            $response['error'] = false;
+            $response['success'] = true;
+            $response['type'] = $res;
+            if ($res == 'mobile') {
+                $message = 'Please enter short code we just sent via SMS';
             }
 
-            $db = NULL;
-            echoResponse(200, $response);
-        });
+            if ($res == 'email') {
+                $message = 'Please click on the reset password link in the email we just sent you to reset your password';
+            }
+            $response['message'] = $message;
+        }
+
+        $db = NULL;
+        echoResponse(200, $response);
+    });
 
 $app->post('/admins/password/forgot', function() use($app) {
         // check for required params
