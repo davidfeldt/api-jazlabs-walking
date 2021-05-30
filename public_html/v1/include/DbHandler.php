@@ -1472,12 +1472,19 @@ table.list .center {
     }
 
     if (isset($data['pushNotifications'])) {
-      if ($data['pushNotifications'] == '0' && $profile['messaging'] == 'push') {
-        // force messaging to be none if messaging is push and use set pushNotifications = 0
-        $stmt = $this->conn->prepare("UPDATE registrants SET pushNotifications = :pushNotifications, messaging = 'none', dateModified=NOW() WHERE username = :username");
-        $stmt->bindParam(':username',$username);
-        $stmt->bindParam(':pushNotifications',$data['pushNotifications']);
-        $stmt->execute();
+      if ($data['pushNotifications'] == '0') {
+        if ($profile['messaging'] == 'push') {
+          // force messaging to be none if messaging is push and use set pushNotifications = 0
+          $stmt = $this->conn->prepare("UPDATE registrants SET pushNotifications = :pushNotifications, messaging = 'none', dateModified=NOW() WHERE username = :username");
+          $stmt->bindParam(':username',$username);
+          $stmt->bindParam(':pushNotifications',$data['pushNotifications']);
+          $stmt->execute();
+        } else {
+          $stmt = $this->conn->prepare("UPDATE registrants SET pushNotifications = :pushNotifications, dateModified=NOW() WHERE username = :username");
+          $stmt->bindParam(':username',$username);
+          $stmt->bindParam(':pushNotifications',$data['pushNotifications']);
+          $stmt->execute();
+        }
       } else {
         $stmt = $this->conn->prepare('UPDATE registrants SET pushNotifications = :pushNotifications, dateModified=NOW() WHERE username = :username');
         $stmt->bindParam(':username',$username);
