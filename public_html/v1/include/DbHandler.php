@@ -1463,7 +1463,7 @@ table.list .center {
       $stmt->execute();
     }
 
-    if (!empty($data['profileVisible'])) {
+    if (isset($data['profileVisible'])) {
       $stmt = $this->conn->prepare('UPDATE registrants SET profileVisible = :profileVisible, dateModified=NOW() WHERE username = :username');
       $stmt->bindParam(':username',$username);
       $stmt->bindParam(':profileVisible',$data['profileVisible']);
@@ -1477,7 +1477,7 @@ table.list .center {
       $stmt->execute();
     }
 
-    if (!empty($data['pushNotifications'])) {
+    if (isset($data['pushNotifications'])) {
       $stmt = $this->conn->prepare('UPDATE registrants SET pushNotifications = :pushNotifications, dateModified=NOW() WHERE username = :username');
       $stmt->bindParam(':username',$username);
       $stmt->bindParam(':pushNotifications',$data['pushNotifications']);
