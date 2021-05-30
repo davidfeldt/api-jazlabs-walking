@@ -1434,18 +1434,16 @@ table.list .center {
     }
 
     if (!empty($data['phone'])) {
-      $phone = $this->formatPhoneNumber($data['phone']);
       $stmt = $this->conn->prepare('UPDATE registrants SET phone = :phone, dateModified=NOW() WHERE username = :username');
       $stmt->bindParam(':username',$username);
-      $stmt->bindParam(':phone',$phone);
+      $stmt->bindParam(':phone',$data['phone']);
       $stmt->execute();
     }
 
     if (!empty($data['mobilephone'])) {
-      $mobilephone = $this->formatPhoneNumber($data['mobilephone']);
       $stmt = $this->conn->prepare('UPDATE registrants SET mobilephone = :mobilephone, dateModified=NOW() WHERE username = :username');
       $stmt->bindParam(':username',$username);
-      $stmt->bindParam(':mobilephone',$mobilephone);
+      $stmt->bindParam(':mobilephone',$data['mobilephone']);
       $stmt->execute();
     }
 
