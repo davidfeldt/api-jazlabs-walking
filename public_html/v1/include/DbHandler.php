@@ -1435,32 +1435,28 @@ table.list .center {
       $stmt->execute();
     }
 
-    if (!empty($data['privacy'])) {
-      $stmt = $this->conn->prepare('UPDATE registrants SET privacy = :privacy, dateModified=NOW() WHERE username = :username');
+    if (!empty($data['profileVisible'])) {
+      $stmt = $this->conn->prepare('UPDATE registrants SET profileVisible = :profileVisible, dateModified=NOW() WHERE username = :username');
       $stmt->bindParam(':username',$username);
-      $stmt->bindParam(':privacy',$data['privacy']);
+      $stmt->bindParam(':profileVisible',$data['profileVisible']);
       $stmt->execute();
     }
 
-    // add image
-    if (!empty($data['images']) && array_key_exists('mime',$data['images']) && array_key_exists('data', $data['images'])) {
-      $mime = $data['images']['mime'];
-      $data = $data['images']['data'];
-      if ($mime && $data) {
-        $extension = $this->returnFileExtension($mime);
-        $uploadDir  = $_ENV['DIR_PROFILE_IMAGE'];
-        $uploadPath = $_ENV['PATH_PROFILE_IMAGE'];
-        $img        = str_replace(' ', '+', $data);
-        $imgData    = base64_decode($img);
-        $filename   = $username . '_' . uniqid() . '.'. $extension;
-        $imgPath    = $uploadPath . $filename;
-        $file       = $uploadDir . $filename;
-        file_put_contents($file, $imgData);
-        // update profilepic in wch_user
-        $this->updateProfilePhoto($username, $imgPath);
-
-      }
+    if (!empty($data['messaging'])) {
+      $stmt = $this->conn->prepare('UPDATE registrants SET messaging = :messaging, dateModified=NOW() WHERE username = :username');
+      $stmt->bindParam(':username',$username);
+      $stmt->bindParam(':messaging',$data['messaging']);
+      $stmt->execute();
     }
+
+    if (!empty($data['pushNotifications'])) {
+      $stmt = $this->conn->prepare('UPDATE registrants SET pushNotifications = :pushNotifications, dateModified=NOW() WHERE username = :username');
+      $stmt->bindParam(':username',$username);
+      $stmt->bindParam(':pushNotifications',$data['pushNotifications']);
+      $stmt->execute();
+    }
+
+
 
     return true;
   }

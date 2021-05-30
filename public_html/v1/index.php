@@ -895,6 +895,29 @@ $app->post('/events', 'authenticate', function() use($app) {
 
  });
 
+ $app->put('/users/profiles', 'authenticate', function() use($app) {
+ 		$response = array();
+  	$db = new DbHandler();
+    $json = $app->request->getBody();
+    $data = json_decode($json, true);
+
+    $profile = $db->updateProfile($app->username, $data);
+
+    if ($profile != NULL) {
+        $response['error']    = false;
+        $response['success']  = true;
+        $response['username'] = $app->username;
+        $response['profile']  = $profile;
+        echoResponse(200, $response);
+    } else {
+        $response['error'] = true;
+        $response['message'] = "The requested resource doesn't exists";
+        $response['profile'] = array();
+        echoResponse(404, $response);
+    }
+
+ });
+
 $app->run();
 
 ?>
