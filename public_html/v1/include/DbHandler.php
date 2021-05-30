@@ -1464,9 +1464,10 @@ table.list .center {
     }
 
     if (!empty($data['profileVisible'])) {
+      $profileVisible = $data['profileVisible'] == false ? '0' : '1';
       $stmt = $this->conn->prepare('UPDATE registrants SET profileVisible = :profileVisible, dateModified=NOW() WHERE username = :username');
       $stmt->bindParam(':username',$username);
-      $stmt->bindParam(':profileVisible',$data['profileVisible']);
+      $stmt->bindParam(':profileVisible',$profileVisible);
       $stmt->execute();
     }
 
@@ -1478,9 +1479,10 @@ table.list .center {
     }
 
     if (!empty($data['pushNotifications'])) {
+      $pushNotifications = $data['pushNotifications'] == false ? '0' : '1';
       $stmt = $this->conn->prepare('UPDATE registrants SET pushNotifications = :pushNotifications, dateModified=NOW() WHERE username = :username');
       $stmt->bindParam(':username',$username);
-      $stmt->bindParam(':pushNotifications',$data['pushNotifications']);
+      $stmt->bindParam(':pushNotifications',$pushNotifications);
       $stmt->execute();
     }
 
