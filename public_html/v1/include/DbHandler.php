@@ -1421,7 +1421,7 @@ table.list .center {
     }
 
     if (!empty($data['phone'])) {
-      $phone = $data['phone'];
+      $phone = $this->formatPhoneNumber($data['phone']);
       $stmt = $this->conn->prepare('UPDATE registrants SET phone = :phone, dateModified=NOW() WHERE username = :username');
       $stmt->bindParam(':username',$username);
       $stmt->bindParam(':phone',$phone);
@@ -1429,9 +1429,26 @@ table.list .center {
     }
 
     if (!empty($data['mobilephone'])) {
+      $mobilephone = $this->formatPhoneNumber($data['mobilephone']);
       $stmt = $this->conn->prepare('UPDATE registrants SET mobilephone = :mobilephone, dateModified=NOW() WHERE username = :username');
       $stmt->bindParam(':username',$username);
-      $stmt->bindParam(':mobilephone',$data['mobilephone']);
+      $stmt->bindParam(':mobilephone',$mobilephone);
+      $stmt->execute();
+    }
+
+    if (!empty($data['title'])) {
+      $title = ucwords(trim($data['title']));
+      $stmt = $this->conn->prepare('UPDATE registrants SET title = :title, dateModified=NOW() WHERE username = :username');
+      $stmt->bindParam(':username',$username);
+      $stmt->bindParam(':title',$title);
+      $stmt->execute();
+    }
+
+    if (!empty($data['company'])) {
+      $company = ucwords(trim($data['company']));
+      $stmt = $this->conn->prepare('UPDATE registrants SET company = :company, dateModified=NOW() WHERE username = :username');
+      $stmt->bindParam(':username',$username);
+      $stmt->bindParam(':company',$company);
       $stmt->execute();
     }
 
@@ -1455,8 +1472,6 @@ table.list .center {
       $stmt->bindParam(':pushNotifications',$data['pushNotifications']);
       $stmt->execute();
     }
-
-
 
     return true;
   }
