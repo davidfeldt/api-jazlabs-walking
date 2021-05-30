@@ -1470,19 +1470,29 @@ table.list .center {
       $stmt->execute();
     }
 
-    if (!empty($data['messaging'])) {
-      $stmt = $this->conn->prepare('UPDATE registrants SET messaging = :messaging, dateModified=NOW() WHERE username = :username');
-      $stmt->bindParam(':username',$username);
-      $stmt->bindParam(':messaging',$data['messaging']);
-      $stmt->execute();
-    }
-
     if (isset($data['pushNotifications'])) {
       $stmt = $this->conn->prepare('UPDATE registrants SET pushNotifications = :pushNotifications, dateModified=NOW() WHERE username = :username');
       $stmt->bindParam(':username',$username);
       $stmt->bindParam(':pushNotifications',$data['pushNotifications']);
       $stmt->execute();
     }
+
+    if (!empty($data['messaging'])) {
+      if ($data['messaging'] == 'push') {
+        // force pushNotifications to be '1' if user wants to receive messaging via push notification
+        $stmt = $this->conn->prepare("UPDATE registrants SET messaging = :messaging, pushNotifications = '1', dateModified=NOW() WHERE username = :username");
+        $stmt->bindParam(':username',$username);
+        $stmt->bindParam(':messaging',$data['messaging']);
+        $stmt->execute();
+      } else {
+        $stmt = $this->conn->prepare("UPDATE registrants SET messaging = :messaging, dateModified=NOW() WHERE username = :username");
+        $stmt->bindParam(':username',$username);
+        $stmt->bindParam(':messaging',$data['messaging']);
+        $stmt->execute();
+      }
+    }
+
+
 
     return true;
   }
