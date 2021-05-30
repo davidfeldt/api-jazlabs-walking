@@ -190,7 +190,7 @@ function authenticateAdmin(\Slim\Route $route) {
 function formatPhoneNumber($sPhone){
 	if (empty($sPhone)) return "";
 
-	$sPhone = trim($sPhone);
+	$sPhone = trim($sPhone,' ()-+');
 	if(strlen($sPhone) != 10) return "Error";
 
 	$sArea = substr($sPhone,0,3);

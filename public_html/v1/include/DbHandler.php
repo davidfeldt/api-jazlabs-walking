@@ -1303,7 +1303,7 @@ table.list .center {
   public function formatPhoneNumber($sPhone){
   	if (empty($sPhone)) return "";
 
-  	$sPhone = trim($sPhone);
+  	$sPhone = trim($sPhone,' ()-+');
   	if(strlen($sPhone) != 10) return "Error";
 
   	$sArea = substr($sPhone,0,3);
