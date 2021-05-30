@@ -1410,6 +1410,7 @@ table.list .center {
 
   public function updateProfile($username, $data) {
     date_default_timezone_set($_ENV['TIMEZONE']);
+    $profile = $this->getProfileByUsername($username);
 
     if (!empty($data['firstName']) && !empty($data['lastName'])) {
       $firstName = ucwords(trim($data['firstName']));
@@ -1471,10 +1472,18 @@ table.list .center {
     }
 
     if (isset($data['pushNotifications'])) {
-      $stmt = $this->conn->prepare('UPDATE registrants SET pushNotifications = :pushNotifications, dateModified=NOW() WHERE username = :username');
-      $stmt->bindParam(':username',$username);
-      $stmt->bindParam(':pushNotifications',$data['pushNotifications']);
-      $stmt->execute();
+      if ($data['pushNotifications'] == '0' && $profile['messaging'] == 'push') {
+        // force messaging to be none if messaging is push and use set pushNotifications = 0
+        $stmt = $this->conn->prepare("UPDATE registrants SET pushNotifications = :pushNotifications, messaging = 'none', dateModified=NOW() WHERE username = :username");
+        $stmt->bindParam(':username',$username);
+        $stmt->bindParam(':pushNotifications',$data['pushNotifications']);
+        $stmt->execute();
+      } else {
+        $stmt = $this->conn->prepare('UPDATE registrants SET pushNotifications = :pushNotifications, dateModified=NOW() WHERE username = :username');
+        $stmt->bindParam(':username',$username);
+        $stmt->bindParam(':pushNotifications',$data['pushNotifications']);
+        $stmt->execute();
+      }
     }
 
     if (!empty($data['messaging'])) {
