@@ -1300,6 +1300,19 @@ table.list .center {
     }
   }
 
+  public function formatPhoneNumber($sPhone){
+  	if (empty($sPhone)) return "";
+
+  	$sPhone = trim($sPhone);
+  	if(strlen($sPhone) != 10) return "Error";
+
+  	$sArea = substr($sPhone,0,3);
+  	$sPrefix = substr($sPhone,3,3);
+  	$sNumber = substr($sPhone,6,4);
+  	$sPhone = "(".$sArea.") ".$sPrefix."-".$sNumber;
+  	return($sPhone);
+  }
+
   public function checkAdminLogin($username, $password) {
     $stmt = $this->conn->prepare("SELECT username, password FROM admins WHERE username = :username");
 
@@ -1345,7 +1358,7 @@ table.list .center {
 		$email = !empty($data['email']) ? strtolower(trim($data['email'])) : '';
 		$title = !empty($data['title']) ? ucwords(trim($data['title'])) : '';
 		$company = !empty($data['company']) ? ucwords(trim($data['company'])) : '';
-		$mobilephone = !empty($data['mobilephone']) ? formatPhoneNumber($data['mobilephone']) : '';
+		$mobilephone = !empty($data['mobilephone']) ? $this->formatPhoneNumber($data['mobilephone']) : '';
 		$password = !empty($data['password']) ? $data['password'] : '';
     $password_hash = password_hash(trim($password), PASSWORD_DEFAULT);
     $username = $this->generateUniqueUsername($firstName, $lastName);
