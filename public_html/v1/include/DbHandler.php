@@ -1350,7 +1350,7 @@ table.list .center {
     $password_hash = password_hash(trim($password), PASSWORD_DEFAULT);
     $username = $this->generateUniqueUsername($firstName, $lastName);
     $fullName = ucwords($firstName)." ".ucwords($lastName);
-    $stmt = $this->conn->prepare("INSERT INTO registrants SET firstName = :firstName, lastName = :lastName, fullName = :fullName, email = :email, mobilephone = :mobilephone, title = :title, company = :company, dateAdded = :now, dateModified = :now, username = :username, password = :password, profileVisible = '0'");
+    $stmt = $this->conn->prepare("INSERT INTO registrants SET firstName = :firstName, lastName = :lastName, fullName = :fullName, email = :email, phone = '', profileVisible = '', messaging = 'none', pushNotifications = '0', mobilephone = :mobilephone, title = :title, company = :company, dateAdded = :now, dateModified = :now, username = :username, password = :password");
     $stmt->bindParam(':username', $username);
     $stmt->bindParam(':password', $password_hash);
     $stmt->bindParam(':firstName', $firstName);
@@ -1372,7 +1372,7 @@ table.list .center {
 
 
   public function getProfileByUsername($username) {
-      $stmt = $this->conn->prepare('SELECT registrantId, username, fullName, email, mobilephone, title, company, profileVisible FROM registrants WHERE username = :username');
+      $stmt = $this->conn->prepare('SELECT registrantId, username, firstName, lastName, fullName, email, phone, mobilephone, title, company, profileVisible, messaging, pushNotifications FROM registrants WHERE username = :username');
       $stmt->bindParam(':username', $username);
       if ($stmt->execute()) {
       	$stmt->setFetchMode(PDO::FETCH_ASSOC);

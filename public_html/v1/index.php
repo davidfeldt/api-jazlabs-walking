@@ -875,56 +875,25 @@ $app->post('/events', 'authenticate', function() use($app) {
 // preferences
 
 
- $app->get('/users/preferences', 'authenticate', function() use($app) {
+ $app->get('/users/profiles', 'authenticate', function() use($app) {
  		$response = array();
   	$db = new DbHandler();
+    $profile = $db->getProfileByUsername($app->username);
 
-      // fetch task
-      $result = $db->getPermissionsByUsername($app->username);
-
-      if ($result != NULL) {
-          $response['error'] 				    = false;
-          $response['success']                = true;
-          $response['username'] 			    = $app->username;
-          $response['like_my_post']           = (!empty($result['like_my_post']) && $result['like_my_post'] == 'yes');
-          $response['comment_my_post']        = (!empty($result['comment_my_post']) && $result['comment_my_post'] == 'yes');
-          $response['comment_my_frontdesk']   = (!empty($result['comment_my_frontdesk']) && $result['comment_my_frontdesk'] == 'yes');
-          $response['comment_my_incident']    = (!empty($result['comment_my_incident']) && $result['comment_my_incident'] == 'yes');
-          $response['comment_my_maintenance'] = (!empty($result['comment_my_maintenance']) && $result['comment_my_maintenance'] == 'yes');
-          $response['comment_my_reservation'] = (!empty($result['comment_my_reservation']) && $result['comment_my_reservation'] == 'yes');
-          $response['comment_my_marketplace'] = (!empty($result['comment_my_marketplace']) && $result['comment_my_marketplace'] == 'yes');
-          $response['send_external_email']    = (!empty($result['send_external_email']) && $result['send_external_email'] == 'yes');
-          echoResponse(200, $response);
-      } else {
-          $response['error'] = true;
-          $response['message'] = "The requested resource doesn't exists";
-          echoResponse(404, $response);
-      }
+    if ($profile != NULL) {
+        $response['error']    = false;
+        $response['success']  = true;
+        $response['username'] = $app->username;
+        $response['profile']  = $profile;
+        echoResponse(200, $response);
+    } else {
+        $response['error'] = true;
+        $response['message'] = "The requested resource doesn't exists";
+        $response['profile'] = array();
+        echoResponse(404, $response);
+    }
 
  });
-
- $app->put('/users/preferences', 'authenticate', function() use($app) {
-
-      $json = $app->request->getBody();
-      $data = json_decode($json, true);
-
-      $db = new DbHandler();
-      $res = $db->updateUserPreferences($app->username, $data);
-
-      if ($res) {
-          $response['error'] 		= false;
-          $response['username'] 	= $app->username;
-          $response['message'] 	= "Permissions updated successfully!";
-          echoResponse(201, $response);
-      } else {
-          $response['error'] 		= true;
-          $response['username'] 	= $app->username;
-          $response['message'] 	= "An error occurred while updating permissions. Try again later!";
-          echoResponse(200, $response);
-      }
-
-      $db = null;
-  });
 
 $app->run();
 
