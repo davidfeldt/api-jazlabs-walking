@@ -641,11 +641,47 @@ class DbHandler {
       }
     }
 
-    public function getPeopleWhoAreRegistedForMyEvents($registrantId, $query = '') {
+    public function getEventsForRegistrant($registrantId) {
+      date_default_timezone_set($_ENV['TIMEZONE']);
+      $now = date('Y-m-d');
+      $response = array ();
+
+      $stmt = $this->conn->prepare("SELECT e.* FROM events e LEFT JOIN attendees a ON e.eventId = a.eventId WHERE a.registrantId = :registrantId ORDER BY e.startDate ASC");
+      $stmt->bindParam(':registrantId', $registrantId);
+
+      if ($stmt->execute()) {
+        $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($events AS $row) {
+
+          $response [] = array (
+              'eventId'       => $row['eventId'],
+              'registrantId'  => $registrantId,
+              'startDate'     => date('m/d/Y',strtotime($row['startDate'])),
+              'endDate'       => date('m/d/Y',strtotime($row['endDate'])),
+              'avatar'        => !empty($row['avatar']) ? 'https://spectacularapps.us/img/organizations/'.$row['avatar'] : 'https://jazlabs.com/img/logo_light.png',
+              'image'         => !empty($row['image']) ? 'https://spectacularapps.us/img/events/'.$row['image'] : '',
+              'location'      => $row['location'],
+              'city'          => $row['city'],
+              'state'         => $row['state'],
+              'zip'           => $row['zip'],
+              'orgId'         => $row['orgId'],
+              'orgName'       => $this->getOrganizationName($row['orgId']),
+              'name'          => $row['name'],
+              'blurb'			    => $row['description'] ? html_entity_decode(strip_tags(substr($row['description'],0,100)).'...', ENT_QUOTES, 'UTF-8') : '',
+              'description'   => $row['description']
+            );
+        }
+      }
+
+      return $response;
+
+    }
+
+    public function getPeopleWhoAreRegistedForMyEvents($registrantId) {
       $people = array();
       $myEvents = $this->getAllMyEvents($registrantId);
       foreach ($myEvents AS $event) {
-        $stmt = $this->conn->prepare("SELECT a.attendeeId, r.fullName, r.title, r.company, r.email, r.profileVisible FROM attendees a LEFT JOIN registrants r ON a.registrantId = r.registrantId WHERE a.eventId = :eventId AND a.meetingId = '0' AND a.registrantId != :registrantId AND r.profileVisible = '1' ORDER BY r.fullName ASC");
+        $stmt = $this->conn->prepare("SELECT a.attendeeId, a.registrantId, r.fullName, r.title, r.company, r.email, r.profileVisible FROM attendees a LEFT JOIN registrants r ON a.registrantId = r.registrantId WHERE a.eventId = :eventId AND a.meetingId = '0' AND a.registrantId != :registrantId AND r.profileVisible = '1' ORDER BY r.fullName ASC");
         $stmt->bindParam(':registrantId', $registrantId);
         $stmt->bindParam(':eventId', $event['eventId']);
         if ($stmt->execute()) {
@@ -657,7 +693,7 @@ class DbHandler {
               'title'     => $row['title'],
               'company'   => $row['company'],
               'email'     => $row['email'],
-              'eventName' => $this->getEventName($event['eventId']),
+              'events'    => $this->getEventsForRegistrant($row['registrantId']),
             );
           }
         }
