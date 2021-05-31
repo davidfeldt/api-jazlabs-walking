@@ -1634,7 +1634,7 @@ table.list .center {
       $phone = '0';
     }
 
-    if ($data['showMobilePhone']) {
+    if ($data['showMobilephone']) {
       $mobilephone = '1';
     } else {
       $mobilephone = '0';
