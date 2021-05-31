@@ -669,6 +669,30 @@ $app->post('/admins/password/reset', function() use($app) {
 
 // Calls that require authentication
 
+$app->get('/people/:query', 'authenticate', function($query) use($app) {
+    $response = array();
+    $db = new DbHandler();
+
+    $people = $db->getPeopleWhoAreRegistedForMyEvents($app->registrantId, $query);
+
+    if ($people) {
+        $response['success'] = true;
+        $response['error'] = false;
+        $response['results'] = $people;
+        $response['message'] = 'People found';
+    } else {
+        $response['error'] = true;
+        $response['success'] = false;
+        $response['results'] = array();
+        $response['message'] = 'No people found';
+    }
+
+
+    echoResponse(200, $response);
+
+    $db = NULL;
+});
+
 $app->get('/events', 'authenticate', function() use($app) {
     $response = array();
     $db = new DbHandler();

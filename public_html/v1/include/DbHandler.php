@@ -641,6 +641,31 @@ class DbHandler {
       }
     }
 
+    public function getPeopleWhoAreRegistedForMyEvents($registrantId, $query = '') {
+      $people = array();
+      $myEvents = $this->getAllMyEvents($registrantId);
+      foreach ($myEvents AS $event) {
+        $stmt = $this->conn->prepare("SELECT a.attendeeId, r.fullName, r.title, r.company, r.email, r.profileVisible FROM attendees a LEFT JOIN registrants r ON a.registrantId = r.registrantId WHERE a.eventId = :eventId AND a.meetingId = '0' AND a.registrantId != :registrantId AND r.profileVisible = '1' ORDER BY r.fullName ASC");
+        $stmt->bindParam(':registrantId', $registrantId);
+        $stmt->bindParam(':eventId', $event['eventId']);
+        if ($stmt->execute()) {
+          $peeps = $stmt->fetchAll(PDO::FETCH_ASSOC);
+          foreach ($peeps AS $row) {
+            $people[] = array(
+              'attendeeId'=> $row['attendeeId'],
+              'fullName'  => $row['fullName'],
+              'title'     => $row['title'],
+              'company'   => $row['company'],
+              'email'     => $row['email'],
+              'eventName' => $this->getEventName($event['eventId']),
+            );
+          }
+        }
+      }
+
+      return $people;
+    }
+
     public function getMyAnnouncements($registrantId, $page = 1) {
       date_default_timezone_set($_ENV['TIMEZONE']);
       $now = date('Y-m-d');
