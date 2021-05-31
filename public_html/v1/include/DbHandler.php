@@ -1436,11 +1436,44 @@ table.list .center {
     $stmt->bindParam(':company', $company);
     $stmt->bindParam(':now', $now);
     if ($stmt->execute()) {
+      // set up permissions for sharing profile info with other attendees
+      $registrantId = $this->conn->lastInsertId();
+      $stmt = $this->conn->prepare("INSERT INTO permissions SET registrantId = :registrantId, email = '0', phone = '0', mobilephone = '0', title = '0', company = '0'");
+      $stmt->bindParam(':registrantId', $registrantId);
+      $stmt->execute();
+      // return profile
       $profile = $this->getProfileByUsername($username);
       $profile['success'] = true;
+
       return $profile;
     } else {
       return false;
+    }
+  }
+
+  public function getPermissions($registrantId) {
+    $stmt = $this->conn->prepare('SELECT * FROM permissions WHERE registrantId = :registrantId');
+    $stmt->bindParam(':registrantId', $registrantId);
+    if ($stmt->execute()) {
+      $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      return array (
+        'registrantId'  => $row['registrantId'],
+        'showEmail'         => $row['email'] == '1',
+        'showPhone'         => $row['phone'] == '1',
+        'showMobilephone'   => $row['mobilephone'] == '1',
+        'showTitle'         => $row['title'] == '1',
+        'showCompany'       => $row['company'] == '1',
+      );
+    } else {
+      return array(
+        'registrantId'      => $row['registrantId'],
+        'showEmail'         => false,
+        'showPhone'         => false,
+        'showMobilephone'   => false,
+        'showTitle'         => false,
+        'showCompany'       => false,
+      );
     }
   }
 
@@ -1573,6 +1606,52 @@ table.list .center {
 
     return true;
   }
+
+  public function updatePermissions($registrantId, $data) {
+    date_default_timezone_set($_ENV['TIMEZONE']);
+
+    if ($data['showTitle']) {
+      $title = '1';
+    } else {
+      $title = '0';
+    }
+
+    if ($data['showCompany']) {
+      $company = '1';
+    } else {
+      $company = '0';
+    }
+
+    if ($data['showEmail']) {
+      $email = '1';
+    } else {
+      $email = '0';
+    }
+
+    if ($data['showPhone']) {
+      $phone = '1';
+    } else {
+      $phone = '0';
+    }
+
+    if ($data['showMobilePhone']) {
+      $mobilephone = '1';
+    } else {
+      $mobilephone = '0';
+    }
+
+    $stmt = $this->conn->prepare('UPDATE permissions SET title = :title, company = :company, email = :email, phone = :phone, mobilephone = :mobilephone, dateModified=NOW()  WHERE registrantId = :registrantId');
+    $stmt->bindParam(':registrantId',$registrantId);
+    $stmt->bindParam(':title',$title);
+    $stmt->bindParam(':company',$company);
+    $stmt->bindParam(':email',$email);
+    $stmt->bindParam(':phone',$phone);
+    $stmt->bindParam(':mobilephone',$mobilephone);
+    $stmt->execute();
+
+    return true;
+  }
+
 
 
 
