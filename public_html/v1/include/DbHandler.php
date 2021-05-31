@@ -677,13 +677,24 @@ class DbHandler {
 
     }
 
-    public function getPeopleWhoAreRegistedForMyEvents($registrantId) {
+    public function getPeopleWhoAreRegistedForMyEvents($registrantId, $query = '') {
+      $queryString = "%".strtolower($query)."%";
       $people = array();
       $myEvents = $this->getAllMyEvents($registrantId);
       foreach ($myEvents AS $event) {
-        $stmt = $this->conn->prepare("SELECT a.attendeeId, a.registrantId, r.fullName, r.title, r.company, r.email, r.profileVisible FROM attendees a LEFT JOIN registrants r ON a.registrantId = r.registrantId WHERE a.eventId = :eventId AND a.meetingId = '0' AND a.registrantId != :registrantId AND r.profileVisible = '1' ORDER BY r.fullName ASC");
-        $stmt->bindParam(':registrantId', $registrantId);
-        $stmt->bindParam(':eventId', $event['eventId']);
+        if ($query) {
+          $stmt = $this->conn->prepare("SELECT a.attendeeId, a.registrantId, r.fullName, r.title, r.company, r.email, r.profileVisible
+            FROM attendees a LEFT JOIN registrants r ON a.registrantId = r.registrantId
+            WHERE a.eventId = :eventId AND a.meetingId = '0' AND a.registrantId != :registrantId
+            AND r.profileVisible = '1' AND (LOWER(r.fullName) like :queryString OR LOWER(r.title) like :queryString or LOWER(r.company) like :queryString) ORDER BY r.fullName ASC");
+          $stmt->bindParam(':registrantId', $registrantId);
+          $stmt->bindParam(':eventId', $event['eventId']);
+          $stmt->bindParam(':queryString', $queryString);
+        } else {
+          $stmt = $this->conn->prepare("SELECT a.attendeeId, a.registrantId, r.fullName, r.title, r.company, r.email, r.profileVisible FROM attendees a LEFT JOIN registrants r ON a.registrantId = r.registrantId WHERE a.eventId = :eventId AND a.meetingId = '0' AND a.registrantId != :registrantId AND r.profileVisible = '1' ORDER BY r.fullName ASC");
+          $stmt->bindParam(':registrantId', $registrantId);
+          $stmt->bindParam(':eventId', $event['eventId']);
+        }
         if ($stmt->execute()) {
           $peeps = $stmt->fetchAll(PDO::FETCH_ASSOC);
           foreach ($peeps AS $row) {

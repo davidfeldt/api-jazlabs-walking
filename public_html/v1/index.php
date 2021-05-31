@@ -669,11 +669,11 @@ $app->post('/admins/password/reset', function() use($app) {
 
 // Calls that require authentication
 
-$app->get('/people', 'authenticate', function() use($app) {
+$app->get('/people/search/:query', 'authenticate', function($query) use($app) {
     $response = array();
     $db = new DbHandler();
 
-    $people = $db->getPeopleWhoAreRegistedForMyEvents($app->registrantId);
+    $people = $db->getPeopleWhoAreRegistedForMyEvents($app->registrantId, $query);
 
     if ($people) {
         $response['success'] = true;
