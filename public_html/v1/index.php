@@ -951,7 +951,7 @@ $app->post('/events', 'authenticate', function() use($app) {
     $json = $app->request->getBody();
     $data = json_decode($json, true);
 
-    $permissions = $db->updatePermissions($app->registrantId);
+    $permissions = $db->updatePermissions($app->registrantId, $data);
 
     if ($permissions != NULL) {
         $response['error']    = false;
