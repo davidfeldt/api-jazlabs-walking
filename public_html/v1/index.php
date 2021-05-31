@@ -669,7 +669,7 @@ $app->post('/admins/password/reset', function() use($app) {
 
 // Calls that require authentication
 
-$app->get('/people/search/:query', 'authenticate', function($query) use($app) {
+$app->get('/people/:query', 'authenticate', function($query) use($app) {
     $response = array();
     $db = new DbHandler();
 
