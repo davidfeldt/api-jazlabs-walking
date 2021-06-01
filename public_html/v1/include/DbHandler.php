@@ -683,7 +683,7 @@ class DbHandler {
       foreach ($myEvents AS $event) {
         array_push($events, $event['eventId']);
       }
-      $eventList = implode(',',$events);
+      $eventList = implode(",", $events);
 
       $queryString = "%".strtolower($query)."%";
       if ($query) {
