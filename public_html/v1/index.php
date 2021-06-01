@@ -676,6 +676,10 @@ $app->get('/people', 'authenticate', function() use($app) {
     $search_term    = $app->request()->get('search_term');
     $page           = $app->request()->get('page');
 
+    if (!isset($search_term)) {
+      $search_term = '';
+    }
+
     if (!isset($page) || $page < 1) { $page = 1;}
     $limit = $_ENV['LIMIT'];
     $start = ($page - 1) * $limit;
@@ -684,9 +688,7 @@ $app->get('/people', 'authenticate', function() use($app) {
     $maxCount  = $db->numberOfPeopleWhoAreRegistedForMyEvents($app->registrantId, $search_term);
     $nextPage  = ($lastCount < $maxCount) ? $page + 1 : null;
 
-    if (!isset($search_term)) {
-      $search_term = '';
-    }
+
 
     $people = $db->getPeopleWhoAreRegistedForMyEvents($app->registrantId, $search_term, $page);
 

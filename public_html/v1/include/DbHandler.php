@@ -679,20 +679,26 @@ class DbHandler {
 
     public function numberOfPeopleWhoAreRegistedForMyEvents($registrantId, $query = '') {
       $myEvents = $this->getAllMyEvents($registrantId);
+      $events = array();
+      foreach ($myEvents AS $event) {
+        array_push($events, $event['eventId']);
+      }
+      $eventList = implode(',',$events);
+
       $queryString = "%".strtolower($query)."%";
       if ($query) {
         $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM FROM attendees a LEFT JOIN registrants r ON a.registrantId = r.registrantId
-          WHERE a.eventId = :eventId AND a.meetingId = '0' AND a.registrantId != :registrantId
+          WHERE a.eventId IN (:eventList) AND a.meetingId = '0' AND a.registrantId != :registrantId
           AND r.profileVisible = '1' AND (LOWER(r.fullName) like :queryString OR LOWER(r.title) like :queryString or LOWER(r.company) like :queryString) ");
         $stmt->bindParam(':registrantId', $registrantId);
-        $stmt->bindParam(':eventId', $event['eventId']);
+        $stmt->bindParam(':eventList', $eventList);
         $stmt->bindParam(':queryString', $queryString);
       } else {
         $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM FROM attendees a LEFT JOIN registrants r ON a.registrantId = r.registrantId
-          WHERE a.eventId = :eventId AND a.meetingId = '0' AND a.registrantId != :registrantId
+          WHERE a.eventId IN (:eventList) AND a.meetingId = '0' AND a.registrantId != :registrantId
           AND r.profileVisible = '1' ");
         $stmt->bindParam(':registrantId', $registrantId);
-        $stmt->bindParam(':eventId', $event['eventId']);
+        $stmt->bindParam(':eventList', $eventList);
       }
 
       if ($stmt->execute()) {
