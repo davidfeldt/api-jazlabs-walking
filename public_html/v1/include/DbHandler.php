@@ -683,31 +683,36 @@ class DbHandler {
       foreach ($myEvents AS $event) {
         array_push($events, $event['eventId']);
       }
-      $eventList = implode(",", $events);
+
+      $in = "";
+      $i = 0;
+      foreach ($events AS $item) {
+        $key = ":id".$i++;
+        $in .= "$key,";
+        $in_params[$key] = $item;
+      }
+      $in = rtrim($in,",");
 
       $queryString = "%".strtolower($query)."%";
+
       if ($query) {
+        $params = array('registrantId' => $registrantId, 'queryString' => $queryString);
         $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM attendees a LEFT JOIN registrants r ON a.registrantId = r.registrantId
-          WHERE a.eventId IN (:eventList) AND a.meetingId = '0' AND a.registrantId != :registrantId
+          WHERE a.eventId IN ($in) AND a.meetingId = '0' AND a.registrantId != :registrantId
           AND r.profileVisible = '1' AND (LOWER(r.fullName) like :queryString OR LOWER(r.title) like :queryString or LOWER(r.company) like :queryString) ");
-        $stmt->bindParam(':registrantId', $registrantId);
-        $stmt->bindParam(':eventList', $eventList);
-        $stmt->bindParam(':queryString', $queryString);
+        $stmt->execute(array_merge($params, $in_params));
       } else {
+        $params = array('registrantId' => $registrantId);
         $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM attendees a LEFT JOIN registrants r ON a.registrantId = r.registrantId
-          WHERE a.eventId IN (:eventList) AND a.meetingId = '0' AND a.registrantId != :registrantId
+          WHERE a.eventId IN ($in) AND a.meetingId = '0' AND a.registrantId != :registrantId
           AND r.profileVisible = '1' ");
-        $stmt->bindParam(':registrantId', $registrantId);
-        $stmt->bindParam(':eventList', $eventList);
+        $stmt->execute(array_merge($params, $in_params));
       }
 
-      if ($stmt->execute()) {
-        $stmt->setFetchMode(PDO::FETCH_ASSOC);
-        $row = $stmt->fetch();
-        return (int)$row['total'];
-      } else {
-        return 0;
-      }
+      $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      return (int)$row['total'];
+
     }
 
     public function getPeopleWhoAreRegistedForMyEvents($registrantId, $query = '', $page = 1) {
