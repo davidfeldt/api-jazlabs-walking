@@ -743,12 +743,13 @@ class DbHandler {
           $peeps = $stmt->fetchAll(PDO::FETCH_ASSOC);
           foreach ($peeps AS $row) {
             $people[] = array(
-              'attendeeId'=> $row['attendeeId'],
-              'fullName'  => $row['fullName'],
-              'title'     => $row['title'],
-              'company'   => $row['company'],
-              'email'     => $row['email'],
-              'events'    => $this->getEventsForRegistrant($row['registrantId']),
+              'attendeeId'  => $row['attendeeId'],
+              'fullName'    => $row['fullName'],
+              'title'       => $row['title'],
+              'company'     => $row['company'],
+              'email'       => $row['email'],
+              'events'      => $this->getEventsForRegistrant($row['registrantId']),
+              'permissions' => $this->getPermissions($row['registrantId'])
             );
           }
         }
