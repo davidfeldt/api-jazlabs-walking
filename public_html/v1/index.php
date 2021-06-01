@@ -688,15 +688,19 @@ $app->get('/people', 'authenticate', function() use($app) {
     $maxCount  = $db->numberOfPeopleWhoAreRegistedForMyEvents($app->registrantId, $search_term);
     $nextPage  = ($lastCount < $maxCount) ? $page + 1 : null;
 
-
-
     $people = $db->getPeopleWhoAreRegistedForMyEvents($app->registrantId, $search_term, $page);
 
     if ($people) {
         $response['success'] = true;
         $response['error'] = false;
-        $response['results'] = $people;
         $response['nextPage'] = $nextPage;
+        $response['page']     = $page;
+        $response['search_term'] = $search_term;
+        $response['start']       = $start;
+        $response['lastCount']       = $lastCount;
+        $response['maxCount']       = $maxCount;
+        $response['results'] = $people;
+
         $response['message'] = 'People found';
     } else {
         $response['error'] = true;
