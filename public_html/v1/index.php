@@ -719,12 +719,26 @@ $app->get('/events', 'authenticate', function() use($app) {
     $response = array();
     $db = new DbHandler();
 
-    $results   = $db->getAllEvents($app->registrantId);
+    $page = $app->request()->get('page');
+    if (!isset($page) || $page < 1) { $page = 1;}
+
+    $mine = $app->request()->get('mine');
+    if (!isset($mine)) { $mine = 0;}
+    
+    $limit = $_ENV['LIMIT'];
+    $start = ($page - 1) * $limit;
+
+    $lastCount = $start + $limit;
+    $maxCount  = $db->numberOfEvents($app->registrantId, $mine);
+    $nextPage  = ($lastCount < $maxCount) ? $page + 1 : null;
+
+    $results   = $db->getAllEvents($app->registrantId, $page, $mine);
 
     if ($results) {
         $response['success']    = true;
         $response['username'] = $app->username;
         $response['results']  = $results;
+        $response['nextPage'] = $nextPage;
     } else {
         $response['error'] = true;
         $response['results'] = array();

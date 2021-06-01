@@ -282,13 +282,43 @@ class DbHandler {
       return $response;
     }
 
-    public function getAllEvents($registrantId) {
+    public function numberOfEvents($registrantId, $mine = 0) {
+      date_default_timezone_set($_ENV['TIMEZONE']);
+      $now = date('Y-m-d');
+      if ($mine != 0) {
+        $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM events e LEFT JOIN attendees a ON e.eventId = a.eventId WHERE e.endDate >= :endDate AND a.registrantId = :registrantId AND a.meetingId = '0'");
+        $stmt->bindParam(':endDate', $now);
+        $stmt->bindParam(':registrantId', $registrantId);
+      } else {
+        $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM events WHERE endDate >= :endDate");
+        $stmt->bindParam(':endDate', $now);
+      }
+
+      if ($stmt->execute()) {
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch();
+        return (int)$row['total'];
+      } else {
+        return 0;
+      }
+    }
+
+    public function getAllEvents($registrantId, $page = 1, $mine = 0) {
       date_default_timezone_set($_ENV['TIMEZONE']);
       $now = date('Y-m-d');
       $response = array ();
 
-      $stmt = $this->conn->prepare("SELECT * FROM events WHERE endDate >= :endDate ORDER BY startDate ASC");
-      $stmt->bindParam(':endDate', $now);
+      $limit = $_ENV['LIMIT'];
+      $page = (isset($page)) ? $page : 1;
+      $start = ($page - 1) * $limit;
+
+      if ($mine != 0) {
+        $stmt = $this->conn->prepare("SELECT e.* FROM events e LEFT JOIN attendees a ON e.eventId = a.eventId WHERE e.endDate >= :endDate AND a.registrantId = :registrantId AND a.meetingId = '0' ORDER BY e.startDate ASC LIMIT $start, $limit");
+        $stmt->bindParam(':endDate', $now);
+        $stmt->bindParam(':registrantId', $registrantId);
+      } else {
+        $stmt = $this->conn->prepare("SELECT * FROM events WHERE endDate >= :endDate ORDER BY startDate ASC LIMIT $start, $limit");
+        $stmt->bindParam(':endDate', $now);
 
       if ($stmt->execute()) {
         $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -371,9 +401,6 @@ class DbHandler {
       return $response;
 
     }
-
-
-
 
     public function getAllEventsForAdmin($orgId) {
       date_default_timezone_set($_ENV['TIMEZONE']);
