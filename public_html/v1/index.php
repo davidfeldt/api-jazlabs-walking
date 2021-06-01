@@ -674,17 +674,27 @@ $app->get('/people', 'authenticate', function() use($app) {
     $db = new DbHandler();
 
     $search_term    = $app->request()->get('search_term');
+    $page           = $app->request()->get('page');
+
+    if (!isset($page) || $page < 1) { $page = 1;}
+    $limit = $_ENV['LIMIT'];
+    $start = ($page - 1) * $limit;
+
+    $lastCount = $start + $limit;
+    $maxCount  = $db->numberOfPeopleWhoAreRegistedForMyEvents($app->registrantId, $search_term);
+    $nextPage  = ($lastCount < $maxCount) ? $page + 1 : null;
 
     if (!isset($search_term)) {
       $search_term = '';
     }
 
-    $people = $db->getPeopleWhoAreRegistedForMyEvents($app->registrantId, $search_term);
+    $people = $db->getPeopleWhoAreRegistedForMyEvents($app->registrantId, $search_term, $page);
 
     if ($people) {
         $response['success'] = true;
         $response['error'] = false;
         $response['results'] = $people;
+        $response['nextPage'] = $nextPage;
         $response['message'] = 'People found';
     } else {
         $response['error'] = true;

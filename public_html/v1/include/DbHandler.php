@@ -677,21 +677,54 @@ class DbHandler {
 
     }
 
-    public function getPeopleWhoAreRegistedForMyEvents($registrantId, $query = '') {
+    public function numberOfPeopleWhoAreRegistedForMyEvents($registrantId, $query = '') {
+      $myEvents = $this->getAllMyEvents($registrantId);
+      $queryString = "%".strtolower($query)."%";
+      if ($query) {
+        $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM FROM attendees a LEFT JOIN registrants r ON a.registrantId = r.registrantId
+          WHERE a.eventId = :eventId AND a.meetingId = '0' AND a.registrantId != :registrantId
+          AND r.profileVisible = '1' AND (LOWER(r.fullName) like :queryString OR LOWER(r.title) like :queryString or LOWER(r.company) like :queryString) ");
+        $stmt->bindParam(':registrantId', $registrantId);
+        $stmt->bindParam(':eventId', $event['eventId']);
+        $stmt->bindParam(':queryString', $queryString);
+      } else {
+        $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM FROM attendees a LEFT JOIN registrants r ON a.registrantId = r.registrantId
+          WHERE a.eventId = :eventId AND a.meetingId = '0' AND a.registrantId != :registrantId
+          AND r.profileVisible = '1' ");
+        $stmt->bindParam(':registrantId', $registrantId);
+        $stmt->bindParam(':eventId', $event['eventId']);
+      }
+
+      if ($stmt->execute()) {
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch();
+        return (int)$row['total'];
+      } else {
+        return 0;
+      }
+    }
+
+    public function getPeopleWhoAreRegistedForMyEvents($registrantId, $query = '', $page = 1) {
       $queryString = "%".strtolower($query)."%";
       $people = array();
       $myEvents = $this->getAllMyEvents($registrantId);
+
+      $limit = $_ENV['LIMIT'];
+      $page = (isset($page)) ? $page : 1;
+      $start = ($page - 1) * $limit;
+
       foreach ($myEvents AS $event) {
         if ($query) {
           $stmt = $this->conn->prepare("SELECT a.attendeeId, a.registrantId, r.fullName, r.title, r.company, r.email, r.profileVisible
             FROM attendees a LEFT JOIN registrants r ON a.registrantId = r.registrantId
             WHERE a.eventId = :eventId AND a.meetingId = '0' AND a.registrantId != :registrantId
-            AND r.profileVisible = '1' AND (LOWER(r.fullName) like :queryString OR LOWER(r.title) like :queryString or LOWER(r.company) like :queryString) ORDER BY r.fullName ASC");
+            AND r.profileVisible = '1' AND (LOWER(r.fullName) like :queryString OR LOWER(r.title) like :queryString or LOWER(r.company) like :queryString) ORDER BY r.fullName ASC LIMIT $start, $limit");
           $stmt->bindParam(':registrantId', $registrantId);
           $stmt->bindParam(':eventId', $event['eventId']);
           $stmt->bindParam(':queryString', $queryString);
         } else {
-          $stmt = $this->conn->prepare("SELECT a.attendeeId, a.registrantId, r.fullName, r.title, r.company, r.email, r.profileVisible FROM attendees a LEFT JOIN registrants r ON a.registrantId = r.registrantId WHERE a.eventId = :eventId AND a.meetingId = '0' AND a.registrantId != :registrantId AND r.profileVisible = '1' ORDER BY r.fullName ASC");
+          $stmt = $this->conn->prepare("SELECT a.attendeeId, a.registrantId, r.fullName, r.title, r.company, r.email, r.profileVisible FROM attendees a
+            LEFT JOIN registrants r ON a.registrantId = r.registrantId WHERE a.eventId = :eventId AND a.meetingId = '0' AND a.registrantId != :registrantId AND r.profileVisible = '1' ORDER BY r.fullName ASC LIMIT $start, $limit");
           $stmt->bindParam(':registrantId', $registrantId);
           $stmt->bindParam(':eventId', $event['eventId']);
         }
