@@ -319,6 +319,7 @@ class DbHandler {
       } else {
         $stmt = $this->conn->prepare("SELECT * FROM events WHERE endDate >= :endDate ORDER BY startDate ASC LIMIT $start, $limit");
         $stmt->bindParam(':endDate', $now);
+      }
 
       if ($stmt->execute()) {
         $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
