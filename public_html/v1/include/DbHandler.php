@@ -687,14 +687,14 @@ class DbHandler {
 
       $queryString = "%".strtolower($query)."%";
       if ($query) {
-        $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM FROM attendees a LEFT JOIN registrants r ON a.registrantId = r.registrantId
+        $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM attendees a LEFT JOIN registrants r ON a.registrantId = r.registrantId
           WHERE a.eventId IN (:eventList) AND a.meetingId = '0' AND a.registrantId != :registrantId
           AND r.profileVisible = '1' AND (LOWER(r.fullName) like :queryString OR LOWER(r.title) like :queryString or LOWER(r.company) like :queryString) ");
         $stmt->bindParam(':registrantId', $registrantId);
         $stmt->bindParam(':eventList', $eventList);
         $stmt->bindParam(':queryString', $queryString);
       } else {
-        $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM FROM attendees a LEFT JOIN registrants r ON a.registrantId = r.registrantId
+        $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM attendees a LEFT JOIN registrants r ON a.registrantId = r.registrantId
           WHERE a.eventId IN (:eventList) AND a.meetingId = '0' AND a.registrantId != :registrantId
           AND r.profileVisible = '1' ");
         $stmt->bindParam(':registrantId', $registrantId);
