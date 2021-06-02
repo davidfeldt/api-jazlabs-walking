@@ -648,7 +648,7 @@ class DbHandler {
     }
 
     public function testNotificationForEvent($registrantId, $eventId) {
-      $event = $this->getEvent($eventId);
+      $event = $this->getEvent($registrantId, $eventId);
       $email = $this->sendEmailNotification($registrantId, 'you are registered','','',$event);
       $sms = $this->sendSMSNotification($registrantId, 'you are registered for '.$event['name']);
       $push = $this->$this->sendPushNotificationsToIndividual($registrantId, $subject);
