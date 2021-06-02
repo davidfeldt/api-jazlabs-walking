@@ -651,7 +651,7 @@ class DbHandler {
       $event = $this->getEvent($registrantId, $eventId);
       $email = $this->sendEmailNotification($registrantId, 'you are registered','','',$event);
       $sms = $this->sendSMSNotification($registrantId, 'you are registered for '.$event['name']);
-      $push = $this->$this->sendPushNotificationsToIndividual($registrantId, 'you are registered for '.$event['name']);
+      $push = $this->sendPushNotificationsToIndividual($registrantId, 'you are registered for '.$event['name']);
       return array (
           'emailResult' => $email,
           'smsResult' => $sms,
