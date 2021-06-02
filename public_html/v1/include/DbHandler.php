@@ -650,24 +650,32 @@ class DbHandler {
     private function sendEmailNotification($registrantId, $subject, $message, $template_id = '', $event = array()) {
       $name = $this->getFullName($registrantId);
       $email = $this->getFullName($registrantId);
-      if (!$template_id) {
-        $template_id = $_ENV['NOTIFICATION_TEMPLATE_ID'];
-      }
 
       $custom_fields = array(
-        'template_id' => $template_id,
         'from'  => array(
           'email' => $_ENV['SENDGRID_FROM_EMAIL'],
           'name'  => $_ENV['SENDGRID_FROM_NAME']
         ),
+        'subject' => $subject,
         'personalizations'  => array(
           'to' => array(
             'email' => $email,
             'name'  => $name
           ),
-          'dynamic_template_data' => $events
+          'dynamic_template_data' => $event
         )
       );
+
+      if ($template_id) {
+        $custom_fields['template_id'] => $template_id;
+      }
+
+      if ($message && !$template_id) {
+        $custom_fields['content'] = array(
+          'type'  => 'text/html',
+          'value' => nl2br($message)
+        );
+      }
 
 
       if (!empty($name) && !empty($email)) {
