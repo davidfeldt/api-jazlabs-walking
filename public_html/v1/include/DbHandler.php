@@ -657,99 +657,36 @@ class DbHandler {
           'smsResult' => $sms,
           'pushResult' => $push
       );
-
+    }
 
     private function sendEmailNotification($registrantId, $subject, $message, $template_id = '', $event = array()) {
       $name = $this->getFullName($registrantId);
       $email = $this->getFullName($registrantId);
 
-      $custom_fields = array(
-        'from'  => array(
-          'email' => $_ENV['SENDGRID_FROM_EMAIL'],
-          'name'  => $_ENV['SENDGRID_FROM_NAME']
-        ),
-        'subject' => $subject,
-        'personalizations'  => array(
-          'to' => array(
-            'email' => $email,
-            'name'  => $name
-          ),
-          'from' => array(
-            'email' => $_ENV['SENDGRID_FROM_EMAIL'],
-            'name'  => $_ENV['SENDGRID_FROM_NAME']
-          ),
-          'dynamic_template_data' => array(
-            'event' => $event
-          ),
-        ),
-      );
-
-      if ($template_id) {
-        $custom_fields['template_id'] = $template_id;
-      }
-
-      if ($message && !$template_id) {
-        $custom_fields['content'] = array(
-          'type'  => 'text/html',
-          'value' => nl2br($message)
-        );
-      }
-
-
       if (!empty($name) && !empty($email)) {
-      //   $curl = curl_init();
-      //
-      //   curl_setopt_array($curl, array(
-      //     CURLOPT_URL => $_ENV['SENDGRID_API_URL'],
-      //     CURLOPT_RETURNTRANSFER => true,
-      //     CURLOPT_ENCODING => "",
-      //     CURLOPT_MAXREDIRS => 10,
-      //     CURLOPT_TIMEOUT => 30,
-      //     CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-      //     CURLOPT_CUSTOMREQUEST => "POST",
-      //     CURLOPT_POSTFIELDS => json_encode($custom_fields),
-      //     CURLOPT_HTTPHEADER => array(
-      //       "authorization: Bearer ".$_ENV['SENDGRID_API_KEY'],
-      //       "content-type: application/json"
-      //     ),
-      //   ));
-      //
-      //   $response = curl_exec($curl);
-      //   $err = curl_error($curl);
-      //
-      //   curl_close($curl);
-      //
-      //   if ($err) {
-      //     return "cURL Error #:" . $err;
-      //   } else {
-      //     return json_decode($response, true);
-      //   }
-      // } else {
-      //   return false;
-      // }
-      require 'vendor/autoload.php'; // If you're using Composer (recommended)
-      $email = new \SendGrid\Mail\Mail();
-      $email->setFrom($_ENV['SENDGRID_FROM_EMAIL'], $_ENV['SENDGRID_FROM_NAME']);
-      $email->setSubject($subject);
-      $email->addTo($mail, $name);
-      if ($template_id) {
-        $email->setTemplateId($template_id);
-      }
-      if ($event) {
-        $email->addDynamicTemplateData("event", $event);
-      }
-      if ($message) {
-        $email->addContent("text/plain", $message);
-        $email->addContent(
-            "text/html", nl2br($message)
-        );
-      }
-      $sendgrid = new \SendGrid(getenv('SENDGRID_API_KEY'));
-      try {
-          $response = $sendgrid->send($email);
-          return json_encode($response);
-      } catch (Exception $e) {
-          return 'Caught exception: '. $e->getMessage() ."\n";
+        $email = new \SendGrid\Mail\Mail();
+        $email->setFrom($_ENV['SENDGRID_FROM_EMAIL'], $_ENV['SENDGRID_FROM_NAME']);
+        $email->setSubject($subject);
+        $email->addTo($mail, $name);
+        if ($template_id) {
+          $email->setTemplateId($template_id);
+        }
+        if ($event) {
+          $email->addDynamicTemplateData("event", $event);
+        }
+        if ($message) {
+          $email->addContent("text/plain", $message);
+          $email->addContent(
+              "text/html", nl2br($message)
+          );
+        }
+        $sendgrid = new \SendGrid(getenv('SENDGRID_API_KEY'));
+        try {
+            $response = $sendgrid->send($email);
+            return json_encode($response);
+        } catch (Exception $e) {
+            return 'Caught exception: '. $e->getMessage() ."\n";
+        }
       }
     }
 
