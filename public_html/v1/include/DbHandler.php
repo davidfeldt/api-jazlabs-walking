@@ -122,6 +122,30 @@ class DbHandler {
     }
   }
 
+  private function getEmail($registrantId) {
+    $stmt = $this->conn->prepare('SELECT email FROM registrants WHERE registrantId = :registrantId');
+    $stmt->bindParam(':registrantId', $registrantId);
+    if ($stmt->execute()) {
+    $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      return !empty($row['email']) ? $row['email'] : '';
+    } else {
+      return '';
+    }
+  }
+
+  private function getMobilephone($registrantId) {
+    $stmt = $this->conn->prepare('SELECT mobilephone FROM registrants WHERE registrantId = :registrantId');
+    $stmt->bindParam(':registrantId', $registrantId);
+    if ($stmt->execute()) {
+    $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      return !empty($row['mobilephone']) ? $row['mobilephone'] : '';
+    } else {
+      return '';
+    }
+  }
+
   public function getAdminName($adminId) {
     $stmt = $this->conn->prepare('SELECT name FROM admins WHERE adminId = :adminId');
     $stmt->bindParam(':adminId', $adminId);
@@ -603,7 +627,7 @@ class DbHandler {
       $stmt = $this->conn->prepare('SELECT orgId FROM events WHERE eventId = :eventId');
       $stmt->bindParam(':eventId', $eventId);
       if ($stmt->execute()) {
-      $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
         $row = $stmt->fetch();
         return !empty($row['orgId']) ? $row['orgId'] : '0';
       } else {
@@ -611,9 +635,105 @@ class DbHandler {
       }
     }
 
+    private function getMessagingChannelFor($registrantId) {
+      $stmt = $this->conn->prepare('SELECT messaging FROM registrants WHERE registrantId = :registrantId');
+      $stmt->bindParam(':registrantId', $registrantId);
+      if ($stmt->execute()) {
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch();
+        return !empty($row['messaging']) ? $row['messaging'] : 'none';
+      } else {
+        return 'none';
+      }
+    }
+
+    private sendEmailNotification($registrantId, $subject, $message, $template_id = '', $event = array()) {
+      $name = $this->getFullName($registrantId);
+      $email = $this->getFullName($registrantId);
+      if (!$template_id) {
+        $template_id = $_ENV['NOTIFICATION_TEMPLATE_ID'];
+      }
+
+      $custom_fields = array(
+        'template_id' => $template_id,
+        'from'  => array(
+          'email' => $_ENV['SENDGRID_FROM_EMAIL'],
+          'name'  => $_ENV['SENDGRID_FROM_NAME']
+        ),
+        'personalizations'  => array(
+          'to' => array(
+            'email' => $email,
+            'name'  => $name
+          ),
+          'dynamic_template_data' => $events
+        )
+      );
+
+
+      if (!empty($name) && !empty($email)) {
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+          CURLOPT_URL => $_ENV['SENDGRID_API_URL'],
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_ENCODING => "",
+          CURLOPT_MAXREDIRS => 10,
+          CURLOPT_TIMEOUT => 30,
+          CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+          CURLOPT_CUSTOMREQUEST => "POST",
+          CURLOPT_POSTFIELDS => json_encode($custom_fields),
+          CURLOPT_HTTPHEADER => array(
+            "authorization: Bearer ".$_ENV['SENDGRID_API_KEY'],
+            "content-type: application/json"
+          ),
+        ));
+
+        $response = curl_exec($curl);
+        $err = curl_error($curl);
+
+        curl_close($curl);
+
+        if ($err) {
+          echo "cURL Error #:" . $err;
+        } else {
+          echo $response;
+        }
+      } else {
+        return false;
+      }
+    }
+
+    private sendSMSNotification($registrantId, $message) {
+
+    }
+
+    public function sendNotification($registrantId, $subject = '', $message = '', $template_id = '', $event = array()) {
+      $messaging = $this->getMessagingChannelFor($registrantId);
+      switch ($messaging) {
+        case 'email':
+          $result = $this->sendEmailNotification($registrantId, $subject, $message, $template_id, $event);
+          break;
+        case 'sms':
+          $result = $this->sendSMSNotification($registrantId, $subject);
+          break;
+        case 'push':
+          $result = $this->sendPushNotificationsToIndividual($registrantId, $subject);
+          break;
+        case 'none':
+          $result = false;
+          break;
+        default:
+          $result = false;
+          break;
+      }
+
+      return $result;
+    }
+
     public function registerForEvent($registrantId, $eventId) {
       date_default_timezone_set($_ENV['TIMEZONE']);
       $now = date('Y-m-d H:i:s');
+      $event = $this->getEvent($registrantId, $eventId);
       if (!$this->isRegisteredForEvent($eventId, $registrantId)) {
         $orgId = $this->getOrgIdForEvent($eventId);
         $sql = "INSERT INTO attendees SET registrantId = :registrantId, eventId = :eventId, orgId = :orgId, meetingId = '0', checkedIn = '0', dateAdded = :dateAdded, dateModified = :dateModified";
@@ -624,12 +744,14 @@ class DbHandler {
         $stmt->bindParam(':orgId', $orgId);
         $stmt->bindParam(':registrantId', $registrantId);
         if ($stmt->execute()) {
-          return $this->getEvent($registrantId, $eventId);
+          $this->sendNotification($registrantId, 'You are registered for '. $event['name'], 'You are registered for '. $event['name'], '', $event);
+          return $event;
         } else {
           return false;
         }
       } else {
-        return $this->getEvent($registrantId, $eventId);
+        $this->sendNotification($registrantId, 'You are registered for '. $event['name'], 'You are registered for '. $event['name'], '', $event);
+        return $event;
       }
     }
 
@@ -1079,181 +1201,8 @@ class DbHandler {
 
   }
 
-   public function sendEmail($username, $email,$subject,$message, $id = 0) {
-		$resident_info	= $this->getUserByUsername($username);
-		$building_info	= $this->getBuildingInfo($resident_info['bid']);
 
-		if (isset($building_info) && $building_info) {
-			$from_name		= $building_info['name'];
-			$from_email		= $building_info['email'];
-			$from_logo 		= $building_info['image'] ? $building_info['image'] : 'jazlife0.png';
-			$logo_href		= $_ENV['HTTP_IMAGE'].$from_logo;
-			$from_url		= $_ENV['HTTP_CATALOG'];
-			$from_address	= str_replace(",",",<br/>",$this->getSetting('config_address'));
-		} else {
-			$from_name 		= $this->getSetting('config_name');
-			$from_email 	= $this->getSetting('config_email');
-			$from_logo 		= $this->getSetting('config_logo');
-			$logo_href		= $_ENV['HTTP_IMAGE0'].$from_logo;
-			$from_url		= $_ENV['HTTP_CATALOG'];
-			$from_address	= str_replace(",",",<br/>",$this->getSetting('config_address'));
-		}
-
-		$tracker 		= $from_url.'/track.php?log=true&campaign_id='.$id.'&date='.date('Y-m-d').'&email=' . urlencode( $email );
-
-		$fullName		= isset($resident_info['fullName']) ? $resident_info['fullName'] : 'Resident';
-
-		$html = '
-			<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <title>'.$subject.'</title>
-
-        <!--[if gte mso 6]>
-        <style>
-            table.mcnFollowContent {width:100% !important;}
-            table.mcnShareContent {width:100% !important;}
-        </style>
-        <![endif]-->
-<style type="text/css">
-body {
-	color: #000000;
-	font-family: Arial, Helvetica, sans-serif;
-}
-body, td, th, input, textarea, select, a {
-	font-size: 12px;
-}
-h2 {
-	font-size: 18px;
-}
-p {
-	margin-top: 0px;
-	margin-bottom: 20px;
-}
-a, a:visited, a b {
-	color: #378DC1;
-	text-decoration: underline;
-	cursor: pointer;
-}
-a:hover {
-	text-decoration: none;
-}
-a img {
-	border: none;
-}
-#container {
-	width: 680px;
-}
-#logo {
-	margin-bottom: 20px;
-}
-.footer {
-	float:left;
-	font-size:11px;
-	font-weight:lighter;
-	margin:5px;
-}
-.footer a {
-	font-size:11px;
-	font-weight:lighter;
-}
-.message {
-	padding: 0px 5px;
-	font-size: 12px;
-	font-style:italic;
-	border-bottom: 1px solid #ccc;
-}
-table.list {
-	border-collapse: collapse;
-	width: 100%;
-	border-top: 1px solid #DDDDDD;
-	border-left: 1px solid #DDDDDD;
-	margin-bottom: 20px;
-}
-table.list td {
-	border-right: 1px solid #DDDDDD;
-	border-bottom: 1px solid #DDDDDD;
-}
-table.list thead td {
-	background-color: #EFEFEF;
-	padding: 0px 5px;
-}
-table.list thead td a, .list thead td {
-	text-decoration: none;
-	color: #222222;
-	font-weight: bold;
-}
-table.list tbody td a {
-	text-decoration: underline;
-}
-table.list tbody td {
-	vertical-align: top;
-	padding: 0px 5px;
-}
-table.list .left {
-	text-align: left;
-	padding: 7px;
-}
-table.list .right {
-	text-align: right;
-	padding: 7px;
-}
-table.list .center {
-	text-align: center;
-	padding: 7px;
-}
-</style>
-</head>
-<body>
-<div id="container">
-  <img border="0" src="'.$tracker.'" width="1" height="1" />
-  <table class="list">
-
-    <tbody>
-      <tr>
-        <td class="center" style="background-color: #EFEFEF;" width="77"><img src="'.$logo_href.'"></td>
-        <td class="left">
-        <table class="list">
-        	<thead>
-      		<tr>
-        		<td class="left" colspan="2"><h2>'.$subject.'</h2></td>
-      		</tr>
-    		</thead>
-        </table>';
-
-
-	    $html .= '<br/><p>Dear '.$fullName.',</p><p>'.html_entity_decode($message, ENT_QUOTES, 'UTF-8').'</p>
-
-	    <br/>
-<div class="footer"><hr><i>Copyright &copy; '.date('Y').' '.$from_name. ', All rights reserved.</i><br/><br/>Private and Confidential: This email was sent to '.$fullName.' at '.$email.' who is a registered resident/owner at '.$from_name.'<br/><br/>Our mailing address is:<br/>'.$from_address.'
-<br/><br/>
-	    </div>
-
-        </td>
-      </tr>
-    </tbody>
-    </table>
-
-</body>
-</html>';
-
-
-  $mg = Mailgun\Mailgun::create($_ENV['MAILGUN_API_KEY']);
-
-  $mg->messages()->send('jazlife.com', [
-    'from'    => 'info@jazlife.com',
-    'to'      => $email,
-    'subject' => $subject,
-    'text'    => strip_tags(html_entity_decode($html)),
-    'html'    => $html
-  ]);
-
-	return TRUE;
-
-}
-
-	public function sendSMS($number, $message) {
+	private function sendSMS($number, $message) {
 
 		// Your Account SID and Auth Token from twilio.com/console
 		$sid = $_ENV['TWILIO_SID'];
@@ -1508,7 +1457,7 @@ table.list .center {
     $password_hash = password_hash(trim($password), PASSWORD_DEFAULT);
     $username = $this->generateUniqueUsername($firstName, $lastName);
     $fullName = ucwords($firstName)." ".ucwords($lastName);
-    $stmt = $this->conn->prepare("INSERT INTO registrants SET firstName = :firstName, lastName = :lastName, fullName = :fullName, email = :email, phone = '', profileVisible = '', messaging = 'none', pushNotifications = '0', mobilephone = :mobilephone, title = :title, company = :company, dateAdded = :now, dateModified = :now, username = :username, password = :password");
+    $stmt = $this->conn->prepare("INSERT INTO registrants SET firstName = :firstName, lastName = :lastName, fullName = :fullName, email = :email, phone = '', profileVisible = '', messaging = 'email', pushNotifications = '0', mobilephone = :mobilephone, title = :title, company = :company, dateAdded = :now, dateModified = :now, username = :username, password = :password");
     $stmt->bindParam(':username', $username);
     $stmt->bindParam(':password', $password_hash);
     $stmt->bindParam(':firstName', $firstName);
@@ -1987,16 +1936,16 @@ table.list .center {
   }
 
 
-		public function sendPushNotificationsToIndividual($username, $message, $data = array(), $sound = 0) {
+		public function sendPushNotificationsToIndividual($registrantId, $message, $data = array(), $sound = 0) {
 
 			// get group members
 			$filters = array(
-				array(
-				"field" =>"tag",
-				"key" => "username",
-				"relation" => "=",
-				"value" => $username
-			)
+  				array(
+  				"field"     => "tag",
+  				"key"       => "registrantId",
+  				"relation"  => "=",
+  				"value"     => (int)$registrantId
+  			)
 			);
 
 			// create push notification data
