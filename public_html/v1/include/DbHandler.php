@@ -661,7 +661,7 @@ class DbHandler {
 
     private function sendEmailNotification($registrantId, $subject, $message, $template_id = '', $event = array()) {
       $to_name = $this->getFullName($registrantId);
-      $to_email = $this->getFullName($registrantId);
+      $to_email = $this->getEmail($registrantId);
 
       if (!empty($to_name) && !empty($to_email)) {
         $email = new \SendGrid\Mail\Mail();
