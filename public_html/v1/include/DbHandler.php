@@ -647,7 +647,7 @@ class DbHandler {
       }
     }
 
-    private sendEmailNotification($registrantId, $subject, $message, $template_id = '', $event = array()) {
+    private function sendEmailNotification($registrantId, $subject, $message, $template_id = '', $event = array()) {
       $name = $this->getFullName($registrantId);
       $email = $this->getFullName($registrantId);
       if (!$template_id) {
@@ -703,8 +703,9 @@ class DbHandler {
       }
     }
 
-    private sendSMSNotification($registrantId, $message) {
-
+    private function sendSMSNotification($registrantId, $message) {
+      $mobilephone = $this->getMobilephone($registrantId);
+      return $this->sendSMS($mobilephone, $message);
     }
 
     public function sendNotification($registrantId, $subject = '', $message = '', $template_id = '', $event = array()) {
