@@ -826,12 +826,7 @@ $app->get('/announcements', 'authenticate', function() use($app) {
 });
 
 $app->post('/test/notification/event/:eventId', 'authenticate', function($eventId) use($app) {
-
-     $json = $app->request->getBody();
-     $data = json_decode($json, true);
-     $eventId = $data['eventId'];
      $registrantId = $app->registrantId;
-
      $db = new DbHandler();
      $result = $db->testNotificationForEvent($registrantId, $eventId);
 
