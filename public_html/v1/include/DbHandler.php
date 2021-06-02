@@ -285,6 +285,7 @@ class DbHandler {
             'registrantId'  => $registrantId,
             'startDate'     => date('m/d/Y',strtotime($row['startDate'])),
             'endDate'       => date('m/d/Y',strtotime($row['endDate'])),
+            'dates'         => $row['startDate'] == $row['endDate'] ? date('m/d/Y',strtotime($row['startDate'])) : date('m/d/Y',strtotime($row['startDate'])).' - '.date('m/d/Y',strtotime($row['endDate'])),
             'avatar'        => !empty($row['avatar']) ? 'https://spectacularapps.us/img/organizations/'.$row['avatar'] : 'https://jazlabs.com/img/logo_light.png',
             'image'         => !empty($row['image']) ? 'https://spectacularapps.us/img/events/'.$row['image'] : '',
             'location'      => $row['location'],

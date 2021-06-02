@@ -8,7 +8,7 @@ use \Firebase\JWT\JWT;
 use \Slim\Slim;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
-use \SendGrid\Mail;
+use \SendGrid\Mail\Mail;
 
 
 $dotenv = new Dotenv\Dotenv('../../');
