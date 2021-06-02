@@ -825,6 +825,34 @@ $app->get('/announcements', 'authenticate', function() use($app) {
     $db = NULL;
 });
 
+$app->post('/test/notification/event/:eventId', 'authenticate', function($eventId) use($app) {
+
+     $json = $app->request->getBody();
+     $data = json_decode($json, true);
+     $eventId = $data['eventId'];
+     $registrantId = $app->registrantId;
+
+     $db = new DbHandler();
+     $result = $db->testNotificationForEvent($registrantId, $eventId);
+
+     if ($result) {
+         $response['error'] 		= false;
+         $response['success'] 	= true;
+         $response['username'] 	= $app->username;
+         $response['result']    = $result;
+         $response['message'] 	= "You have registered for the event!";
+         echoResponse(201, $response);
+     } else {
+         $response['error'] 		= true;
+         $response['username'] 	= $app->username;
+         $response['message'] 	= "An error occurred while registering for the event. Try again later!";
+         echoResponse(200, $response);
+     }
+
+     $db = null;
+ });
+
+
 // register for events
 $app->post('/events', 'authenticate', function() use($app) {
 

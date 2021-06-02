@@ -647,6 +647,20 @@ class DbHandler {
       }
     }
 
+    public function testNotificationForEvent($registrantId, $eventId) {
+      $event = $this->getEvent($eventId);
+      $email = $this->sendEmailNotification($registrantId, 'you are registered','','',$event);
+      $sms = $this->sendSMSNotification($registrantId, 'you are registered for '.$event['name']);
+      $push = $this->$this->sendPushNotificationsToIndividual($registrantId, $subject);
+      return array (
+          'emailResult' => $email,
+          'smsResult' => $sms,
+          'pushResult' => $push
+      );
+    }
+
+
+
     private function sendEmailNotification($registrantId, $subject, $message, $template_id = '', $event = array()) {
       $name = $this->getFullName($registrantId);
       $email = $this->getFullName($registrantId);
