@@ -676,8 +676,14 @@ class DbHandler {
             'email' => $email,
             'name'  => $name
           ),
-          'dynamic_template_data' => $event
-        )
+          'from' => array(
+            'email' => $_ENV['SENDGRID_FROM_EMAIL'],
+            'name'  => $_ENV['SENDGRID_FROM_NAME']
+          ),
+          'dynamic_template_data' => array(
+            'event' => $event
+          ),
+        ),
       );
 
       if ($template_id) {
