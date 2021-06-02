@@ -722,9 +722,9 @@ class DbHandler {
         curl_close($curl);
 
         if ($err) {
-          echo "cURL Error #:" . $err;
+          return "cURL Error #:" . $err;
         } else {
-          echo $response;
+          return json_decode($response, true);
         }
       } else {
         return false;
