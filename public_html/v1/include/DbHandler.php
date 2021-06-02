@@ -733,13 +733,13 @@ class DbHandler {
         $stmt->bindParam(':orgId', $orgId);
         $stmt->bindParam(':registrantId', $registrantId);
         if ($stmt->execute()) {
-          $this->sendNotification($registrantId, 'You are registered for '. $event['name'], 'You are registered for '. $event['name'], '', $event);
+          $this->sendNotification($registrantId, 'You are registered','',$_ENV['NOTIFICATION_TEMPLATE_ID'],$event);
           return $event;
         } else {
           return false;
         }
       } else {
-        $this->sendNotification($registrantId, 'You are registered for '. $event['name'], 'You are registered for '. $event['name'], '', $event);
+        $this->sendNotification($registrantId, 'You are registered','',$_ENV['NOTIFICATION_TEMPLATE_ID'],$event); 
         return $event;
       }
     }
