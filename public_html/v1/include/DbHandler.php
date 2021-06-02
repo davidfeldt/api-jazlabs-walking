@@ -624,12 +624,12 @@ class DbHandler {
         $stmt->bindParam(':orgId', $orgId);
         $stmt->bindParam(':registrantId', $registrantId);
         if ($stmt->execute()) {
-          return true;
+          return $this->getEvent($registrantId, $eventId);
         } else {
           return false;
         }
       } else {
-        return true;
+        return $this->getEvent($registrantId, $eventId);
       }
     }
 

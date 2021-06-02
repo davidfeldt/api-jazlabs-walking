@@ -724,7 +724,7 @@ $app->get('/events', 'authenticate', function() use($app) {
 
     $mine = $app->request()->get('mine');
     if (!isset($mine)) { $mine = 0;}
-    
+
     $limit = $_ENV['LIMIT'];
     $start = ($page - 1) * $limit;
 
@@ -834,12 +834,13 @@ $app->post('/events', 'authenticate', function() use($app) {
      $registrantId = $app->registrantId;
 
      $db = new DbHandler();
-     $res = $db->registerForEvent($registrantId, $eventId);
+     $result = $db->registerForEvent($registrantId, $eventId);
 
-     if ($res) {
+     if ($result) {
          $response['error'] 		= false;
          $response['success'] 	= true;
          $response['username'] 	= $app->username;
+         $response['result']    = $result;
          $response['message'] 	= "You have registered for the event!";
          echoResponse(201, $response);
      } else {
