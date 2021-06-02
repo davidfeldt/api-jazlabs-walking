@@ -683,7 +683,7 @@ class DbHandler {
         $sendgrid = new \SendGrid(getenv('SENDGRID_API_KEY'));
         try {
             $response = $sendgrid->send($email);
-            return json_encode($response);
+            return $response;
         } catch (Exception $e) {
             return 'Caught exception: '. $e->getMessage() ."\n";
         }
