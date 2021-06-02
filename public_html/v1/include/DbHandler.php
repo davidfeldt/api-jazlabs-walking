@@ -649,7 +649,7 @@ class DbHandler {
 
     public function testNotificationForEvent($registrantId, $eventId) {
       $event = $this->getEvent($registrantId, $eventId);
-      $email = $this->sendEmailNotification($registrantId, 'you are registered','','',$event);
+      $email = $this->sendEmailNotification($registrantId, 'you are registered','',$_ENV['NOTIFICATION_TEMPLATE_ID'],$event);
       $sms = $this->sendSMSNotification($registrantId, 'you are registered for '.$event['name']);
       $push = $this->sendPushNotificationsToIndividual($registrantId, 'you are registered for '.$event['name']);
       return array (
@@ -657,8 +657,6 @@ class DbHandler {
           'smsResult' => $sms,
           'pushResult' => $push
       );
-    }
-
 
 
     private function sendEmailNotification($registrantId, $subject, $message, $template_id = '', $event = array()) {
@@ -699,35 +697,59 @@ class DbHandler {
 
 
       if (!empty($name) && !empty($email)) {
-        $curl = curl_init();
-
-        curl_setopt_array($curl, array(
-          CURLOPT_URL => $_ENV['SENDGRID_API_URL'],
-          CURLOPT_RETURNTRANSFER => true,
-          CURLOPT_ENCODING => "",
-          CURLOPT_MAXREDIRS => 10,
-          CURLOPT_TIMEOUT => 30,
-          CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-          CURLOPT_CUSTOMREQUEST => "POST",
-          CURLOPT_POSTFIELDS => json_encode($custom_fields),
-          CURLOPT_HTTPHEADER => array(
-            "authorization: Bearer ".$_ENV['SENDGRID_API_KEY'],
-            "content-type: application/json"
-          ),
-        ));
-
-        $response = curl_exec($curl);
-        $err = curl_error($curl);
-
-        curl_close($curl);
-
-        if ($err) {
-          return "cURL Error #:" . $err;
-        } else {
-          return json_decode($response, true);
-        }
-      } else {
-        return false;
+      //   $curl = curl_init();
+      //
+      //   curl_setopt_array($curl, array(
+      //     CURLOPT_URL => $_ENV['SENDGRID_API_URL'],
+      //     CURLOPT_RETURNTRANSFER => true,
+      //     CURLOPT_ENCODING => "",
+      //     CURLOPT_MAXREDIRS => 10,
+      //     CURLOPT_TIMEOUT => 30,
+      //     CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+      //     CURLOPT_CUSTOMREQUEST => "POST",
+      //     CURLOPT_POSTFIELDS => json_encode($custom_fields),
+      //     CURLOPT_HTTPHEADER => array(
+      //       "authorization: Bearer ".$_ENV['SENDGRID_API_KEY'],
+      //       "content-type: application/json"
+      //     ),
+      //   ));
+      //
+      //   $response = curl_exec($curl);
+      //   $err = curl_error($curl);
+      //
+      //   curl_close($curl);
+      //
+      //   if ($err) {
+      //     return "cURL Error #:" . $err;
+      //   } else {
+      //     return json_decode($response, true);
+      //   }
+      // } else {
+      //   return false;
+      // }
+      require 'vendor/autoload.php'; // If you're using Composer (recommended)
+      $email = new \SendGrid\Mail\Mail();
+      $email->setFrom($_ENV['SENDGRID_FROM_EMAIL'], $_ENV['SENDGRID_FROM_NAME']);
+      $email->setSubject($subject);
+      $email->addTo($mail, $name);
+      if ($template_id) {
+        $email->setTemplateId($template_id);
+      }
+      if ($event) {
+        $email->addDynamicTemplateData("event", $event);
+      }
+      if ($message) {
+        $email->addContent("text/plain", $message);
+        $email->addContent(
+            "text/html", nl2br($message)
+        );
+      }
+      $sendgrid = new \SendGrid(getenv('SENDGRID_API_KEY'));
+      try {
+          $response = $sendgrid->send($email);
+          return json_encode($response);
+      } catch (Exception $e) {
+          return 'Caught exception: '. $e->getMessage() ."\n";
       }
     }
 
@@ -1994,7 +2016,7 @@ class DbHandler {
 				$ch = curl_init();
 				curl_setopt($ch, CURLOPT_URL, $_ENV['ONESIGNAL_API_URL']);
 				curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json; charset=utf-8',
-														 'Authorization: Basic '.$_ENV['ONESIGNAL_APP_KEY']));
+														 'Authorization: Basic '.$_ENV['ONESIGNAL_API_KEY']));
 				curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
 				curl_setopt($ch, CURLOPT_HEADER, FALSE);
 				curl_setopt($ch, CURLOPT_POST, TRUE);
