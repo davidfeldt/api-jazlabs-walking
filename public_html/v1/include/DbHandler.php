@@ -667,7 +667,7 @@ class DbHandler {
       );
 
       if ($template_id) {
-        $custom_fields['template_id'] => $template_id;
+        $custom_fields['template_id'] = $template_id;
       }
 
       if ($message && !$template_id) {
