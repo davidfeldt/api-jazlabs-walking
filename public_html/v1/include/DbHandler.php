@@ -663,7 +663,7 @@ class DbHandler {
       $to_name = $this->getFullName($registrantId);
       $to_email = $this->getFullName($registrantId);
 
-      if (!empty($name) && !empty($email)) {
+      if (!empty($to_name) && !empty($to_email)) {
         $email = new \SendGrid\Mail\Mail();
         $email->setFrom($_ENV['SENDGRID_FROM_EMAIL'], $_ENV['SENDGRID_FROM_NAME']);
         $email->setSubject($subject);
