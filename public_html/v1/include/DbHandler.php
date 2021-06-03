@@ -1984,9 +1984,9 @@ class DbHandler {
 			$fields = array(
 				'app_id'    => $_ENV['ONESIGNAL_APP_ID'],
 				'contents'    => $contents,
-				'data'    => $data,
+				// 'data'    => $data,
 				'filters'   => $filters,
-				'ios_sound' => $sound ? 'alert.wav' : ''
+				// 'ios_sound' => $sound ? 'alert.wav' : ''
 			);
 
 			$fields = json_encode($fields);
