@@ -660,25 +660,27 @@ class DbHandler {
       );
     }
 
-    private function sendEmailNotification($registrantId, $subject, $message, $template_id = '', $event = array()) {
+    private function sendEmailNotification($registrantId, $subject, $message) {
       $to_name = $this->getFullName($registrantId);
       $to_email = $this->getEmail($registrantId);
+
+      $data = array (
+                'subject' => $subject,
+                'message' => $message,
+              );
+
+      $phpView = new PhpRenderer("../../templates");
+      $html = $phpView->render(new Response(), "event_registration_email.phtml", $data);
 
       if (!empty($to_name) && !empty($to_email)) {
         $email = new \SendGrid\Mail\Mail();
         $email->setFrom($_ENV['SENDGRID_FROM_EMAIL'], $_ENV['SENDGRID_FROM_NAME']);
         $email->setSubject($subject);
         $email->addTo($to_email, $to_name);
-        if ($template_id) {
-          $email->setTemplateId($template_id);
-        }
-        if ($event) {
-          $email->addDynamicTemplateData("event", $event);
-        }
+        
         if ($message) {
-          $email->addContent("text/plain", $message);
           $email->addContent(
-              "text/html", nl2br($message)
+              "text/html", $html
           );
         }
         $sendgrid = new \SendGrid(getenv('SENDGRID_API_KEY'));
@@ -690,6 +692,37 @@ class DbHandler {
         }
       }
     }
+
+    // private function sendEmailNotification($registrantId, $subject, $message, $template_id = '', $event = array()) {
+    //   $to_name = $this->getFullName($registrantId);
+    //   $to_email = $this->getEmail($registrantId);
+    //
+    //   if (!empty($to_name) && !empty($to_email)) {
+    //     $email = new \SendGrid\Mail\Mail();
+    //     $email->setFrom($_ENV['SENDGRID_FROM_EMAIL'], $_ENV['SENDGRID_FROM_NAME']);
+    //     $email->setSubject($subject);
+    //     $email->addTo($to_email, $to_name);
+    //     if ($template_id) {
+    //       $email->setTemplateId($template_id);
+    //     }
+    //     if ($event) {
+    //       $email->addDynamicTemplateData("event", $event);
+    //     }
+    //     if ($message) {
+    //       $email->addContent("text/plain", $message);
+    //       $email->addContent(
+    //           "text/html", nl2br($message)
+    //       );
+    //     }
+    //     $sendgrid = new \SendGrid(getenv('SENDGRID_API_KEY'));
+    //     try {
+    //         $response = $sendgrid->send($email);
+    //         return $response;
+    //     } catch (Exception $e) {
+    //         return 'Caught exception: '. $e->getMessage() ."\n";
+    //     }
+    //   }
+    // }
 
     private function sendSMSNotification($registrantId, $message) {
       $mobilephone = $this->getMobilephone($registrantId);
@@ -723,6 +756,7 @@ class DbHandler {
       date_default_timezone_set($_ENV['TIMEZONE']);
       $now = date('Y-m-d H:i:s');
       $event = $this->getEvent($registrantId, $eventId);
+      $subject = 'You are registered for '.$event['name'];
       if (!$this->isRegisteredForEvent($eventId, $registrantId)) {
         $orgId = $this->getOrgIdForEvent($eventId);
         $sql = "INSERT INTO attendees SET registrantId = :registrantId, eventId = :eventId, orgId = :orgId, meetingId = '0', checkedIn = '0', dateAdded = :dateAdded, dateModified = :dateModified";
@@ -733,13 +767,13 @@ class DbHandler {
         $stmt->bindParam(':orgId', $orgId);
         $stmt->bindParam(':registrantId', $registrantId);
         if ($stmt->execute()) {
-          $this->sendNotification($registrantId, 'You are registered','',$_ENV['NOTIFICATION_TEMPLATE_ID'],$event);
+          $this->sendNotification($registrantId, $subject,'',$_ENV['NOTIFICATION_TEMPLATE_ID'],$event);
           return $event;
         } else {
           return false;
         }
       } else {
-        $this->sendNotification($registrantId, 'You are registered','',$_ENV['NOTIFICATION_TEMPLATE_ID'],$event); 
+        $this->sendNotification($registrantId, $subject,'',$_ENV['NOTIFICATION_TEMPLATE_ID'],$event);
         return $event;
       }
     }

@@ -9,7 +9,7 @@ use \Slim\Slim;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
 use \SendGrid\Mail\Mail;
-
+use Slim\Views\PhpRenderer;
 
 $dotenv = new Dotenv\Dotenv('../../');
 $dotenv->load();
