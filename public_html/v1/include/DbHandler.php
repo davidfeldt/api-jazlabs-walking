@@ -808,7 +808,7 @@ class DbHandler {
       $attendees = $this->getAttendeesForEvent($eventId);
       $subject = 'Message from Event Organizer';
       foreach ($attendees AS $row) {
-        $this->sendEmailNotification(($row['registrantId'], $subject, $message);
+        $this->sendEmailNotification($row['registrantId'], $subject, $message);
       }
     }
 
