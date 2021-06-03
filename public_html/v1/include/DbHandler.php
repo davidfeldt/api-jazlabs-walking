@@ -750,6 +750,75 @@ class DbHandler {
       return $result;
     }
 
+    public function sendAdminMessage($orgId, $data) {
+      date_default_timezone_set($_ENV['TIMEZONE']);
+      $now = date('Y-m-d H:i:s');
+
+      $message = !empty($data['message']) ? $data['message'] : '';
+      $sms = !empty($data['sms']) ? $data['sms'] : false;
+      $push = !empty($data['push']) ? $data['push'] : false;
+      $email = !empty($data['email']) ? $data['email'] : false;
+      $subject = !empty($data['subject']) ? $data['subject'] : '';
+      $message = !empty($data['message']) ? $data['message'] : '';
+      $events = !empty($data['events']) ? $data['events'] : array();
+
+      $eventId = implode(',', $events['value']);
+
+      if ($sms) {
+        $smsCount = $this->sendSMSToAllRegistrantsForEvents($eventId, $message);
+      }
+
+      if ($push) {
+        $pushCount = $this->sendPushToAllRegistrantsForEvents($eventId, $message);
+      }
+
+      if ($email) {
+        $emailCount = $this->sendEmailToAllRegistrantsForEvents($eventId, $message);
+      }
+
+      return true;
+
+    }
+
+    private function getAttendeesForEvent($eventId) {
+      $peeps = array();
+      $sql = "SELECT DISTINCT r.registrantId, r.email, r.mobilephone FROM events e LEFT JOIN attendees a ON e.eventId = a.eventId LEFT JOIN registrants r ON a.registrantId = r.registrantId WHERE a.meetingId = '0' AND a.eventId = :eventId";
+      $stmt = $this->conn->prepare($sql);
+      $stmt->bindParam(':eventId', $eventId);
+      $people = $stmt->fetchAll(PDO::FETCH_ASSOC);
+      foreach ($people AS $row) {
+        $peeps[] = array(
+          'email'         => $row['email'],
+          'mobilephone'   => $row['mobilephone'],
+          'registrantId'  => $row['registrantId']
+        );
+      }
+
+      return $peeps;
+    }
+
+    private function sendSMSToAllRegistrantsForEvents($eventId, $message) {
+      $attendees = $this->getAttendeesForEvent($eventId);
+      foreach ($attendees AS $row) {
+        $this->sendSMS($row['mobilephone'], $message);
+      }
+    }
+
+    private function sendEmailToAllRegistrantsForEvents($eventId, $message) {
+      $attendees = $this->getAttendeesForEvent($eventId);
+      $subject = 'Message from Event Organizer';
+      foreach ($attendees AS $row) {
+        $this->sendEmailNotification(($row['registrantId'], $subject, $message);
+      }
+    }
+
+    private function sendPushToAllRegistrantsForEvents($eventId, $message) {
+      $attendees = $this->getAttendeesForEvent($eventId);
+      foreach ($attendees AS $row) {
+        $this->sendPushNotificationsToIndividual($row['registrantId'], $message);
+      }
+    }
+
     public function registerForEvent($registrantId, $eventId) {
       date_default_timezone_set($_ENV['TIMEZONE']);
       $now = date('Y-m-d H:i:s');
@@ -1555,7 +1624,7 @@ class DbHandler {
   }
 
   public function getAdminProfileByUsername($username) {
-    $stmt = $this->conn->prepare('SELECT orgId, username, name, company, email, mobilephone FROM admins WHERE username = :username');
+    $stmt = $this->conn->prepare('SELECT orgId, adminId, username, name, company, email, mobilephone FROM admins WHERE username = :username');
     $stmt->bindParam(':username', $username);
     if ($stmt->execute()) {
       $stmt->setFetchMode(PDO::FETCH_ASSOC);
@@ -1928,6 +1997,31 @@ class DbHandler {
             'city'      => $e['city'],
             'state'     => $e['state'],
             'zip'       => $e['zip']
+          );
+        }
+      }
+    }
+
+    return $eventsData;
+  }
+
+  public function getEventNamesForOrganization($orgId) {
+    date_default_timezone_set($_ENV['TIMEZONE']);
+    $today = date('Y-m-d H:i:s');
+    $eventsData = array();
+
+    $sql = "SELECT name, eventId FROM events WHERE orgId = :orgId AND endDate >= :today ORDER BY name ASC";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':orgId', $orgId);
+    $stmt->bindParam(':today', $today);
+    if ($stmt->execute()) {
+      $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+      if ($events) {
+        foreach ($events AS $e) {
+          $eventsData[] = array (
+            'value'	    => $e['eventId'],
+            'label'      => $e['name'],
           );
         }
       }

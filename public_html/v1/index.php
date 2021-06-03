@@ -106,6 +106,7 @@ function generateAdminJWT($username) {
 	    "nbf" 			     => time(),
 			"username" 		   => $username,
       "orgId"          => $result['orgId'],
+      "adminId"        => $result['adminId'],
       "name"           => $result['name'],
       "email"          => $result['email'],
       "mobilephone"    => $result['mobilephone']
@@ -376,6 +377,33 @@ $app->get('/admins/calendar-items/:date', 'authenticateAdmin', function($date) u
     $db = NULL;
 });
 
+$app->post('/admins/messages', 'authenticateAdmin', function() use($app) {
+    $json           = $app->request->getBody();
+    $data           = json_decode($json, true);
+
+    $response = array();
+
+    $db = new DbHandler();
+    $result = $db->sendAdminMessage($app->orgId, $app->adminId, $data);
+
+    if (!$result) {
+        $response['error'] = true;
+        $response['success'] = false;
+        $response['message'] = 'Could not add '.$data['message'];
+        echoResponse(200, $response);
+    } else {
+        $response['error'] = false;
+        $response['success'] = true;
+        $response['message'] = 'Added '.$data['message'];
+        $response['username'] = $app->username;
+        $response['data'] = $data;
+        echoResponse(201, $response);
+    }
+
+    $db = NULL;
+
+});
+
 $app->put('/admins/events', 'authenticateAdmin', function() use($app) {
     $json           = $app->request->getBody();
     $data           = json_decode($json, true);
@@ -402,6 +430,27 @@ $app->put('/admins/events', 'authenticateAdmin', function() use($app) {
 
     $db = NULL;
 
+});
+
+$app->get('/admins/event-names', 'authenticateAdmin', function() use($app) {
+    $response = array();
+    $db = new DbHandler();
+
+    $results   = $db->getEventNamesForOrganization($app->orgId);
+
+    if ($results) {
+        $response['success']    = true;
+        $response['username'] = $app->username;
+        $response['results']  = $results;
+    } else {
+        $response['error'] = true;
+        $response['results'] = array();
+        $response['message'] = 'No events found!';
+    }
+
+    echoResponse(200, $response);
+
+    $db = NULL;
 });
 
 $app->get('/admins/events', 'authenticateAdmin', function() use($app) {
