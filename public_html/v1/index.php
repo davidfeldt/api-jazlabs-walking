@@ -1,15 +1,13 @@
 <?php
 
-require '../../vendor/autoload.php';
-
-require_once 'include/DbHandler.php';
-
 use \Firebase\JWT\JWT;
 use \Slim\Slim;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
 use \SendGrid\Mail\Mail;
 use Slim\Views\PhpRenderer;
+require '../../vendor/autoload.php';
+require_once 'include/DbHandler.php';
 
 $dotenv = new Dotenv\Dotenv('../../');
 $dotenv->load();

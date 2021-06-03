@@ -1,5 +1,7 @@
 <?php
 
+use Slim\Views\PhpRenderer;
+
 class DbHandler {
 
   private $conn;
@@ -677,7 +679,7 @@ class DbHandler {
         $email->setFrom($_ENV['SENDGRID_FROM_EMAIL'], $_ENV['SENDGRID_FROM_NAME']);
         $email->setSubject($subject);
         $email->addTo($to_email, $to_name);
-        
+
         if ($message) {
           $email->addContent(
               "text/html", $html
