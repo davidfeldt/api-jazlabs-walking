@@ -670,9 +670,9 @@ class DbHandler {
         'event'   => $event
       );
 
-      $loader = new \Twig\Loader\FilesystemLoader('../../../templates');
+      $loader = new \Twig\Loader\FilesystemLoader($_ENV['TEMPLATE_FULL_PATH']);
       $twig = new \Twig\Environment($loader, [
-          'cache' => '../../../cache',
+          'cache' => $_ENV['CACHE_FULL_PATH'],
           'debug' => true,
       ]);
       $html = $twig->render('event_registration_email.phtml', $data);
