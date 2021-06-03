@@ -753,7 +753,6 @@ class DbHandler {
     public function sendAdminMessage($orgId, $data) {
       date_default_timezone_set($_ENV['TIMEZONE']);
       $now = date('Y-m-d H:i:s');
-
       $message = !empty($data['message']) ? $data['message'] : '';
       $sms = !empty($data['sms']) ? $data['sms'] : false;
       $push = !empty($data['push']) ? $data['push'] : false;
@@ -762,7 +761,7 @@ class DbHandler {
       $message = !empty($data['message']) ? $data['message'] : '';
       $events = !empty($data['events']) ? $data['events'] : array();
 
-      $eventId = implode(',', $events['value']);
+      $eventId = implode(',', $events);
 
       if ($sms) {
         $smsCount = $this->sendSMSToAllRegistrantsForEvents($eventId, $message);
