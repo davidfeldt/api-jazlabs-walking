@@ -750,7 +750,7 @@ class DbHandler {
       return $result;
     }
 
-    public function sendAdminMessage($orgId, $adminId, $data) {
+    public function sendAdminMessage($adminId, $orgId, $data) {
       date_default_timezone_set($_ENV['TIMEZONE']);
       $now = date('Y-m-d H:i:s');
       $message = !empty($data['message']) ? $data['message'] : '';

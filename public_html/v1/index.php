@@ -169,6 +169,7 @@ function authenticateAdmin(\Slim\Route $route) {
         if (!empty($decoded)) {
             $app->username      = $decoded->username;
             $app->orgId         = $decoded->orgId;
+            $app->adminId       = $decoded->adminId;
             $app->email         = $decoded->email;
             $app->mobilephone   = $decoded->mobilephone;
 
@@ -384,7 +385,7 @@ $app->post('/admins/messages', 'authenticateAdmin', function() use($app) {
     $response = array();
 
     $db = new DbHandler();
-    $result = $db->sendAdminMessage($app->orgId, $app->adminId, $data);
+    $result = $db->sendAdminMessage($app->adminId, $app->orgId, $data);
 
     if (!$result) {
         $response['error'] = true;
