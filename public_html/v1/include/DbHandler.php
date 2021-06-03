@@ -802,6 +802,7 @@ class DbHandler {
       $sql = "SELECT DISTINCT r.registrantId, r.email, r.mobilephone FROM events e LEFT JOIN attendees a ON e.eventId = a.eventId LEFT JOIN registrants r ON a.registrantId = r.registrantId WHERE a.meetingId = '0' AND a.eventId = :eventId";
       $stmt = $this->conn->prepare($sql);
       $stmt->bindParam(':eventId', $eventId);
+      $stmt->execute();
       $people = $stmt->fetchAll(PDO::FETCH_ASSOC);
       foreach ($people AS $row) {
         $peeps[] = array(
