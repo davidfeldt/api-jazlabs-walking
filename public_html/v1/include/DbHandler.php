@@ -650,7 +650,7 @@ class DbHandler {
 
     public function testNotificationForEvent($registrantId, $eventId) {
       $event = $this->getEvent($registrantId, $eventId);
-      $email = $this->sendEmailNotification($registrantId, 'you are registered','',$event);
+      $email = $this->sendEmailNotification($registrantId, 'you are registered','What a lovely day it is!\nLinetwo',$event);
       $sms = $this->sendSMSNotification($registrantId, 'you are registered for '.$event['name']);
       $push = $this->sendPushNotificationsToIndividual($registrantId, 'you are registered for '.$event['name']);
       return array (
@@ -702,7 +702,7 @@ class DbHandler {
         $email->setSubject($subject);
         $email->addTo($to_email, $to_name);
         $email->setTemplateId($_ENV['NOTIFICATION_TEMPLATE_ID']);
-
+        $email->addDynamicTemplateData("subject", $subject);
         if ($event) {
           $email->addDynamicTemplateData("event", $event);
         }
