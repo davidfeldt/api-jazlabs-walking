@@ -767,7 +767,7 @@ class DbHandler {
          foreach ($attendees AS $row) {
           // insert into announcements mysql_list_table
           $sql = "INSERT INTO announcements SET adminId = :adminId, orgId = :orgId, registrantId = :registrantId, eventId = :eventId, subject = :subject, message = :message, dateAdded = :now";
-          $stmt = $this->conn->query($sql);
+          $stmt = $this->conn->prepare($sql);
           $stmt->bindParam(':adminId', $adminId);
           $stmt->bindParam(':orgId', $orgId);
           $stmt->bindParam(':registrantId', $row['registrantId']);
