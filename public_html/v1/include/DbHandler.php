@@ -1838,9 +1838,10 @@ class DbHandler {
             $end_date = date('Y-m-d', strtotime($date['endDate']));
             if ($start_date == $end_date) {
               $dates_data[$start_date] = array(
-                'marked'    => true,
-                'dotColor'  => 'green',
-                'selected'  => $today == $start_date,
+                'color'       => 'green',
+                'selected'    => $today == $start_date,
+                'startingDay' => true,
+                'endingDay'   => true,
               );
             } else {
               $dates_data[$start_date] = array (
@@ -1849,6 +1850,15 @@ class DbHandler {
                 'color'        => 'green',
                 'textColor' => 'white'
               );
+              $day_after_start_date = date ("Y-m-d", strtotime("+1 days", strtotime($start_date)));
+              $day_before_end_date = date ("Y-m-d", strtotime("-1 days", strtotime($end_date)));
+              while (strtotime($day_after_start_date) <= strtotime($day_before_end_date)) {
+                $dates_data[$day_after_start_date] = array (
+                  'color'     => 'green',
+                  'textColor' => 'white'
+                );
+                $day_after_start_date = date ("Y-m-d", strtotime("+1 days", strtotime($day_after_start_date)));
+              }
               $dates_data[$end_date] = array (
                 'selected'  => $today == $end_date,
                 'endingDay' => true,
@@ -1883,9 +1893,10 @@ class DbHandler {
             $end_date = date('Y-m-d', strtotime($date['endDate']));
             if ($start_date == $end_date) {
               $dates_data[$start_date] = array(
-                'marked'    => true,
-                'dotColor'  => 'green',
-                'selected'  => $today == $start_date,
+                'color'       => 'green',
+                'selected'    => $today == $start_date,
+                'startingDay' => true,
+                'endingDay'   => true,
               );
             } else {
               $dates_data[$start_date] = array (
@@ -1894,12 +1905,22 @@ class DbHandler {
                 'color'        => 'green',
                 'textColor' => 'white'
               );
+              $day_after_start_date = date ("Y-m-d", strtotime("+1 days", strtotime($start_date)));
+              $day_before_end_date = date ("Y-m-d", strtotime("-1 days", strtotime($end_date)));
+              while (strtotime($day_after_start_date) <= strtotime($day_before_end_date)) {
+                $dates_data[$day_after_start_date] = array (
+                  'color'     => 'green',
+                  'textColor' => 'white'
+                );
+                $day_after_start_date = date ("Y-m-d", strtotime("+1 days", strtotime($day_after_start_date)));
+              }
               $dates_data[$end_date] = array (
                 'selected'  => $today == $end_date,
                 'endingDay' => true,
                 'color'     => 'green',
                 'textColor' => 'white'
               );
+
             }
         }
       }
