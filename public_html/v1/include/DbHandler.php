@@ -750,7 +750,7 @@ class DbHandler {
       return $result;
     }
 
-    public function sendAdminMessage($orgId, $data) {
+    public function sendAdminMessage($orgId, $adminId, $data) {
       date_default_timezone_set($_ENV['TIMEZONE']);
       $now = date('Y-m-d H:i:s');
       $message = !empty($data['message']) ? $data['message'] : '';
@@ -761,22 +761,41 @@ class DbHandler {
       $message = !empty($data['message']) ? $data['message'] : '';
       $events = !empty($data['events']) ? $data['events'] : array();
 
-      $eventId = implode(',', $events);
+      if (!empty($events)) {
+        $eventId = $events[0];
 
-      if ($sms) {
-        $smsCount = $this->sendSMSToAllRegistrantsForEvents($eventId, $message);
+        $attendees = $this->getAttendeesForEvent($eventId);
+
+        foreach ($attendees AS $row) {
+          // insert into announcements mysql_list_table
+          $sql = "INSERT INTO announcements SET adminId = :adminId, orgId = :orgId, registrantId = :registrantId, subject = :subject, message = :message, dateAdded = :now";
+          $stmt = $this->conn->query($sql);
+          $stmt->bindParam(':adminId', $adminId);
+          $stmt->bindParam(':orgId', $orgId);
+          $stmt->bindParam(':registrantId', $row['registrantId']);
+          $stmt->bindParam(':eventId', $eventId);
+          $stmt->bindParam(':subject', $subject);
+          $stmt->bindParam(':message', $message);
+          $stmt->bindParam(':now', $now);
+
+          if ($sms) {
+            $smsCount = $this->sendSMS($row['mobilephone'], $message);
+          }
+
+          if ($push) {
+            $pushCount = $this->sendPushNotificationsToIndividual($row['registrantId'], $message);
+          }
+
+          if ($email) {
+            $emailCount = $this->sendEmailNotification($row['registrantId'], $subject, $message);
+          }
+
+        }
+
+        return count($attendees);
+      } else {
+        return false;
       }
-
-      if ($push) {
-        $pushCount = $this->sendPushToAllRegistrantsForEvents($eventId, $message);
-      }
-
-      if ($email) {
-        $emailCount = $this->sendEmailToAllRegistrantsForEvents($eventId, $message);
-      }
-
-      return true;
-
     }
 
     private function getAttendeesForEvent($eventId) {
@@ -792,30 +811,7 @@ class DbHandler {
           'registrantId'  => $row['registrantId']
         );
       }
-
       return $peeps;
-    }
-
-    private function sendSMSToAllRegistrantsForEvents($eventId, $message) {
-      $attendees = $this->getAttendeesForEvent($eventId);
-      foreach ($attendees AS $row) {
-        $this->sendSMS($row['mobilephone'], $message);
-      }
-    }
-
-    private function sendEmailToAllRegistrantsForEvents($eventId, $message) {
-      $attendees = $this->getAttendeesForEvent($eventId);
-      $subject = 'Message from Event Organizer';
-      foreach ($attendees AS $row) {
-        $this->sendEmailNotification($row['registrantId'], $subject, $message);
-      }
-    }
-
-    private function sendPushToAllRegistrantsForEvents($eventId, $message) {
-      $attendees = $this->getAttendeesForEvent($eventId);
-      foreach ($attendees AS $row) {
-        $this->sendPushNotificationsToIndividual($row['registrantId'], $message);
-      }
     }
 
     public function registerForEvent($registrantId, $eventId) {
