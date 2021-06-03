@@ -664,18 +664,12 @@ class DbHandler {
       $to_name = $this->getFullName($registrantId);
       $to_email = $this->getEmail($registrantId);
 
-      $data = array (
-        'subject' => $subject,
-        'message' => $message,
-        'event'   => $event
-      );
-
       $loader = new \Twig\Loader\FilesystemLoader($_ENV['TEMPLATE_FULL_PATH']);
       $twig = new \Twig\Environment($loader, [
           'cache' => $_ENV['CACHE_FULL_PATH'],
           'debug' => true,
       ]);
-      $html = $twig->render('event_registration_email.phtml', $data);
+      $html = $twig->render('email_template.html', ['subject' => $subject, 'message' => $message, 'event' => $event]);
 
       if (!empty($to_name) && !empty($to_email)) {
         $email = new \SendGrid\Mail\Mail();
@@ -734,7 +728,7 @@ class DbHandler {
       return $this->sendSMS($mobilephone, $message);
     }
 
-    public function sendNotification($registrantId, $subject = '', $message = '', $template_id = '', $event = array()) {
+    public function sendNotification($registrantId, $subject = '', $message = '', $event = array()) {
       $messaging = $this->getMessagingChannelFor($registrantId);
       switch ($messaging) {
         case 'email':
@@ -762,6 +756,7 @@ class DbHandler {
       $now = date('Y-m-d H:i:s');
       $event = $this->getEvent($registrantId, $eventId);
       $subject = 'You are registered for '.$event['name'];
+      $message = '';
       if (!$this->isRegisteredForEvent($eventId, $registrantId)) {
         $orgId = $this->getOrgIdForEvent($eventId);
         $sql = "INSERT INTO attendees SET registrantId = :registrantId, eventId = :eventId, orgId = :orgId, meetingId = '0', checkedIn = '0', dateAdded = :dateAdded, dateModified = :dateModified";
@@ -772,13 +767,13 @@ class DbHandler {
         $stmt->bindParam(':orgId', $orgId);
         $stmt->bindParam(':registrantId', $registrantId);
         if ($stmt->execute()) {
-          $this->sendNotification($registrantId, $subject,'',$_ENV['NOTIFICATION_TEMPLATE_ID'],$event);
+          $this->sendNotification($registrantId, $subject,$message,$event);
           return $event;
         } else {
           return false;
         }
       } else {
-        $this->sendNotification($registrantId, $subject,'',$_ENV['NOTIFICATION_TEMPLATE_ID'],$event);
+        $this->sendNotification($registrantId, $subject, $message, $event);
         return $event;
       }
     }
