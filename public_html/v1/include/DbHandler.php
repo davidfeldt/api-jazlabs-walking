@@ -1839,6 +1839,7 @@ class DbHandler {
             if ($start_date == $end_date) {
               $dates_data[$start_date] = array(
                 'color'       => 'green',
+                'textColor'   => 'white'
                 'selected'    => $today == $start_date,
                 'startingDay' => true,
                 'endingDay'   => true,
@@ -1894,6 +1895,7 @@ class DbHandler {
             if ($start_date == $end_date) {
               $dates_data[$start_date] = array(
                 'color'       => 'green',
+                'textColor'   => 'white'
                 'selected'    => $today == $start_date,
                 'startingDay' => true,
                 'endingDay'   => true,
