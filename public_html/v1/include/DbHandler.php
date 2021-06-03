@@ -768,7 +768,7 @@ class DbHandler {
 
         foreach ($attendees AS $row) {
           // insert into announcements mysql_list_table
-          $sql = "INSERT INTO announcements SET adminId = :adminId, orgId = :orgId, registrantId = :registrantId, subject = :subject, message = :message, dateAdded = :now";
+          $sql = "INSERT INTO announcements SET adminId = :adminId, orgId = :orgId, registrantId = :registrantId, eventId = :eventId, subject = :subject, message = :message, dateAdded = :now";
           $stmt = $this->conn->query($sql);
           $stmt->bindParam(':adminId', $adminId);
           $stmt->bindParam(':orgId', $orgId);
@@ -777,6 +777,7 @@ class DbHandler {
           $stmt->bindParam(':subject', $subject);
           $stmt->bindParam(':message', $message);
           $stmt->bindParam(':now', $now);
+          $stmt->execute();
 
           if ($sms) {
             $smsCount = $this->sendSMS($row['mobilephone'], $message);
