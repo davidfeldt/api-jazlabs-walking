@@ -660,57 +660,26 @@ class DbHandler {
       );
     }
 
-    private function sendEmailNotification($registrantId, $subject, $message, $event = array()) {
-      $to_name = $this->getFullName($registrantId);
-      $to_email = $this->getEmail($registrantId);
-
-      $loader = new \Twig\Loader\FilesystemLoader($_ENV['TEMPLATE_FULL_PATH']);
-      $twig = new \Twig\Environment($loader, [
-          'cache' => $_ENV['CACHE_FULL_PATH'],
-          'debug' => true,
-      ]);
-      $html = $twig->render('email_template.html', ['subject' => $subject, 'message' => $message, 'event' => $event]);
-
-      if (!empty($to_name) && !empty($to_email)) {
-        $email = new \SendGrid\Mail\Mail();
-        $email->setFrom($_ENV['SENDGRID_FROM_EMAIL'], $_ENV['SENDGRID_FROM_NAME']);
-        $email->setSubject($subject);
-        $email->addTo($to_email, $to_name);
-
-        if ($message) {
-          $email->addContent(
-              "text/html", $html
-          );
-        }
-        $sendgrid = new \SendGrid(getenv('SENDGRID_API_KEY'));
-        try {
-            $response = $sendgrid->send($email);
-            return $response;
-        } catch (Exception $e) {
-            return 'Caught exception: '. $e->getMessage() ."\n";
-        }
-      }
-    }
-
-    // private function sendEmailNotification($registrantId, $subject, $message, $template_id = '', $event = array()) {
+    // private function sendEmailNotification($registrantId, $subject, $message, $event = array()) {
     //   $to_name = $this->getFullName($registrantId);
     //   $to_email = $this->getEmail($registrantId);
+    //
+    //   $loader = new \Twig\Loader\FilesystemLoader($_ENV['TEMPLATE_FULL_PATH']);
+    //   $twig = new \Twig\Environment($loader, [
+    //       'cache' => $_ENV['CACHE_FULL_PATH'],
+    //       'debug' => true,
+    //   ]);
+    //   $html = $twig->render('email_template.html', ['subject' => $subject, 'message' => $message, 'event' => $event]);
     //
     //   if (!empty($to_name) && !empty($to_email)) {
     //     $email = new \SendGrid\Mail\Mail();
     //     $email->setFrom($_ENV['SENDGRID_FROM_EMAIL'], $_ENV['SENDGRID_FROM_NAME']);
     //     $email->setSubject($subject);
     //     $email->addTo($to_email, $to_name);
-    //     if ($template_id) {
-    //       $email->setTemplateId($template_id);
-    //     }
-    //     if ($event) {
-    //       $email->addDynamicTemplateData("event", $event);
-    //     }
+    //
     //     if ($message) {
-    //       $email->addContent("text/plain", $message);
     //       $email->addContent(
-    //           "text/html", nl2br($message)
+    //           "text/html", $html
     //       );
     //     }
     //     $sendgrid = new \SendGrid(getenv('SENDGRID_API_KEY'));
@@ -722,6 +691,36 @@ class DbHandler {
     //     }
     //   }
     // }
+
+    private function sendEmailNotification($registrantId, $subject, $message, $event = array()) {
+      $to_name = $this->getFullName($registrantId);
+      $to_email = $this->getEmail($registrantId);
+
+      if (!empty($to_name) && !empty($to_email)) {
+        $email = new \SendGrid\Mail\Mail();
+        $email->setFrom($_ENV['SENDGRID_FROM_EMAIL'], $_ENV['SENDGRID_FROM_NAME']);
+        $email->setSubject($subject);
+        $email->addTo($to_email, $to_name);
+        $email->setTemplateId($_ENV['NOTIFICATION_TEMPLATE_ID']);
+
+        if ($event) {
+          $email->addDynamicTemplateData("event", $event);
+        }
+        if ($message) {
+          $email->addContent("text/plain", $message);
+          $email->addContent(
+              "text/html", nl2br($message)
+          );
+        }
+        $sendgrid = new \SendGrid(getenv('SENDGRID_API_KEY'));
+        try {
+            $response = $sendgrid->send($email);
+            return $response;
+        } catch (Exception $e) {
+            return 'Caught exception: '. $e->getMessage() ."\n";
+        }
+      }
+    }
 
     private function sendSMSNotification($registrantId, $message) {
       $mobilephone = $this->getMobilephone($registrantId);
@@ -1334,7 +1333,10 @@ class DbHandler {
   public function checkinForEventAdmin($registrantId, $eventId) {
     date_default_timezone_set($_ENV['TIMEZONE']);
     $now = date('Y-m-d H:i:s');
+    $event = $this->getEvent($eventId);
+    $message = 'You are now checked in to the ' . $event['name'] . ' event';
     if ($this->hasCheckedInForEvent($registrantId, $eventId)) {
+      $this->sendPushNotificationsToIndividual($registrantId, $message);
       return true;
     }
     $stmt = $this->conn->prepare("UPDATE attendees SET checkedIn = '1', checkedInDate = :now, dateModified = :now WHERE registrantId = :registrantId AND eventId = :eventId AND meetingId = '0'");
@@ -1342,6 +1344,7 @@ class DbHandler {
     $stmt->bindParam(':registrantId', $registrantId);
     $stmt->bindParam(':eventId', $eventId);
     if ($stmt->execute()) {
+      $this->sendPushNotificationsToIndividual($registrantId, $message);
       return true;
     } else {
       return false;
@@ -1381,7 +1384,10 @@ class DbHandler {
   public function checkinForMeetingAdmin($registrantId, $meetingId) {
     date_default_timezone_set($_ENV['TIMEZONE']);
     $now = date('Y-m-d H:i:s');
+    $meetingName = $this->getMeetingName($meetingId);
+    $message = 'You are not checked in for the ' . $meetingName . ' meeting.';
     if ($this->hasCheckedInForMeeting($registrantId, $meetingId)) {
+      $this->sendPushNotificationsToIndividual($registrantId, $message);
       return true;
     }
     if ($this->hasRegisteredForMeeting($registrantId, $meetingId)) {
@@ -1390,6 +1396,7 @@ class DbHandler {
       $stmt->bindParam(':registrantId', $registrantId);
       $stmt->bindParam(':meetingId', $meetingId);
       if ($stmt->execute()) {
+        $this->sendPushNotificationsToIndividual($registrantId, $message);
         return true;
       } else {
         return false;
@@ -1410,6 +1417,7 @@ class DbHandler {
       $stmt->bindParam(':registrantId', $registrantId);
       $stmt->bindParam(':meetingId', $meetingId);
       if ($stmt->execute()) {
+        $this->sendPushNotificationsToIndividual($registrantId, $message);
         return true;
       } else {
         return false;
