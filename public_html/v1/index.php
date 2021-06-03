@@ -316,6 +316,25 @@ $app->get('/admins/people/:query', 'authenticateAdmin', function($query) use($ap
     $db = NULL;
 });
 
+$app->get('/calendars/marked-dates', 'authenticate', function() use($app) {
+	    date_default_timezone_set($_ENV['TIMEZONE']);
+      $days = $_ENV['CALENDAR_PERIOD'];
+	    $defaultStart = date('Y-m-01', strtotime('- '.$days.' DAYS'));
+	    $defaultEnd = date('Y-m-t', strtotime('+ 365 DAYS'));
+	    $response = array();
+
+	    $db = new DbHandler();
+
+	    $error = false;
+	    $response['error'] = false;
+	    $response['success'] = true;
+	    $response['results'] = $db->getCalendarMarkedDates($defaultStart,$defaultEnd);
+
+	    echoResponse(200, $response);
+
+	    $db = NULL;
+	});
+
 $app->get('/admins/calendars/marked-dates', 'authenticateAdmin', function() use($app) {
 	    date_default_timezone_set($_ENV['TIMEZONE']);
       $days = $_ENV['CALENDAR_PERIOD'];
@@ -360,6 +379,22 @@ $app->get('/admins/calendars/marked-dates', 'authenticateAdmin', function() use(
 
     $db = NULL;
 
+});
+
+$app->get('/calendar-items/:date', 'authenticate', function($date) use($app) {
+    date_default_timezone_set($_ENV['TIMEZONE']);
+    $response = array();
+
+    $db = new DbHandler();
+
+    $error = false;
+    $response['error'] = false;
+    $response['success'] = true;
+    $response['items'] = $db->getEventsAndMeetingsForCalendar($date);
+
+    echoResponse(200, $response);
+
+    $db = NULL;
 });
 
 $app->get('/admins/calendar-items/:date', 'authenticateAdmin', function($date) use($app) {

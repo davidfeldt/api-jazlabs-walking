@@ -1818,6 +1818,50 @@ class DbHandler {
     }
   }
 
+  public function getCalendarMarkedDates($startDate, $endDate)  {
+    $dates_data  = array();
+    date_default_timezone_set($_ENV['TIMEZONE']);
+    $startDate = date('Y-m-d', strtotime($startDate));
+    $endDate = date('Y-m-d', strtotime($endDate));
+    $today = date('Y-m-d');
+
+    $stmt = $this->conn->prepare("SELECT startDate, endDate FROM events WHERE DATE(startDate) >= :startDate AND DATE(endDate) <= :endDate ORDER BY startDate ASC");
+    $stmt->bindParam(':startDate', $startDate);
+    $stmt->bindParam(':endDate', $endDate);
+
+    if ($stmt->execute()) {
+      $dates = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+      if ($dates) {
+        foreach ($dates AS $date) {
+            $start_date = date('Y-m-d', strtotime($date['startDate']));
+            $end_date = date('Y-m-d', strtotime($date['endDate']));
+            if ($start_date == $end_date) {
+              $dates_data[$start_date] = array(
+                'marked'    => true,
+                'dotColor'  => 'green',
+                'selected'  => $today == $start_date,
+              );
+            } else {
+              $dates_data[$start_date] = array (
+                'startingDay'  => true,
+                'selected'     => $today == $start_date,
+                'color'        => 'green',
+                'textColor' => 'white'
+              );
+              $dates_data[$end_date] = array (
+                'selected'  => $today == $end_date,
+                'endingDay' => true,
+                'color'     => 'green',
+                'textColor' => 'white'
+              );
+            }
+        }
+      }
+    }
+    return $dates_data;
+  }
+
   public function getCalendarMarkedDatesAdmin($startDate, $endDate, $orgId = 0)  {
     $dates_data  = array();
     date_default_timezone_set($_ENV['TIMEZONE']);
@@ -1904,6 +1948,33 @@ class DbHandler {
       }
       return $meetingData;
     }
+
+    public function getEventsAndMeetingsForCalendar($day) {
+   		date_default_timezone_set($_ENV['TIMEZONE']);
+      $day = date('Y-m-d', strtotime($day));
+   		$eventData = array();
+   		$stmt = $this->conn->prepare("SELECT * FROM events WHERE DATE(startDate) <= :day AND DATE(endDate) >= :day ORDER BY startDate ASC");
+  		$stmt->bindParam(':day', $day);
+  		if ($stmt->execute()) {
+  			$events = $stmt->fetchAll(PDO::FETCH_ASSOC);
+  			foreach ($events AS $event) {
+  				$times = $event['startDate'] == $event['endDate'] ? date('m/d',strtotime($event['startDate'])) : date('m/d',strtotime($event['startDate']))." - ".date('m/d',strtotime($event['endDate']));
+  				$eventData['events'][] = array (
+  					'name'		    => $event['name'],
+            'eventId'     => $event['eventId'],
+  					'times'		    => $times,
+  					'height'	    => 50,
+  					'meetingId'		=> 0
+  				);
+          $eventData['meetings'] = $this->getMeetingsByDay($day, $event['eventId']);
+
+  			}
+  		}
+
+  		return $eventData;
+   	}
+
+
 
     public function getEventsAndMeetingsByDay($day, $orgId) {
    		date_default_timezone_set($_ENV['TIMEZONE']);
