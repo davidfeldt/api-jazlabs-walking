@@ -390,6 +390,7 @@ $app->post('/admins/messages', 'authenticateAdmin', function() use($app) {
         $response['error'] = true;
         $response['success'] = false;
         $response['message'] = 'Could not add '.$data['message'];
+        $response['data'] = $data;
         echoResponse(200, $response);
     } else {
         $response['error'] = false;
