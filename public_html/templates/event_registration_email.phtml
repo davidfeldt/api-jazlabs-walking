@@ -145,7 +145,7 @@
             height="100%"
             valign="top"
             bgcolor="">
-            <div style="text-align: center;"><span style="font-size:24px;"><?php echo $subject; ?>!</span></div>
+            <div style="text-align: center;"><span style="font-size:24px;">{{ subject }}</span></div>
         </td>
       </tr>
     </table>
@@ -187,11 +187,29 @@
             height="100%"
             valign="top"
             bgcolor="">
+            {% if event|length > 0 %}
             <div style="text-align: center;"><span style="font-size:18px;">DETAILS</span>:</div>
 
-<div style="text-align: center;"><span style="font-size:14px;"><?php echo $message; ?></span></div>
+            <div style="text-align: center;"><span style="font-size:14px;">Name: {{ event.name }}</span></div>
 
-<div>&nbsp;</div>
+            <div style="text-align: center;"><span style="font-size:14px;">Organization: {{ event.orgName }}</span></div>
+
+            <div style="text-align: center;">Date(s): {{ event.dates }}</div>
+
+            <div style="text-align: center;">Location: {{ event.location }}</div>
+
+            <div style="text-align: center;">City: {{ event.city }}</div>
+
+            <div style="text-align: center;">State: {{ event.state }}</div>
+
+            <div style="text-align: center;">Zip: {{ event.zip}}</div>
+            {% endif %}
+
+            {% if message|length > 0 %}
+            <div style="text-align: center;"><span style="font-size:14px;">Name: {{ message }}</span></div>
+            {% endif %}
+
+            <div>&nbsp;</div>
         </td>
       </tr>
     </table>

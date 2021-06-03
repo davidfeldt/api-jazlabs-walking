@@ -1,7 +1,5 @@
 <?php
 
-use Slim\Views\PhpRenderer;
-
 class DbHandler {
 
   private $conn;
@@ -652,7 +650,7 @@ class DbHandler {
 
     public function testNotificationForEvent($registrantId, $eventId) {
       $event = $this->getEvent($registrantId, $eventId);
-      $email = $this->sendEmailNotification($registrantId, 'you are registered','',$_ENV['NOTIFICATION_TEMPLATE_ID'],$event);
+      $email = $this->sendEmailNotification($registrantId, 'you are registered','',$event);
       $sms = $this->sendSMSNotification($registrantId, 'you are registered for '.$event['name']);
       $push = $this->sendPushNotificationsToIndividual($registrantId, 'you are registered for '.$event['name']);
       return array (
@@ -662,17 +660,22 @@ class DbHandler {
       );
     }
 
-    private function sendEmailNotification($registrantId, $subject, $message) {
+    private function sendEmailNotification($registrantId, $subject, $message, $event = array()) {
       $to_name = $this->getFullName($registrantId);
       $to_email = $this->getEmail($registrantId);
 
       $data = array (
-                'subject' => $subject,
-                'message' => $message,
-              );
+        'subject' => $subject,
+        'message' => $message,
+        'event'   => $event
+      );
 
-      $phpView = new PhpRenderer("../../templates");
-      $html = $phpView->render(new Response(), "event_registration_email.phtml", $data);
+      $loader = new \Twig\Loader\FilesystemLoader('../../templates');
+      $twig = new \Twig\Environment($loader, [
+          'cache' => '../../cache',
+          'debug' => true,
+      ]);
+      $html = $twig->render('event_registration_email.phtml', $data);
 
       if (!empty($to_name) && !empty($to_email)) {
         $email = new \SendGrid\Mail\Mail();
@@ -735,7 +738,7 @@ class DbHandler {
       $messaging = $this->getMessagingChannelFor($registrantId);
       switch ($messaging) {
         case 'email':
-          $result = $this->sendEmailNotification($registrantId, $subject, $message, $template_id, $event);
+          $result = $this->sendEmailNotification($registrantId, $subject, $message, $event);
           break;
         case 'sms':
           $result = $this->sendSMSNotification($registrantId, $subject);
