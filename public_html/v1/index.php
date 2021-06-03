@@ -398,6 +398,7 @@ $app->post('/admins/messages', 'authenticateAdmin', function() use($app) {
         $response['message'] = 'Added '.$data['message'];
         $response['username'] = $app->username;
         $response['data'] = $data;
+        $response['result'] = $result;
         echoResponse(201, $response);
     }
 

@@ -759,14 +759,12 @@ class DbHandler {
       $email = !empty($data['email']) ? $data['email'] : false;
       $subject = !empty($data['subject']) ? $data['subject'] : '';
       $message = !empty($data['message']) ? $data['message'] : '';
-      $events = !empty($data['events']) ? $data['events'] : array();
 
-      if (!empty($events)) {
-        $eventId = $events[0];
+      if (is_array($data['events']) && !empty($data['events'])) {
+	       $eventId = array_shift($data['events']);
+         $attendees = $this->getAttendeesForEvent($eventId);
 
-        $attendees = $this->getAttendeesForEvent($eventId);
-
-        foreach ($attendees AS $row) {
+         foreach ($attendees AS $row) {
           // insert into announcements mysql_list_table
           $sql = "INSERT INTO announcements SET adminId = :adminId, orgId = :orgId, registrantId = :registrantId, eventId = :eventId, subject = :subject, message = :message, dateAdded = :now";
           $stmt = $this->conn->query($sql);
@@ -793,7 +791,7 @@ class DbHandler {
 
         }
 
-        return count($attendees);
+        return $this->getAttendeesForEvent($eventId);
       } else {
         return false;
       }
