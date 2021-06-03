@@ -994,7 +994,7 @@ class DbHandler {
       return $people;
     }
 
-    public function getMyAnnouncements($registrantId, $page = 1) {
+    public function getMyAnnouncements($registrantId, $search_term = '', $page = 1) {
       date_default_timezone_set($_ENV['TIMEZONE']);
       $now = date('Y-m-d');
       $response = array ();
@@ -1003,8 +1003,18 @@ class DbHandler {
       $page = (isset($page)) ? $page : 1;
       $start = ($page - 1) * $limit;
 
-      $stmt = $this->conn->prepare("SELECT * FROM announcements WHERE registrantId = :registrantId ORDER BY dateAdded DESC LIMIT $start, $limit");
-      $stmt->bindParam(':registrantId', $registrantId);
+      if ($search_term) {
+        $search_term = "%".strtolower($search_term)."%";
+        $stmt = $this->conn->prepare("SELECT * FROM announcements WHERE
+          registrantId = :registrantId AND
+          (LOWER(subject) LIKE :search_term OR LOWER(message) LIKE :search_term)
+          ORDER BY dateAdded DESC LIMIT $start, $limit");
+        $stmt->bindParam(':registrantId', $registrantId);
+        $stmt->bindParam(':search_term', $search_term);
+      } else {
+        $stmt = $this->conn->prepare("SELECT * FROM announcements WHERE registrantId = :registrantId ORDER BY dateAdded DESC LIMIT $start, $limit");
+        $stmt->bindParam(':registrantId', $registrantId);
+      }
 
       if ($stmt->execute()) {
         $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -1028,9 +1038,19 @@ class DbHandler {
 
     }
 
-    public function numberOfAnnouncements($registrantId) {
-      $stmt     = $this->conn->prepare('SELECT COUNT(*) AS total FROM announcements WHERE registrantId = :registrantId');
-      $stmt->bindParam(':registrantId', $registrantId);
+    public function numberOfAnnouncements($registrantId, $search_term = '') {
+      if ($search_term) {
+        $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM announcements
+          WHERE registrantId = :registrantId AND
+          (LOWER(subject) LIKE :search_term OR LOWER(message) LIKE :search_term)");
+        $stmt->bindParam(':registrantId', $registrantId);
+        $stmt->bindParam(':search_term', $search_term);
+
+      } else {
+        $stmt = $this->conn->prepare('SELECT COUNT(*) AS total FROM announcements WHERE registrantId = :registrantId');
+        $stmt->bindParam(':registrantId', $registrantId);
+      }
+
       $post_data = array();
       if ($stmt->execute()) {
         $stmt->setFetchMode(PDO::FETCH_ASSOC);

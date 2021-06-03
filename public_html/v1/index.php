@@ -848,17 +848,22 @@ $app->get('/announcements', 'authenticate', function() use($app) {
     $response = array();
     $db = new DbHandler();
 
-    $page = $app->request()->get('page');
+    $search_term    = $app->request()->get('search_term');
+    $page           = $app->request()->get('page');
+
+    if (!isset($search_term)) {
+      $search_term = '';
+    }
 
     if (!isset($page) || $page < 1) { $page = 1;}
     $limit = $_ENV['ANNOUNCEMENTS_LIMIT'];
     $start = ($page - 1) * $limit;
 
     $lastCount = $start + $limit;
-    $maxCount  = $db->numberOfAnnouncements($app->registrantId);
+    $maxCount  = $db->numberOfAnnouncements($app->registrantId, $search_term);
     $nextPage  = ($lastCount < $maxCount) ? $page + 1 : null;
 
-    $results   = $db->getMyAnnouncements($app->registrantId, $page);
+    $results   = $db->getMyAnnouncements($app->registrantId, $search_term, $page);
 
     if ($results) {
         $response['success']  = true;
