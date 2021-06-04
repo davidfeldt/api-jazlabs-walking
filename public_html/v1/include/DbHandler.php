@@ -993,6 +993,49 @@ class DbHandler {
 
       return $people;
     }
+    public function getMyAnnouncementsAdmin($orgId, $search_term = '', $page = 1) {
+      date_default_timezone_set($_ENV['TIMEZONE']);
+      $now = date('Y-m-d');
+      $response = array ();
+
+      $limit = $_ENV['ANNOUNCEMENTS_LIMIT'];
+      $page = (isset($page)) ? $page : 1;
+      $start = ($page - 1) * $limit;
+
+      if ($search_term) {
+        $search_term = "%".strtolower($search_term)."%";
+        $stmt = $this->conn->prepare("SELECT * FROM announcements WHERE
+          orgId = :orgId AND
+          (LOWER(subject) LIKE :search_term OR LOWER(message) LIKE :search_term)
+          ORDER BY dateAdded DESC LIMIT $start, $limit");
+        $stmt->bindParam(':orgId', $orgId);
+        $stmt->bindParam(':search_term', $search_term);
+      } else {
+        $stmt = $this->conn->prepare("SELECT * FROM announcements WHERE orgId = :orgId ORDER BY dateAdded DESC LIMIT $start, $limit");
+        $stmt->bindParam(':orgId', $orgId);
+      }
+
+      if ($stmt->execute()) {
+        $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($announcements AS $row) {
+
+          $response [] = array (
+              'id'            => $row['id'],
+              'orgId'         => $orgId,
+              'sentTo'        => $this->getFullName($row['registrantId']),
+              'sentByName'    => $this->getAdminName($row['adminId']),
+              'sentByOrg'     => $this->getOrganizationName($row['orgId']),
+              'subject'       => $row['subject'],
+              'message'       => $row['message'],
+              'blurb'			    => $row['message'] ? html_entity_decode(strip_tags(substr($row['message'],0,100)).'...', ENT_QUOTES, 'UTF-8') : '',
+              'dateAdded'     => date('m/d/Y h:i a', strtotime($row['dateAdded']))
+            );
+        }
+      }
+
+      return $response;
+
+    }
 
     public function getMyAnnouncements($registrantId, $search_term = '', $page = 1) {
       date_default_timezone_set($_ENV['TIMEZONE']);
@@ -1036,6 +1079,29 @@ class DbHandler {
 
       return $response;
 
+    }
+
+    public function numberOfAnnouncementsAdmin($orgId, $search_term = '') {
+      if ($search_term) {
+        $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM announcements
+          WHERE orgId = :orgId AND
+          (LOWER(subject) LIKE :search_term OR LOWER(message) LIKE :search_term) ORDER BY dateAdded DESC");
+        $stmt->bindParam(':orgId', $orgId);
+        $stmt->bindParam(':search_term', $search_term);
+
+      } else {
+        $stmt = $this->conn->prepare('SELECT COUNT(*) AS total FROM announcements WHERE orgId = :orgId ORDER BY dateAdded DESC');
+        $stmt->bindParam(':orgId', $orgId);
+      }
+
+      $post_data = array();
+      if ($stmt->execute()) {
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch();
+        return (int)$row['total'];
+      } else {
+        return 0;
+      }
     }
 
     public function numberOfAnnouncements($registrantId, $search_term = '') {

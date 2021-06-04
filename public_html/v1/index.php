@@ -916,6 +916,44 @@ $app->get('/announcements', 'authenticate', function() use($app) {
     $db = NULL;
 });
 
+$app->get('/admins/announcements', 'authenticateAdmin', function() use($app) {
+    $response = array();
+    $db = new DbHandler();
+
+    $search_term    = $app->request()->get('search_term');
+    $page           = $app->request()->get('page');
+
+    if (!isset($search_term)) {
+      $search_term = '';
+    }
+
+    if (!isset($page) || $page < 1) { $page = 1;}
+    $limit = $_ENV['ANNOUNCEMENTS_LIMIT'];
+    $start = ($page - 1) * $limit;
+
+    $lastCount = $start + $limit;
+    $maxCount  = $db->numberOfAnnouncementsAdmin($app->orgId, $search_term);
+    $nextPage  = ($lastCount < $maxCount) ? $page + 1 : null;
+
+    $results   = $db->getMyAnnouncementsAdmin($app->orgId, $search_term, $page);
+
+    if ($results) {
+        $response['success']  = true;
+        $response['username'] = $app->username;
+        $response['results']  = $results;
+        $response['nextPage'] = $nextPage;
+    } else {
+        $response['error'] = true;
+        $response['results'] = array();
+        $response['message'] = 'No announcements found!';
+    }
+
+    echoResponse(200, $response);
+
+    $db = NULL;
+});
+
+
 $app->post('/test/notification/event/:eventId', 'authenticate', function($eventId) use($app) {
      $registrantId = $app->registrantId;
      $db = new DbHandler();
