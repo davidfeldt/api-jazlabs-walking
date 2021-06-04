@@ -1733,7 +1733,7 @@ class DbHandler {
   }
 
   public function getAdminProfileByUsername($username) {
-    $stmt = $this->conn->prepare('SELECT orgId, adminId, username, name, company, email, phone, mobilephone FROM admins WHERE username = :username');
+    $stmt = $this->conn->prepare('SELECT orgId, adminId, username, name, title, company, email, phone, mobilephone FROM admins WHERE username = :username');
     $stmt->bindParam(':username', $username);
     if ($stmt->execute()) {
       $stmt->setFetchMode(PDO::FETCH_ASSOC);
@@ -1794,7 +1794,7 @@ class DbHandler {
       $stmt->execute();
     }
 
-    return true;
+    return $this->getAdminProfileByUsername($username);
   }
 
   public function updateProfile($username, $data) {
