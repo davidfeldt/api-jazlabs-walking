@@ -1733,7 +1733,7 @@ class DbHandler {
   }
 
   public function getAdminProfileByUsername($username) {
-    $stmt = $this->conn->prepare('SELECT orgId, adminId, username, name, company, email, mobilephone FROM admins WHERE username = :username');
+    $stmt = $this->conn->prepare('SELECT orgId, adminId, username, name, company, email, phone, mobilephone FROM admins WHERE username = :username');
     $stmt->bindParam(':username', $username);
     if ($stmt->execute()) {
       $stmt->setFetchMode(PDO::FETCH_ASSOC);
@@ -1742,6 +1742,59 @@ class DbHandler {
     } else {
         return NULL;
     }
+  }
+
+  public function updateAdminProfile($username, $data) {
+    date_default_timezone_set($_ENV['TIMEZONE']);
+    $profile = $this->getAdminProfileByUsername($username);
+
+    if (!empty($data['name']) && !empty($data['name'])) {
+      $name = ucwords(trim($data['firstName']));
+      $stmt = $this->conn->prepare('UPDATE admins SET name = :name, dateModified=NOW()  WHERE username = :username');
+      $stmt->bindParam(':username',$username);
+      $stmt->bindParam(':name',$name);
+      $stmt->execute();
+    }
+
+    if (!empty($data['email'])) {
+      $email = strtolower($data['email']);
+      $stmt = $this->conn->prepare('UPDATE registrants SET email = :email, dateModified=NOW() WHERE username = :username');
+      $stmt->bindParam(':username',$username);
+      $stmt->bindParam(':email',$email);
+      $stmt->execute();
+    }
+
+    if (!empty($data['phone'])) {
+      $stmt = $this->conn->prepare('UPDATE registrants SET phone = :phone, dateModified=NOW() WHERE username = :username');
+      $stmt->bindParam(':username',$username);
+      $stmt->bindParam(':phone',$data['phone']);
+      $stmt->execute();
+    }
+
+    if (!empty($data['mobilephone'])) {
+      $stmt = $this->conn->prepare('UPDATE registrants SET mobilephone = :mobilephone, dateModified=NOW() WHERE username = :username');
+      $stmt->bindParam(':username',$username);
+      $stmt->bindParam(':mobilephone',$data['mobilephone']);
+      $stmt->execute();
+    }
+
+    if (!empty($data['title'])) {
+      $title = ucwords(trim($data['title']));
+      $stmt = $this->conn->prepare('UPDATE registrants SET title = :title, dateModified=NOW() WHERE username = :username');
+      $stmt->bindParam(':username',$username);
+      $stmt->bindParam(':title',$title);
+      $stmt->execute();
+    }
+
+    if (!empty($data['company'])) {
+      $company = ucwords(trim($data['company']));
+      $stmt = $this->conn->prepare('UPDATE registrants SET company = :company, dateModified=NOW() WHERE username = :username');
+      $stmt->bindParam(':username',$username);
+      $stmt->bindParam(':company',$company);
+      $stmt->execute();
+    }
+
+    return true;
   }
 
   public function updateProfile($username, $data) {

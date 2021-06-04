@@ -1088,6 +1088,49 @@ $app->post('/events', 'authenticate', function() use($app) {
 
 // preferences
 
+$app->get('/admins/profiles', 'authenticateAdmin', function() use($app) {
+   $response = array();
+   $db = new DbHandler();
+   $profile = $db->getAdminProfileByUsername($app->username);
+
+   if ($profile != NULL) {
+       $response['error']        = false;
+       $response['success']      = true;
+       $response['username']     = $app->username;
+       $response['profile']      = $profile;
+       echoResponse(200, $response);
+   } else {
+       $response['error'] = true;
+       $response['message'] = "The requested resource doesn't exists";
+       $response['profile'] = array();
+       echoResponse(404, $response);
+   }
+
+});
+
+$app->put('/admins/profiles', 'authenticateAdmin', function() use($app) {
+   $response = array();
+   $db = new DbHandler();
+   $json = $app->request->getBody();
+   $data = json_decode($json, true);
+
+   $profile = $db->updateAdminProfile($app->username, $data);
+
+   if ($profile != NULL) {
+       $response['error']    = false;
+       $response['success']  = true;
+       $response['username'] = $app->username;
+       $response['profile']  = $profile;
+       echoResponse(200, $response);
+   } else {
+       $response['error'] = true;
+       $response['message'] = "The requested resource doesn't exists";
+       $response['profile'] = array();
+       echoResponse(404, $response);
+   }
+
+});
+
 
  $app->get('/users/profiles', 'authenticate', function() use($app) {
  		$response = array();
