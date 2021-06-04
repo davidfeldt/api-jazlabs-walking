@@ -1746,7 +1746,6 @@ class DbHandler {
 
   public function updateAdminProfile($username, $data) {
     date_default_timezone_set($_ENV['TIMEZONE']);
-    $profile = $this->getAdminProfileByUsername($username);
 
     if (!empty($data['name']) && !empty($data['name'])) {
       $name = ucwords(trim($data['name']));
@@ -1758,21 +1757,21 @@ class DbHandler {
 
     if (!empty($data['email'])) {
       $email = strtolower($data['email']);
-      $stmt = $this->conn->prepare('UPDATE registrants SET email = :email, dateModified=NOW() WHERE username = :username');
+      $stmt = $this->conn->prepare('UPDATE admins SET email = :email, dateModified=NOW() WHERE username = :username');
       $stmt->bindParam(':username',$username);
       $stmt->bindParam(':email',$email);
       $stmt->execute();
     }
 
     if (!empty($data['phone'])) {
-      $stmt = $this->conn->prepare('UPDATE registrants SET phone = :phone, dateModified=NOW() WHERE username = :username');
+      $stmt = $this->conn->prepare('UPDATE admins SET phone = :phone, dateModified=NOW() WHERE username = :username');
       $stmt->bindParam(':username',$username);
       $stmt->bindParam(':phone',$data['phone']);
       $stmt->execute();
     }
 
     if (!empty($data['mobilephone'])) {
-      $stmt = $this->conn->prepare('UPDATE registrants SET mobilephone = :mobilephone, dateModified=NOW() WHERE username = :username');
+      $stmt = $this->conn->prepare('UPDATE admins SET mobilephone = :mobilephone, dateModified=NOW() WHERE username = :username');
       $stmt->bindParam(':username',$username);
       $stmt->bindParam(':mobilephone',$data['mobilephone']);
       $stmt->execute();
@@ -1780,7 +1779,7 @@ class DbHandler {
 
     if (!empty($data['title'])) {
       $title = ucwords(trim($data['title']));
-      $stmt = $this->conn->prepare('UPDATE registrants SET title = :title, dateModified=NOW() WHERE username = :username');
+      $stmt = $this->conn->prepare('UPDATE admins SET title = :title, dateModified=NOW() WHERE username = :username');
       $stmt->bindParam(':username',$username);
       $stmt->bindParam(':title',$title);
       $stmt->execute();
@@ -1788,7 +1787,7 @@ class DbHandler {
 
     if (!empty($data['company'])) {
       $company = ucwords(trim($data['company']));
-      $stmt = $this->conn->prepare('UPDATE registrants SET company = :company, dateModified=NOW() WHERE username = :username');
+      $stmt = $this->conn->prepare('UPDATE admins SET company = :company, dateModified=NOW() WHERE username = :username');
       $stmt->bindParam(':username',$username);
       $stmt->bindParam(':company',$company);
       $stmt->execute();
