@@ -122,6 +122,30 @@ class DbHandler {
     }
   }
 
+  public function getTitle($registrantId) {
+    $stmt = $this->conn->prepare('SELECT title FROM registrants WHERE registrantId = :registrantId');
+    $stmt->bindParam(':registrantId', $registrantId);
+    if ($stmt->execute()) {
+    $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      return !empty($row['title']) ? $row['title'] : 'N/A';
+    } else {
+      return '';
+    }
+  }
+
+  public function getCompany($registrantId) {
+    $stmt = $this->conn->prepare('SELECT company FROM registrants WHERE registrantId = :registrantId');
+    $stmt->bindParam(':registrantId', $registrantId);
+    if ($stmt->execute()) {
+    $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      return !empty($row['company']) ? $row['company'] : 'N/A';
+    } else {
+      return '';
+    }
+  }
+
   private function getEmail($registrantId) {
     $stmt = $this->conn->prepare('SELECT email FROM registrants WHERE registrantId = :registrantId');
     $stmt->bindParam(':registrantId', $registrantId);
@@ -391,6 +415,8 @@ class DbHandler {
           $response [] = array (
               'attendeeId'      => $row['attendeeId'],
               'fullName'        => $this->getFullName($row['registrantId']),
+              'title'           => $this->getTitle($row['registrantId']),
+              'company'         => $this->getCompany($row['registrantId']),
               'meetingId'       => $row['meetingId'],
               'checkedIn'       => $row['checkedIn'] == '1',
               'checkedInDate'   => $row['checkedInDate'] ? date('m/d/Y h:i a', strtotime($row['checkedInDate'])) : ''
@@ -416,6 +442,8 @@ class DbHandler {
           $response [] = array (
               'attendeeId'      => $row['attendeeId'],
               'fullName'        => $this->getFullName($row['registrantId']),
+              'title'           => $this->getTitle($row['registrantId']),
+              'company'         => $this->getCompany($row['registrantId']),
               'meetingId'       => $row['meetingId'],
               'checkedIn'       => $row['checkedIn'] == '1',
               'checkedInDate'   => $row['checkedInDate'] ? date('m/d/Y h:i a', strtotime($row['checkedInDate'])) : ''
