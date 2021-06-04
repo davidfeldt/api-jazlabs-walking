@@ -1818,6 +1818,15 @@ class DbHandler {
     }
   }
 
+  private function chooseColor() {
+    $sql = "SELECT * FROM colors";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->execute();
+    $colors = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $random = array_rand($colors);
+    return $colors[$random];
+  }
+
   public function getCalendarMarkedDates($startDate, $endDate)  {
     $dates_data  = array();
     date_default_timezone_set($_ENV['TIMEZONE']);
@@ -1836,9 +1845,10 @@ class DbHandler {
         foreach ($dates AS $date) {
             $start_date = date('Y-m-d', strtotime($date['startDate']));
             $end_date = date('Y-m-d', strtotime($date['endDate']));
+            $color = $this->chooseColor();
             if ($start_date == $end_date) {
               $dates_data[$start_date] = array(
-                'color'       => 'green',
+                'color'       => $color,
                 'textColor'   => 'white',
                 'selected'    => $today == $start_date,
                 'startingDay' => true,
@@ -1848,14 +1858,14 @@ class DbHandler {
               $dates_data[$start_date] = array (
                 'startingDay'  => true,
                 'selected'     => $today == $start_date,
-                'color'        => 'green',
+                'color'        => $color,
                 'textColor' => 'white'
               );
               $day_after_start_date = date ("Y-m-d", strtotime("+1 days", strtotime($start_date)));
               $day_before_end_date = date ("Y-m-d", strtotime("-1 days", strtotime($end_date)));
               while (strtotime($day_after_start_date) <= strtotime($day_before_end_date)) {
                 $dates_data[$day_after_start_date] = array (
-                  'color'     => 'green',
+                  'color'     => $color,
                   'textColor' => 'white'
                 );
                 $day_after_start_date = date ("Y-m-d", strtotime("+1 days", strtotime($day_after_start_date)));
@@ -1863,7 +1873,7 @@ class DbHandler {
               $dates_data[$end_date] = array (
                 'selected'  => $today == $end_date,
                 'endingDay' => true,
-                'color'     => 'green',
+                'color'     => $color,
                 'textColor' => 'white'
               );
             }
