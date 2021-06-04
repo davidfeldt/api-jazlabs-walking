@@ -1749,7 +1749,7 @@ class DbHandler {
     $profile = $this->getAdminProfileByUsername($username);
 
     if (!empty($data['name']) && !empty($data['name'])) {
-      $name = ucwords(trim($data['firstName']));
+      $name = ucwords(trim($data['name']));
       $stmt = $this->conn->prepare('UPDATE admins SET name = :name, dateModified=NOW()  WHERE username = :username');
       $stmt->bindParam(':username',$username);
       $stmt->bindParam(':name',$name);
