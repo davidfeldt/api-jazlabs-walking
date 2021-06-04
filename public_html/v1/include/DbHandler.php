@@ -1644,7 +1644,7 @@ class DbHandler {
 
 
   private function generateUniqueUsername($firstName, $lastName){
-    $new_username   = strtolower($firstName.$lastName);
+    $new_username   = strtolower(substr($firstName,0,1).$lastName);
     $count = $this->howManyUsernamesLike($new_username);
 
     if(!empty($count)) {
@@ -1667,9 +1667,22 @@ class DbHandler {
     $password_hash = password_hash(trim($password), PASSWORD_DEFAULT);
     $username = $this->generateUniqueUsername($firstName, $lastName);
     $fullName = ucwords($firstName)." ".ucwords($lastName);
-    $stmt = $this->conn->prepare("INSERT INTO registrants SET firstName = :firstName, lastName = :lastName, fullName = :fullName, email = :email, phone = '', profileVisible = '', messaging = 'email', pushNotifications = '0', mobilephone = :mobilephone, title = :title, company = :company, dateAdded = :now, dateModified = :now, username = :username, password = :password");
-    $stmt->bindParam(':username', $username);
-    $stmt->bindParam(':password', $password_hash);
+    $stmt = $this->conn->prepare("INSERT INTO registrants SET
+            firstName = :firstName,
+            lastName = :lastName,
+            fullName = :fullName,
+            email = :email,
+            phone = '',
+            profileVisible = '0',
+            messaging = 'email',
+            pushNotifications = '0',
+            mobilephone = :mobilephone,
+            title = :title,
+            company = :company,
+            dateAdded = :now,
+            dateModified = :now,
+            username = :username,
+            password = :password");
     $stmt->bindParam(':firstName', $firstName);
     $stmt->bindParam(':lastName', $lastName);
     $stmt->bindParam(':fullName', $fullName);
@@ -1678,6 +1691,8 @@ class DbHandler {
     $stmt->bindParam(':title', $title);
     $stmt->bindParam(':company', $company);
     $stmt->bindParam(':now', $now);
+    $stmt->bindParam(':username', $username);
+    $stmt->bindParam(':password', $password_hash);
     if ($stmt->execute()) {
       // set up permissions for sharing profile info with other attendees
       $registrantId = $this->conn->lastInsertId();
@@ -1690,7 +1705,7 @@ class DbHandler {
 
       return $profile;
     } else {
-      return false;
+      return array();
     }
   }
 
