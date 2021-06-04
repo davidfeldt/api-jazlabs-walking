@@ -1050,7 +1050,8 @@ class DbHandler {
           $response [] = array (
               'id'            => $row['id'],
               'orgId'         => $orgId,
-              'sentTo'        => $this->getFullName($row['registrantId']),
+              'sentToName'    => $this->getFullName($row['registrantId']),
+              'sentToCompany' => $this->getCompany($row['registrantId']),
               'sentByName'    => $this->getAdminName($row['adminId']),
               'sentByOrg'     => $this->getOrganizationName($row['orgId']),
               'subject'       => $row['subject'],
