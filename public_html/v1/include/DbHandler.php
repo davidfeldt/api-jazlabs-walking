@@ -1845,7 +1845,8 @@ class DbHandler {
         foreach ($dates AS $date) {
             $start_date = date('Y-m-d', strtotime($date['startDate']));
             $end_date = date('Y-m-d', strtotime($date['endDate']));
-            $color = $this->chooseColor();
+            $colorPair = $this->chooseColor();
+            $color = $colorPair['color'];
             if ($start_date == $end_date) {
               $dates_data[$start_date] = array(
                 'color'       => $color,
@@ -1902,6 +1903,8 @@ class DbHandler {
         foreach ($dates AS $date) {
             $start_date = date('Y-m-d', strtotime($date['startDate']));
             $end_date = date('Y-m-d', strtotime($date['endDate']));
+            $colorPair = $this->chooseColor();
+            $color = $colorPair['color'];
             if ($start_date == $end_date) {
               $dates_data[$start_date] = array(
                 'color'       => 'green',
