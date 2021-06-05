@@ -636,6 +636,38 @@ $app->post('/users/signup', function() use($app) {
     echoResponse(200, $response);
   });
 
+  $app->post('/users/signup', function() use($app) {
+      // body passed as JSON
+
+      $json = $app->request->getBody();
+  		$data = json_decode($json, true);
+  		$firstName = !empty($data['firstName']) ? ucwords($data['firstName']) : '';
+  		$lastName = !empty($data['lastName']) ? ucwords($data['lastName']) : '';
+  		$email = !empty($data['email']) ? strtolower(trim($data['email'])) : '';
+  		$title = !empty($data['title']) ? ucwords(trim($data['title'])) : '';
+  		$company = !empty($data['company']) ? ucwords(trim($data['company'])) : '';
+  		$mobilephone = !empty($data['mobilephone']) ? formatPhoneNumber($data['mobilephone']) : '';
+  		$password = !empty($data['password']) ? $data['password'] : '';
+
+      $payload = array(
+        'firstName'   => $firstName,
+        'lastName'    => $lastName,
+        'email'       => $email,
+        'title'       => $title,
+        'company'     => $company,
+        'mobilephone' => $mobilephone,
+        'password'    => $password,
+      );
+
+      $response = array();
+
+      $db = new DbHandler();
+      $response = $db->addUser($payload);
+
+  		$db = NULL;
+      echoResponse(200, $response);
+    });
+
 $app->post('/users/password/forgot', function() use($app) {
         // check for required params
         $json = $app->request->getBody();
@@ -700,6 +732,32 @@ $app->post('/admins/password/forgot', function() use($app) {
         echoResponse(200, $response);
     });
 
+$app->post('/users/verify-account', function() use($app) {
+    // check for required params
+    $json = $app->request->getBody();
+    $data = json_decode($json, true);
+    $verifyCode = $data['verifyCode'];
+    $username = strtolower($data['username']);
+
+    $response = array();
+
+    $db = new DbHandler();
+    $res = $db->verifyAccount($verifyCode, $username);
+
+    if ($res) {
+        $response['error'] = false;
+        $response['success'] = true;
+        $response['username'] = $username;
+        $response['message'] = 'Account is now verified. You can now login in using your username ( ' . $username ' ) and password!';
+        echoResponse(201, $response);
+    } else {
+        $response['error'] = true;
+        $response['message'] = 'An error occurred while verifying your account. Try again later.';
+        echoResponse(200, $response);
+    }
+
+    $db = NULL;
+});
 
 $app->post('/users/password/reset', function() use($app) {
     // check for required params

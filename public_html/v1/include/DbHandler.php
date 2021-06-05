@@ -1336,7 +1336,7 @@ class DbHandler {
 
    }
 
-   private function getAdminUsernameFromResetCode($reset_code) {
+  private function getAdminUsernameFromResetCode($reset_code) {
     date_default_timezone_set($_ENV['TIMEZONE']);
     $sql = "SELECT username FROM admins WHERE (reset_code = :reset_code OR reset_code_short = :reset_code) AND reset_code_active = '1' AND reset_dt >= DATE_SUB(NOW(), INTERVAL 30 MINUTE)";
     $stmt = $this->conn->prepare($sql);
@@ -1351,6 +1351,25 @@ class DbHandler {
     }
 
    }
+
+  public function verifyAccount($verifyCode, $uname) {
+    date_default_timezone_set($_ENV['TIMEZONE']);
+    $username = $this->getUsernameFromResetCode($verifyCode);
+
+    if ($username == $uname) {
+      $stmt = $this->conn->prepare("UPDATE registrants SET verified = '1', reset_code = '', reset_code_short = '', reset_code_active = '0', dateModified = NOW() WHERE username = :username");
+      $stmt->bindParam(':username', $uname);
+      if ($stmt->execute()) {
+        return true;
+      } else {
+        return false;
+      }
+
+    } else {
+      return false;
+
+    }
+  }
 
   public function resetPassword($reset_code, $password) {
     date_default_timezone_set($_ENV['TIMEZONE']);
@@ -1403,7 +1422,7 @@ class DbHandler {
   }
 
 
-	private function sendSMS($number, $message) {
+	public function sendSMS($number, $message) {
 
 		// Your Account SID and Auth Token from twilio.com/console
 		$sid = $_ENV['TWILIO_SID'];
@@ -1657,12 +1676,14 @@ class DbHandler {
   public function addUser($data) {
     date_default_timezone_set($_ENV['TIMEZONE']);
     $now = date('Y-m-d H:i:s');
+    $response = array();
+
     $firstName = !empty($data['firstName']) ? ucwords($data['firstName']) : '';
 		$lastName = !empty($data['lastName']) ? ucwords($data['lastName']) : '';
 		$email = !empty($data['email']) ? strtolower(trim($data['email'])) : '';
 		$title = !empty($data['title']) ? ucwords(trim($data['title'])) : '';
 		$company = !empty($data['company']) ? ucwords(trim($data['company'])) : '';
-		$mobilephone = !empty($data['mobilephone']) ? $this->formatPhoneNumber($data['mobilephone']) : '';
+		$mobilephone = !empty($data['mobilephone']) ? $data['mobilephone'] : '';
 		$password = !empty($data['password']) ? $data['password'] : '';
     $password_hash = password_hash(trim($password), PASSWORD_DEFAULT);
     $username = $this->generateUniqueUsername($firstName, $lastName);
@@ -1699,14 +1720,46 @@ class DbHandler {
       $stmt = $this->conn->prepare("INSERT INTO permissions SET registrantId = :registrantId, email = '0', phone = '0', mobilephone = '0', title = '0', company = '0'");
       $stmt->bindParam(':registrantId', $registrantId);
       $stmt->execute();
-      // return profile
-      $profile = $this->getProfileByUsername($username);
-      $profile['success'] = true;
 
-      return $profile;
+      $response['success'] = true;
+      $response['username'] = $username;
+
+      // create verification code and send to user
+      $reset_code_short  = mt_rand(100000,999999);
+      $reset_code = sha1(uniqid(rand(), true));
+      date_default_timezone_set($_ENV['TIMEZONE']);
+      $reset_dt = date('Y-m-d H:i:s');
+      $reset_code_active = 1;
+
+      $stmt = $this->conn->prepare('UPDATE registrants SET reset_code = :reset_code, reset_code_short = :reset_code_short, reset_code_active = :reset_code_active, reset_dt = :reset_dt, dateModified = NOW() WHERE registrantId = :registrantId');
+      $stmt->bindParam(':registrantId', $registrantId);
+      $stmt->bindParam(':reset_code',$reset_code);
+      $stmt->bindParam(':reset_code_short',$reset_code_short);
+      $stmt->bindParam(':reset_code_active',$reset_code_active);
+      $stmt->bindParam(':reset_dt',$reset_dt);
+      $stmt->execute();
+
+      $subject 	= 'Verification Code';
+      $message 	= '<p>Thank you for signing up for Spectacular Events!</p><p>If this was a mistake, just ignore this email and nothing will happen.</p><p>To verify your account, please enter the following verification code on your phone: <strong>'.$reset_code.'</strong></p>';
+
+      if ($mobilephone) {
+        $this->sendSMSNotification($registrantId, 'Verification code is: '.$reset_code_short);
+        $response['message'] = 'Please enter the verification code we just sent to verify your account.';
+      } else if ($email) {
+        $this->sendEmailNotification($registrantId, $subject, $message);
+        $response['message'] = 'Please enter the verification code (sent to your email) on your phone to verify your account.';
+      } else {
+        $response['success'] = false;
+        $response['error'] = true;
+        $response['message'] = 'There was an error adding your account. Try again later!';
+      }
     } else {
-      return array();
+      $response['success'] = false;
+      $response['error'] = true;
+      $response['message'] = 'There was an error adding your account. Try again later!';
     }
+
+    return $response;
   }
 
   public function getPermissions($registrantId) {
