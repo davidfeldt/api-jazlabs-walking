@@ -585,57 +585,6 @@ $app->put('/admins/checkins', 'authenticateAdmin', function() use($app) {
    $db = null;
  });
 
-$app->post('/users/signup', function() use($app) {
-    // body passed as JSON
-
-    $json = $app->request->getBody();
-		$data = json_decode($json, true);
-		$firstName = !empty($data['firstName']) ? ucwords($data['firstName']) : '';
-		$lastName = !empty($data['lastName']) ? ucwords($data['lastName']) : '';
-		$email = !empty($data['email']) ? strtolower(trim($data['email'])) : '';
-		$title = !empty($data['title']) ? ucwords(trim($data['title'])) : '';
-		$company = !empty($data['company']) ? ucwords(trim($data['company'])) : '';
-		$mobilephone = !empty($data['mobilephone']) ? formatPhoneNumber($data['mobilephone']) : '';
-		$password = !empty($data['password']) ? $data['password'] : '';
-
-    $payload = array(
-      'firstName'   => $firstName,
-      'lastName'    => $lastName,
-      'email'       => $email,
-      'title'       => $title,
-      'company'     => $company,
-      'mobilephone' => $mobilephone,
-      'password'    => $password,
-    );
-
-    $response = array();
-
-    $db = new DbHandler();
-    $result = $db->addUser($payload);
-
-    if (array_key_exists('success', $result) && $result['success']) {
-      $response = array (
-        'success'		      => true,
-        'username'        => $result['username'],
-        'token'			      => generateJWT($result['username']),
-        "fullName"        => $result['fullName'],
-        "registrantId"    => $result['registrantId'],
-        "email"           => $result['email'],
-        "mobilephone"     => $result['mobilephone'],
-        "title"           => $result['title'],
-        "company"         => $result['company'],
-        "profileVisible"  => $result['profileVisible'] == 1
-      );
-
-    } else {
-      $response['error'] 		= true;
-      $response['message'] 	= 'Something went wrong. Try again later!';
-    }
-
-		$db = NULL;
-    echoResponse(200, $response);
-  });
-
   $app->post('/users/signup', function() use($app) {
       // body passed as JSON
 
