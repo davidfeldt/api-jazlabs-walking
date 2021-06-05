@@ -943,7 +943,13 @@ class DbHandler {
 
     public function numberOfPeopleWhoAreRegistedForMyEvents($registrantId, $query = '') {
       $myEvents = $this->getAllMyEvents($registrantId);
+
+      if (empty($myEvents)) {
+        return 0;
+      }
+
       $events = array();
+      $in_params = array();
       foreach ($myEvents AS $event) {
         array_push($events, $event['eventId']);
       }
