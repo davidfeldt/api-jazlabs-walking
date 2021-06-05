@@ -748,7 +748,7 @@ $app->post('/users/verify-account', function() use($app) {
         $response['error'] = false;
         $response['success'] = true;
         $response['username'] = $username;
-        $response['message'] = 'Account is now verified. You can now login in using your username ( ' . $username ' ) and password!';
+        $response['message'] = 'Account is now verified. You can now login in using your username ( ' . $username . ' ) and password!';
         echoResponse(201, $response);
     } else {
         $response['error'] = true;
