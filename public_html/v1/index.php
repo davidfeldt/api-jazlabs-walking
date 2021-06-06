@@ -232,6 +232,7 @@ $app->post('/users/auth', function() use($app) {
       $app->username = $username;
       $response = array (
         'success'		      => true,
+        'verified'        => $profile['verified'] == '1',
         'username'        => $profile['username'],
         'token'			      => generateJWT($profile['username']),
         "fullName"        => $profile['fullName'],

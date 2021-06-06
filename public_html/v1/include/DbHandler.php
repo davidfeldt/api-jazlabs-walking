@@ -1796,7 +1796,7 @@ class DbHandler {
 
 
   public function getProfileByUsername($username) {
-      $stmt = $this->conn->prepare('SELECT registrantId, username, firstName, lastName, fullName, email, phone, mobilephone, title, company, profileVisible, messaging, pushNotifications FROM registrants WHERE username = :username');
+      $stmt = $this->conn->prepare('SELECT registrantId, username, firstName, lastName, fullName, email, phone, mobilephone, title, company, profileVisible, messaging, pushNotifications, verified FROM registrants WHERE username = :username');
       $stmt->bindParam(':username', $username);
       if ($stmt->execute()) {
       	$stmt->setFetchMode(PDO::FETCH_ASSOC);
