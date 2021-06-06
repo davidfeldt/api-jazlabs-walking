@@ -1385,8 +1385,7 @@ class DbHandler {
     if ($username) {
       $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
-      $stmt = $this->conn->prepare("UPDATE registrants SET password = :password, reset_code = '', reset_code_short = '', reset_code_active = '0', dateModified = NOW() WHERE username = :username");
-
+      $stmt = $this->conn->prepare("UPDATE registrants SET password = :password, reset_code = '', reset_code_short = '', verified = '1', reset_code_active = '0', dateModified = NOW() WHERE username = :username");
       $stmt->bindParam(':username', $username);
       $stmt->bindParam(':password', $password_hash);
       if ($stmt->execute()) {
