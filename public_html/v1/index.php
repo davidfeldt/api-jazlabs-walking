@@ -711,6 +711,20 @@ $app->post('/users/verify-account', function() use($app) {
     $db = NULL;
 });
 
+$app->get('/users/verifications/:registrantId', function($registrantId) use($app) {
+    // check for required params
+    $json = $app->request->getBody();
+    $data = json_decode($json, true);
+
+    $response = array();
+
+    $db = new DbHandler();
+    $response = $db->setAndSendVerificationCode($registrantId);
+    echoResponse(200, $response);
+
+    $db = NULL;
+});
+
 $app->post('/users/password/reset', function() use($app) {
     // check for required params
     $json = $app->request->getBody();

@@ -1730,40 +1730,49 @@ class DbHandler {
       $response['success'] = true;
       $response['username'] = $username;
 
-      // create verification code and send to user
-      $reset_code_short  = mt_rand(100000,999999);
-      $reset_code = sha1(uniqid(rand(), true));
-      date_default_timezone_set($_ENV['TIMEZONE']);
-      $reset_dt = date('Y-m-d H:i:s');
-      $reset_code_active = 1;
+    } else {
+      $response['success'] = false;
+      $response['error'] = true;
+      $response['message'] = 'There was an error adding your account. Try again later!';
+    }
 
-      $stmt = $this->conn->prepare('UPDATE registrants SET reset_code = :reset_code, reset_code_short = :reset_code_short, reset_code_active = :reset_code_active, reset_dt = :reset_dt, dateModified = NOW() WHERE registrantId = :registrantId');
-      $stmt->bindParam(':registrantId', $registrantId);
-      $stmt->bindParam(':reset_code',$reset_code);
-      $stmt->bindParam(':reset_code_short',$reset_code_short);
-      $stmt->bindParam(':reset_code_active',$reset_code_active);
-      $stmt->bindParam(':reset_dt',$reset_dt);
-      $stmt->execute();
+    return $response;
+  }
 
+  public function setAndSendVerificationCode($registrantId) {
+    // create verification code and send to user
+    $reset_code_short  = mt_rand(100000,999999);
+    $reset_code = sha1(uniqid(rand(), true));
+    date_default_timezone_set($_ENV['TIMEZONE']);
+    $reset_dt = date('Y-m-d H:i:s');
+    $reset_code_active = 1;
+
+    $stmt = $this->conn->prepare('UPDATE registrants SET reset_code = :reset_code, reset_code_short = :reset_code_short, reset_code_active = :reset_code_active, reset_dt = :reset_dt, dateModified = NOW() WHERE registrantId = :registrantId');
+    $stmt->bindParam(':registrantId', $registrantId);
+    $stmt->bindParam(':reset_code',$reset_code);
+    $stmt->bindParam(':reset_code_short',$reset_code_short);
+    $stmt->bindParam(':reset_code_active',$reset_code_active);
+    $stmt->bindParam(':reset_dt',$reset_dt);
+    if ($stmt->execute()) {
+      $response['success'] = true;
+      $response['error'] = false;
       $subject 	= 'Verification Code';
       $message 	= '<p>Thank you for signing up for Spectacular Events!</p><p>If this was a mistake, just ignore this email and nothing will happen.</p><p>To verify your account, please enter the following verification code on your phone: <strong>'.$reset_code.'</strong></p>';
 
       if ($mobilephone) {
         $this->sendSMSNotification($registrantId, 'Verification code is: '.$reset_code_short);
         $response['message'] = 'Please enter the verification code we just sent to verify your account.';
+        $response['channel'] = 'mobile';
       } else if ($email) {
         $this->sendEmailNotification($registrantId, $subject, $message);
         $response['message'] = 'Please enter the verification code (sent to your email) on your phone to verify your account.';
-      } else {
-        $response['success'] = false;
-        $response['error'] = true;
-        $response['message'] = 'There was an error adding your account. Try again later!';
+        $response['channel'] = 'email';
       }
     } else {
-      $response['success'] = false;
-      $response['error'] = true;
-      $response['message'] = 'There was an error adding your account. Try again later!';
-    }
+        $response['success'] = false;
+        $response['error'] = true;
+        $response['message'] = 'There was an error sending your verification code. Try again later!';
+      }
 
     return $response;
   }
