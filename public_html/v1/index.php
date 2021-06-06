@@ -232,6 +232,7 @@ $app->post('/users/auth', function() use($app) {
       $app->username = $username;
       $response = array (
         'success'		      => true,
+        'error'           => false,
         'verified'        => $profile['verified'] == '1',
         'username'        => $profile['username'],
         'token'			      => generateJWT($profile['username']),
@@ -248,6 +249,7 @@ $app->post('/users/auth', function() use($app) {
 
     if ($result == 'not_username' || $result == 'not_password') {
     	$response['error'] 		= true;
+      $response['success']  = false;
       $response['message'] 	= 'Incorrect username or password';
     }
 
