@@ -845,7 +845,6 @@ class DbHandler {
     public function registerForEvent($registrantId, $eventId) {
       date_default_timezone_set($_ENV['TIMEZONE']);
       $now = date('Y-m-d H:i:s');
-      $event = $this->getEvent($registrantId, $eventId);
       $subject = 'You are registered for '.$event['name'];
       $message = '';
       if (!$this->isRegisteredForEvent($eventId, $registrantId)) {
@@ -859,13 +858,13 @@ class DbHandler {
         $stmt->bindParam(':registrantId', $registrantId);
         if ($stmt->execute()) {
           $this->sendNotification($registrantId, $subject,$message,$event);
-          return $event;
+          return $this->getEvent($registrantId, $eventId);
         } else {
           return false;
         }
       } else {
         $this->sendNotification($registrantId, $subject, $message, $event);
-        return $event;
+        return $this->getEvent($registrantId, $eventId);
       }
     }
 
