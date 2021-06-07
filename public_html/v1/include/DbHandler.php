@@ -1362,7 +1362,7 @@ class DbHandler {
     date_default_timezone_set($_ENV['TIMEZONE']);
     $now = date('Y-m-d H:i:s');
 
-    $sql = "SELECT COUNT(*) AS total FROM registrants WHERE username = :username AND reset_code_short = :reset_code_short AND reset_code_active = '1' AND reset_dt >= DATE_SUB(NOW(), INTERVAL 30 MINUTE)";
+    $sql = "SELECT COUNT(*) AS total FROM registrants WHERE username = :username AND reset_code_short = :reset_code_short AND reset_code_active = '1' AND reset_dt >= DATE_SUB(:now, INTERVAL 30 MINUTE)";
     $stmt = $this->conn->prepare($sql);
     $stmt->bindParam(':username', $username);
     $stmt->bindParam(':reset_code_short', $reset_code_short);
