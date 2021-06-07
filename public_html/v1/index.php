@@ -725,7 +725,7 @@ $app->get('/users/verifications/:registrantId', function($registrantId) use($app
 
     if ($db->isUserVerified($registrantId)) {
       $response['success'] = true;
-      $response['message'] = 'Your account is already verified';
+      $response['message'] = 'Your account is verified';
       $response['previouslyVerified'] = true;
     } else {
       $response = $db->setAndSendVerificationCode($registrantId);
