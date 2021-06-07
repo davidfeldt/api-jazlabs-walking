@@ -694,18 +694,25 @@ $app->post('/users/verify-account', function() use($app) {
     $response = array();
 
     $db = new DbHandler();
-    $res = $db->verifyAccount($verifyCode, $username);
 
-    if ($res) {
-        $response['error'] = false;
-        $response['success'] = true;
-        $response['username'] = $username;
-        $response['message'] = 'Account is now verified. You can now login in using your username ( ' . $username . ' ) and password!';
-        echoResponse(201, $response);
+    if ($db->isUserVerified($username)) {
+      $response['success'] = true;
+      $response['message'] = 'Your account is already verified';
+      $response['previouslyVerified'] = true;
     } else {
-        $response['error'] = true;
-        $response['message'] = 'An error occurred while verifying your account. Try again later.';
-        echoResponse(200, $response);
+      $res = $db->verifyAccount($verifyCode, $username);
+
+      if ($res) {
+          $response['error'] = false;
+          $response['success'] = true;
+          $response['username'] = $username;
+          $response['previouslyVerified'] = true;
+          $response['message'] = 'Account is now verified. You can now login in using your username ( ' . $username . ' ) and password!';
+      } else {
+          $response['error'] = true;
+          $response['previouslyVerified'] = true;
+          $response['message'] = 'An error occurred while verifying your account. Try again later.';
+      }
     }
 
     $db = NULL;

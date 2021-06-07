@@ -1377,6 +1377,20 @@ class DbHandler {
     }
   }
 
+  public function isUserVerified($username) {
+    $sql = "SELECT COUNT(*) AS total FROM registrants WHERE username = :username AND verified = '1'";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':username', $username);
+
+    if ($stmt->execute()) {
+      $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      return $row['total'] > 0;
+    } else {
+      return false;
+    }
+  }
+
   public function verifyAccount($verifyCode, $username) {
     date_default_timezone_set($_ENV['TIMEZONE']);
     if ($this->isCodeValid($verifyCode, $username)) {
