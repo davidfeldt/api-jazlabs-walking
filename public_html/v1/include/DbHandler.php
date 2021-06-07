@@ -1358,13 +1358,36 @@ class DbHandler {
 
    }
 
+  private function isCodeValid($reset_code_short, $username) {
+    date_default_timezone_set($_ENV['TIMEZONE']);
+    $now = date('Y-m-d H:i:s');
+
+    $sql = "SELECT COUNT(*) AS total FROM registrants WHERE username = :username AND reset_code_short = :reset_code_short AND reset_code_active = '1' AND reset_dt >= DATE_SUB(NOW(), INTERVAL 30 MINUTE)";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':username', $username);
+    $stmt->bindParam(':reset_code_short', $reset_code_short);
+    $stmt->bindParam(':now', $now);
+
+    if ($stmt->execute()) {
+      $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      return $row['total'] > 0;
+    } else {
+      return false;
+    }
+  }
+
   public function verifyAccount($verifyCode, $username) {
     date_default_timezone_set($_ENV['TIMEZONE']);
-    $stmt = $this->conn->prepare("UPDATE registrants SET verified = '1', reset_code = '', reset_code_short = '', reset_code_active = '0', dateModified = NOW() WHERE username = :username and reset_code_short = :reset_code_short");
-    $stmt->bindParam(':reset_code_short', $verifyCode);
-    $stmt->bindParam(':username', $username);
-    if ($stmt->execute()) {
-      return true;
+    if ($this->isCodeValid($verifyCode, $username)) {
+      $stmt = $this->conn->prepare("UPDATE registrants SET verified = '1', reset_code = '', reset_code_short = '', reset_code_active = '0', dateModified = NOW() WHERE username = :username and reset_code_short = :reset_code_short");
+      $stmt->bindParam(':reset_code_short', $verifyCode);
+      $stmt->bindParam(':username', $username);
+      if ($stmt->execute()) {
+        return true;
+      } else {
+        return false;
+      }
     } else {
       return false;
     }
