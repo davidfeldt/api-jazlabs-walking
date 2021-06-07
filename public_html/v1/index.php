@@ -1022,6 +1022,7 @@ $app->post('/events', 'authenticate', function() use($app) {
      } else {
          $response['error'] 		= true;
          $response['username'] 	= $app->username;
+         $response['result']    = array();
          $response['message'] 	= "An error occurred while registering for the event. Try again later!";
          echoResponse(200, $response);
      }
