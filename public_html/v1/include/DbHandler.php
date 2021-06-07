@@ -845,6 +845,7 @@ class DbHandler {
     public function registerForEvent($registrantId, $eventId) {
       date_default_timezone_set($_ENV['TIMEZONE']);
       $now = date('Y-m-d H:i:s');
+      $event = $this->getEvent($registrantId, $eventId);
       $subject = 'You are registered for '.$event['name'];
       $message = '';
       if (!$this->isRegisteredForEvent($eventId, $registrantId)) {
