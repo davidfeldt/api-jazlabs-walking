@@ -723,7 +723,7 @@ $app->get('/users/verifications/:registrantId', function($registrantId) use($app
 
     $db = new DbHandler();
 
-    if ($db->isUserVerified($username)) {
+    if ($db->isUserVerified($registrantId)) {
       $response['success'] = true;
       $response['message'] = 'Your account is already verified';
       $response['previouslyVerified'] = true;
