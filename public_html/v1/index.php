@@ -695,27 +695,23 @@ $app->post('/users/verify-account', function() use($app) {
 
     $db = new DbHandler();
 
-    if ($db->isUserVerified($username)) {
-      $response['success'] = true;
-      $response['message'] = 'Your account is already verified';
-      $response['previouslyVerified'] = true;
-    } else {
-      $res = $db->verifyAccount($verifyCode, $username);
 
-      if ($res) {
-          $response['error'] = false;
-          $response['success'] = true;
-          $response['username'] = $username;
-          $response['previouslyVerified'] = true;
-          $response['message'] = 'Account is now verified. You can now login in using your username ( ' . $username . ' ) and password!';
-      } else {
-          $response['error'] = true;
-          $response['previouslyVerified'] = true;
-          $response['message'] = 'An error occurred while verifying your account. Try again later.';
-      }
+    $res = $db->verifyAccount($verifyCode, $username);
+
+    if ($res) {
+        $response['error'] = false;
+        $response['success'] = true;
+        $response['username'] = $username;
+        $response['previouslyVerified'] = true;
+        $response['message'] = 'Account is now verified. You can now login in using your username ( ' . $username . ' ) and password!';
+    } else {
+        $response['error'] = true;
+        $response['previouslyVerified'] = true;
+        $response['message'] = 'An error occurred while verifying your account. Try again later.';
     }
 
     $db = NULL;
+    echoResponse(200, $response);
 });
 
 $app->get('/users/verifications/:registrantId', function($registrantId) use($app) {
@@ -726,7 +722,16 @@ $app->get('/users/verifications/:registrantId', function($registrantId) use($app
     $response = array();
 
     $db = new DbHandler();
-    $response = $db->setAndSendVerificationCode($registrantId);
+
+    if ($db->isUserVerified($username)) {
+      $response['success'] = true;
+      $response['message'] = 'Your account is already verified';
+      $response['previouslyVerified'] = true;
+    } else {
+      $response = $db->setAndSendVerificationCode($registrantId);
+      $response['previouslyVerified'] = false;
+    }
+
     echoResponse(200, $response);
 
     $db = NULL;

@@ -1377,10 +1377,10 @@ class DbHandler {
     }
   }
 
-  public function isUserVerified($username) {
-    $sql = "SELECT COUNT(*) AS total FROM registrants WHERE username = :username AND verified = '1'";
+  public function isUserVerified($registrantId) {
+    $sql = "SELECT COUNT(*) AS total FROM registrants WHERE registrantId = :registrantId AND verified = '1'";
     $stmt = $this->conn->prepare($sql);
-    $stmt->bindParam(':username', $username);
+    $stmt->bindParam(':registrantId', $registrantId);
 
     if ($stmt->execute()) {
       $stmt->setFetchMode(PDO::FETCH_ASSOC);
