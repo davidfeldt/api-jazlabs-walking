@@ -1358,22 +1358,15 @@ class DbHandler {
 
    }
 
-  public function verifyAccount($verifyCode, $uname) {
+  public function verifyAccount($verifyCode, $username) {
     date_default_timezone_set($_ENV['TIMEZONE']);
-    $username = $this->getUsernameFromResetCode($verifyCode);
-
-    if ($username == $uname) {
-      $stmt = $this->conn->prepare("UPDATE registrants SET verified = '1', reset_code = '', reset_code_short = '', reset_code_active = '0', dateModified = NOW() WHERE username = :username");
-      $stmt->bindParam(':username', $uname);
-      if ($stmt->execute()) {
-        return true;
-      } else {
-        return false;
-      }
-
+    $stmt = $this->conn->prepare("UPDATE registrants SET verified = '1', reset_code = '', reset_code_short = '', reset_code_active = '0', dateModified = NOW() WHERE username = :username and reset_code_short = :reset_code_short");
+    $stmt->bindParam(':reset_code_short', $verifyCode);
+    $stmt->bindParam(':username', $username);
+    if ($stmt->execute()) {
+      return true;
     } else {
       return false;
-
     }
   }
 
