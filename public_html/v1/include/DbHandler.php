@@ -2257,11 +2257,28 @@ class DbHandler {
   			foreach ($events AS $event) {
   				$times = $event['startDate'] == $event['endDate'] ? date('m/d',strtotime($event['startDate'])) : date('m/d',strtotime($event['startDate']))." - ".date('m/d',strtotime($event['endDate']));
   				$eventData['events'][] = array (
-  					'name'		    => $event['name'],
-            'eventId'     => $event['eventId'],
-  					'times'		    => $times,
-  					'height'	    => 50,
-  					'meetingId'		=> 0
+  					'times'		      => $times,
+  					'height'	      => 50,
+  					'meetingId'		  => 0,
+            'eventId'       => $event['eventId'],
+            'registrantId'  => $registrantId,
+            'startDate'     => date('m/d/Y',strtotime($event['startDate'])),
+            'endDate'       => date('m/d/Y',strtotime($event['endDate'])),
+            'avatar'        => !empty($event['avatar']) ? 'https://spectacularapps.us/img/organizations/'.$event['avatar'] : 'https://jazlabs.com/img/logo_light.png',
+            'image'         => !empty($event['image']) ? 'https://spectacularapps.us/img/events/'.$event['image'] : '',
+            'location'      => $event['location'],
+            'city'          => $event['city'],
+            'state'         => $event['state'],
+            'zip'           => $event['zip'],
+            'orgId'         => $event['orgId'],
+            'orgName'       => $this->getOrganizationName($event['orgId']),
+            'name'          => $event['name'],
+            'blurb'			    => $event['description'] ? html_entity_decode(strip_tags(substr($event['description'],0,100)).'...', ENT_QUOTES, 'UTF-8') : '',
+            'description'   => $event['description'],
+            'meetings'      => $this->getMeetingsForEvent($event['eventId'], $registrantId),
+            'attendeeTotal' => $this->getAttendeeTotal($event['eventId']),
+            'isRegistered'  => $this->isRegisteredForEvent($event['eventId'], $registrantId),
+            'isCheckedIn'   => $this->isCheckedInForEvent($event['eventId'], $registrantId)
   				);
           $eventData['meetings'] = $this->getMeetingsByDay($day, $event['eventId']);
 
