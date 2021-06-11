@@ -1524,7 +1524,7 @@ class DbHandler {
 
 
   public function checkUsername($username) {
-    $stmt = $this->conn->prepare("SELECT username FROM registrants WHERE username = :username");
+    $stmt = $this->conn->prepare("SELECT COUNT(username) AS total FROM registrants WHERE username = :username");
 
     $stmt->bindParam(':username', $username);
     $stmt->execute();
@@ -1535,16 +1535,16 @@ class DbHandler {
         // Found registrant with the username
         // Now verify the password
 
-        if (password_verify($password,$row['password'])) {
-            // User password is correct
+        if ($row['total'] == 1) {
+            // Username exists and is correct
             return 'valid';
         } else {
-            // registrant password is incorrect
-            return 'not_password';
+            // Username not valid
+            return 'not_valid';
         }
     } else {
-        // registrant not existed with the email
-        return 'not_username';
+        // No username found
+        return 'not_valid';
     }
   }
 

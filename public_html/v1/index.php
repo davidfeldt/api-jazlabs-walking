@@ -234,12 +234,10 @@ $app->post('/users/auth', function() use($app) {
         'error'           => false,
         'username'        => $profile['username'],
       );
-    }
-
-    if ($result == 'not_username' || $result == 'not_password') {
+    } else {
     	$response['error'] 		= true;
       $response['success']  = false;
-      $response['message'] 	= 'Incorrect username or password';
+      $response['message'] 	= 'No such username!';
     }
 
 		  $db = NULL;
