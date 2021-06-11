@@ -686,6 +686,7 @@ $app->post('/users/verify-account', function() use($app) {
     $res = $db->verifyAccount($verifyCode, $username);
 
     if ($res) {
+        $profile = $db->getProfileByUsername($username);
         $response = array(
           'success'		      => true,
           'error'           => false,
