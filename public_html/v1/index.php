@@ -212,7 +212,7 @@ $app->get('/', function() {
 
 });
 
-// login
+// login using username and MFA via phone or email.
 
 $app->post('/users/auth', function() use($app) {
     // body passed as JSON
@@ -220,12 +220,11 @@ $app->post('/users/auth', function() use($app) {
     $json = $app->request->getBody();
 		$data = json_decode($json, true);
 		$username = $data['username'];
-		$password = $data['password'];
 
     $response = array();
 
     $db = new DbHandler();
-    $result = $db->checkLogin($username,$password);
+    $result = $db->checkUsername($username);
 
     if ($result == 'valid') {
       $profile = $db->getProfileByUsername($username);
@@ -233,18 +232,8 @@ $app->post('/users/auth', function() use($app) {
       $response = array (
         'success'		      => true,
         'error'           => false,
-        'verified'        => $profile['verified'] == '1',
         'username'        => $profile['username'],
-        'token'			      => generateJWT($profile['username']),
-        "fullName"        => $profile['fullName'],
-        "registrantId"    => $profile['registrantId'],
-        "email"           => $profile['email'],
-        "mobilephone"     => $profile['mobilephone'],
-        "title"           => $profile['title'],
-        "company"         => $profile['company'],
-        "profileVisible"  => $profile['profileVisible'] == 1
       );
-
     }
 
     if ($result == 'not_username' || $result == 'not_password') {
@@ -599,7 +588,7 @@ $app->put('/admins/checkins', 'authenticateAdmin', function() use($app) {
   		$title = !empty($data['title']) ? ucwords(trim($data['title'])) : '';
   		$company = !empty($data['company']) ? ucwords(trim($data['company'])) : '';
   		$mobilephone = !empty($data['mobilephone']) ? formatPhoneNumber($data['mobilephone']) : '';
-  		$password = !empty($data['password']) ? $data['password'] : '';
+  		$username = !empty($data['username']) ? $data['username'] : '';
 
       $payload = array(
         'firstName'   => $firstName,
@@ -608,7 +597,7 @@ $app->put('/admins/checkins', 'authenticateAdmin', function() use($app) {
         'title'       => $title,
         'company'     => $company,
         'mobilephone' => $mobilephone,
-        'password'    => $password,
+        'username'    => $username,
       );
 
       $response = array();
@@ -699,14 +688,22 @@ $app->post('/users/verify-account', function() use($app) {
     $res = $db->verifyAccount($verifyCode, $username);
 
     if ($res) {
-        $response['error'] = false;
-        $response['success'] = true;
-        $response['username'] = $username;
-        $response['previouslyVerified'] = true;
-        $response['message'] = 'Account is now verified. You can now login in using your username ( ' . $username . ' ) and password!';
+        $response = array(
+          'success'		      => true,
+          'error'           => false,
+          'verified'        => $profile['verified'] == '1',
+          'username'        => $profile['username'],
+          'token'			      => generateJWT($profile['username']),
+          "fullName"        => $profile['fullName'],
+          "registrantId"    => $profile['registrantId'],
+          "email"           => $profile['email'],
+          "mobilephone"     => $profile['mobilephone'],
+          "title"           => $profile['title'],
+          "company"         => $profile['company'],
+          "profileVisible"  => $profile['profileVisible'] == 1
+        );
     } else {
         $response['error'] = true;
-        $response['previouslyVerified'] = true;
         $response['message'] = 'An error occurred while verifying your account. Try again later.';
     }
 
@@ -714,7 +711,7 @@ $app->post('/users/verify-account', function() use($app) {
     echoResponse(200, $response);
 });
 
-$app->get('/users/verifications/:registrantId', function($registrantId) use($app) {
+$app->get('/users/verifications/:username', function($username) use($app) {
     // check for required params
     $json = $app->request->getBody();
     $data = json_decode($json, true);
@@ -723,14 +720,7 @@ $app->get('/users/verifications/:registrantId', function($registrantId) use($app
 
     $db = new DbHandler();
 
-    if ($db->isUserVerified($registrantId)) {
-      $response['success'] = true;
-      $response['message'] = 'Your account is verified';
-      $response['previouslyVerified'] = true;
-    } else {
-      $response = $db->setAndSendVerificationCode($registrantId);
-      $response['previouslyVerified'] = false;
-    }
+    $response = $db->sendVerificationCode($username);
 
     echoResponse(200, $response);
 

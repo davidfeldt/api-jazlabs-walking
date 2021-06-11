@@ -1523,8 +1523,8 @@ class DbHandler {
   }
 
 
-  public function checkLogin($username, $password) {
-    $stmt = $this->conn->prepare("SELECT username, password FROM registrants WHERE username = :username");
+  public function checkUsername($username) {
+    $stmt = $this->conn->prepare("SELECT username FROM registrants WHERE username = :username");
 
     $stmt->bindParam(':username', $username);
     $stmt->execute();
@@ -1697,8 +1697,8 @@ class DbHandler {
   }
 
 
-  private function generateUniqueUsername($firstName, $lastName){
-    $new_username   = strtolower(substr($firstName,0,1).$lastName);
+  private function generateUniqueUsername($username){
+    $new_username   = strtolower($username);
     $count = $this->howManyUsernamesLike($new_username);
 
     if(!empty($count)) {
@@ -1715,14 +1715,14 @@ class DbHandler {
 
     $firstName = !empty($data['firstName']) ? ucwords($data['firstName']) : '';
 		$lastName = !empty($data['lastName']) ? ucwords($data['lastName']) : '';
-		$email = !empty($data['email']) ? strtolower(trim($data['email'])) : '';
-		$title = !empty($data['title']) ? ucwords(trim($data['title'])) : '';
-		$company = !empty($data['company']) ? ucwords(trim($data['company'])) : '';
-		$mobilephone = !empty($data['mobilephone']) ? $data['mobilephone'] : '';
-		$password = !empty($data['password']) ? $data['password'] : '';
-    $password_hash = password_hash(trim($password), PASSWORD_DEFAULT);
-    $username = $this->generateUniqueUsername($firstName, $lastName);
     $fullName = ucwords($firstName)." ".ucwords($lastName);
+    $title = !empty($data['title']) ? ucwords(trim($data['title'])) : '';
+		$company = !empty($data['company']) ? ucwords(trim($data['company'])) : '';
+		$email = !empty($data['email']) ? strtolower(trim($data['email'])) : '';
+		$mobilephone = !empty($data['mobilephone']) ? $data['mobilephone'] : '';
+		$username = !empty($data['username']) ? $data['username'] : '';
+    $username = $this->generateUniqueUsername($username);
+
     $stmt = $this->conn->prepare("INSERT INTO registrants SET
             firstName = :firstName,
             lastName = :lastName,
@@ -1737,8 +1737,7 @@ class DbHandler {
             company = :company,
             dateAdded = :now,
             dateModified = :now,
-            username = :username,
-            password = :password");
+            username = :username");
     $stmt->bindParam(':firstName', $firstName);
     $stmt->bindParam(':lastName', $lastName);
     $stmt->bindParam(':fullName', $fullName);
@@ -1748,7 +1747,6 @@ class DbHandler {
     $stmt->bindParam(':company', $company);
     $stmt->bindParam(':now', $now);
     $stmt->bindParam(':username', $username);
-    $stmt->bindParam(':password', $password_hash);
     if ($stmt->execute()) {
       // set up permissions for sharing profile info with other attendees
       $registrantId = $this->conn->lastInsertId();
@@ -1768,15 +1766,16 @@ class DbHandler {
     return $response;
   }
 
-  public function setAndSendVerificationCode($registrantId) {
+  public function sendVerificationCode($username) {
     // create verification code and send to user
+    $profile = $this->getProfileByUsername($username);
     $reset_code_short  = mt_rand(100000,999999);
     $reset_code = sha1(uniqid(rand(), true));
     date_default_timezone_set($_ENV['TIMEZONE']);
     $reset_dt = date('Y-m-d H:i:s');
     $reset_code_active = 1;
 
-    $mobilephone = $this->getMobilephone($registrantId);
+    $mobilephone = $this->getMobilephone($profile['registrantId']);
 
     $stmt = $this->conn->prepare('UPDATE registrants SET reset_code = :reset_code, reset_code_short = :reset_code_short, reset_code_active = :reset_code_active, reset_dt = :reset_dt, dateModified = NOW() WHERE registrantId = :registrantId');
     $stmt->bindParam(':registrantId', $registrantId);
@@ -1788,15 +1787,15 @@ class DbHandler {
       $response['success'] = true;
       $response['error'] = false;
       $subject 	= 'Verification Code';
-      $message 	= '<p>Thank you for signing up for Spectacular Events!</p><p>If this was a mistake, just ignore this email and nothing will happen.</p><p>To verify your account, please enter the following verification code on your phone: <strong>'.$reset_code.'</strong></p>';
+      $message 	= '<p>To log into your account, please enter the following verification code on your phone: <strong>'.$reset_code.'</strong></p>';
 
       if ($mobilephone) {
         $this->sendSMSNotification($registrantId, 'Verification code is: '.$reset_code_short);
-        $response['message'] = 'Please enter the verification code we just sent to verify your account.';
+        $response['message'] = 'Please enter the verification code we just sent to log into your account.';
         $response['channel'] = 'mobile';
       } else if ($email) {
         $this->sendEmailNotification($registrantId, $subject, $message);
-        $response['message'] = 'Please enter the verification code (sent to your email) on your phone to verify your account.';
+        $response['message'] = 'Please enter the verification code (sent to your email) on your phone to log into your account.';
         $response['channel'] = 'email';
       }
     } else {
