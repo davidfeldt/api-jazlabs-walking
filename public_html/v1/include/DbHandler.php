@@ -1778,6 +1778,7 @@ class DbHandler {
       $reset_code_active = 1;
 
       $mobilephone = $this->getMobilephone($profile['registrantId']);
+      $registrantId = $profile['registrantId'];
 
       $stmt = $this->conn->prepare('UPDATE registrants SET reset_code = :reset_code, reset_code_short = :reset_code_short, reset_code_active = :reset_code_active, reset_dt = :reset_dt, dateModified = NOW() WHERE registrantId = :registrantId');
       $stmt->bindParam(':registrantId', $registrantId);
