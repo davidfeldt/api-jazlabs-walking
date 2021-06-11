@@ -702,6 +702,8 @@ $app->post('/users/verify-account', function() use($app) {
         );
     } else {
         $response['error'] = true;
+        $response['username'] = $username;
+        $response['verifyCode'] = $verifyCode;
         $response['message'] = 'An error occurred while verifying your account. Try again later.';
     }
 
@@ -710,12 +712,7 @@ $app->post('/users/verify-account', function() use($app) {
 });
 
 $app->get('/users/verifications/:username', function($username) use($app) {
-    // check for required params
-    $json = $app->request->getBody();
-    $data = json_decode($json, true);
-
     $response = array();
-
     $db = new DbHandler();
 
     $response = $db->sendVerificationCode($username);
