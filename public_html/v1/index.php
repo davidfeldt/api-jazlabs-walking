@@ -282,6 +282,37 @@ $app->post('/admins/auth', function() use($app) {
     echoResponse(200, $response);
   });
 
+$app->post('/admins/signup', function() use($app) {
+    // body passed as JSON
+
+    $json       = $app->request->getBody();
+    $data       = json_decode($json, true);
+    $name       = !empty($data['name']) ? ucwords($data['name']) : '';
+    $title      = !empty($data['title']) ? ucwords(trim($data['title'])) : '';
+    $email      = !empty($data['email']) ? strtolower(trim($data['email'])) : '';
+    $mobilephone= !empty($data['mobilephone']) ? formatPhoneNumber($data['mobilephone']) : '';
+    $orgCode    = !empty($data['orgCode']) ? ucwords(trim($data['orgCode'])) : '';
+    $password   = !empty($data['password']) ? ucwords(trim($data['password'])) : '';
+
+
+    $payload = array(
+      'name'        => $name,
+      'title'       => $title,
+      'email'       => $email,
+      'mobilephone' => $mobilephone,
+      'orgCode'     => $orgCode,
+      'password'    => $password
+    );
+
+    $response = array();
+
+    $db = new DbHandler();
+    $response = $db->addAdminUser($payload);
+
+    $db = NULL;
+    echoResponse(200, $response);
+  });
+
 $app->get('/admins/people/:query', 'authenticateAdmin', function($query) use($app) {
     $response = array();
     $db = new DbHandler();

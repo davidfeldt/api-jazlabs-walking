@@ -62,6 +62,17 @@ class DbHandler {
 
   }
 
+  public function getOrganizationFromCode($orgCode) {
+    $stmt = $this->conn->prepare('SELECT * FROM organizations WHERE orgCode = :orgCode');
+    $stmt->bindParam(':orgCode', $orgCode);
+    $row = array();
+    if ($stmt->execute()) {
+      $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+    }
+    return $row;
+  }
+
   public function getOrganizationName($orgId) {
     $stmt = $this->conn->prepare('SELECT name FROM organizations WHERE orgId = :orgId');
     $stmt->bindParam(':orgId', $orgId);
@@ -1566,7 +1577,7 @@ class DbHandler {
   public function checkinForEventAdmin($registrantId, $eventId) {
     date_default_timezone_set($_ENV['TIMEZONE']);
     $now = date('Y-m-d H:i:s');
-    $event = $this->getEvent($eventId);
+    $event = $this->getEvent($registrantId, $eventId);
     $message = 'You are now checked in to the ' . $event['name'] . ' event';
     if ($this->hasCheckedInForEvent($registrantId, $eventId)) {
       $this->sendPushNotificationsToIndividual($registrantId, $message);
@@ -1706,6 +1717,78 @@ class DbHandler {
     }
 
     return $new_username;
+  }
+
+  private function generateUniqueAdminUsername($name) {
+    $name         = strtolower($name);
+    $nameArray    = explode(' ', $name);
+    $firstInitial = substr($name, 0, 1);
+    $lastName     = end($nameArray);
+    $new_username = $firstInitial . $lastName;
+
+    $count = $this->howManyAdminUsernamesLike($new_username);
+
+    if(!empty($count)) {
+        $new_username = $new_username . $count;
+    }
+
+    return $new_username;
+  }
+
+  public function addAdminUser($data) {
+    date_default_timezone_set($_ENV['TIMEZONE']);
+    $now = date('Y-m-d H:i:s');
+    $response = array();
+
+    $name       = !empty($data['name']) ? ucwords($data['name']) : '';
+    $title      = !empty($data['title']) ? ucwords(trim($data['title'])) : '';
+    $email      = !empty($data['email']) ? strtolower(trim($data['email'])) : '';
+    $mobilephone= !empty($data['mobilephone']) ? formatPhoneNumber($data['mobilephone']) : '';
+    $orgCode    = !empty($data['orgCode']) ? trim($data['orgCode']) : '';
+    $password   = !empty($data['password']) ? trim($data['password']) : '';
+    $username   = $this->generateUniqueAdminUsername($name);
+    $company    = $this->getOrganizationFromCode($orgCode);
+
+    if (!empty($company)) {
+      $stmt = $this->conn->prepare("INSERT INTO admins SET
+              name = :name,
+              title = :title,
+              orgId = :orgId,
+              email = :email,
+              mobilephone = :mobilephone,
+              company = :company,
+              dateAdded = :now,
+              dateModified = :now,
+              username = :username");
+      $stmt->bindParam(':name', $name);
+      $stmt->bindParam(':title', $title);
+      $stmt->bindParam(':orgId', $company['orgId']);
+      $stmt->bindParam(':email', $email);
+      $stmt->bindParam(':mobilephone', $mobilephone);
+      $stmt->bindParam(':company', $company['name']);
+      $stmt->bindParam(':now', $now);
+      $stmt->bindParam(':username', $username);
+      if ($stmt->execute()) {
+        $response['success'] = true;
+        $response['username'] = $username;
+        $response['orgId']    = $company['orgId'];
+        $response['name']     = $name;
+        $response['email']    = $email;
+        $response['title']    = $title;
+        $response['message'] = ' You have registered successfully!';
+
+      } else {
+        $response['success'] = false;
+        $response['error'] = true;
+        $response['message'] = 'There was an error adding your account. Try again later!';
+      }
+    } else {
+      $response['success'] = false;
+      $response['error'] = true;
+      $response['message'] = 'There is no such organization code. Please contact your company event organizer and request the correct code!';
+    }
+
+    return $response;
   }
 
   public function addUser($data) {
@@ -2070,6 +2153,20 @@ class DbHandler {
   }
 
 
+  private function howManyAdminUsernamesLike($username) {
+    $username = "%".$username."%";
+    $sql = "SELECT COUNT(*) AS total FROM admins WHERE username LIKE :username";
+    $stmt     = $this->conn->prepare($sql);
+    $stmt->bindParam(':username', $username);
+
+    if ($stmt->execute()) {
+      $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      return $row['total'];
+    } else {
+      return '';
+    }
+  }
 
 
   private function howManyUsernamesLike($username) {
