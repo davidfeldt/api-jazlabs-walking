@@ -1778,7 +1778,7 @@ class DbHandler {
         $response['name']     = $name;
         $response['email']    = $email;
         $response['title']    = $title;
-        $response['message'] = ' You have registered successfully!';
+        $response['message'] = ' You have registered successfully! Your username is: ' . $username;
 
       } else {
         $response['success'] = false;
