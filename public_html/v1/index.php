@@ -290,9 +290,9 @@ $app->post('/admins/signup', function() use($app) {
     $name       = !empty($data['name']) ? ucwords($data['name']) : '';
     $title      = !empty($data['title']) ? ucwords(trim($data['title'])) : '';
     $email      = !empty($data['email']) ? strtolower(trim($data['email'])) : '';
-    $mobilephone= !empty($data['mobilephone']) ? formatPhoneNumber($data['mobilephone']) : '';
-    $orgCode    = !empty($data['orgCode']) ? ucwords(trim($data['orgCode'])) : '';
-    $password   = !empty($data['password']) ? ucwords(trim($data['password'])) : '';
+    $mobilephone= !empty($data['mobilephone']) ? $data['mobilephone'] : '';
+    $orgCode    = !empty($data['orgCode']) ? trim($data['orgCode']) : '';
+    $password   = !empty($data['password']) ? trim($data['password']) : '';
 
 
     $payload = array(

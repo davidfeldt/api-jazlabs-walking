@@ -1743,11 +1743,12 @@ class DbHandler {
     $name       = !empty($data['name']) ? ucwords($data['name']) : '';
     $title      = !empty($data['title']) ? ucwords(trim($data['title'])) : '';
     $email      = !empty($data['email']) ? strtolower(trim($data['email'])) : '';
-    $mobilephone= !empty($data['mobilephone']) ? formatPhoneNumber($data['mobilephone']) : '';
+    $mobilephone= !empty($data['mobilephone']) ? $data['mobilephone'] : '';
     $orgCode    = !empty($data['orgCode']) ? trim($data['orgCode']) : '';
     $password   = !empty($data['password']) ? trim($data['password']) : '';
     $username   = $this->generateUniqueAdminUsername($name);
     $company    = $this->getOrganizationFromCode($orgCode);
+    $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
     if (!empty($company)) {
       $stmt = $this->conn->prepare("INSERT INTO admins SET
@@ -1759,6 +1760,7 @@ class DbHandler {
               company = :company,
               dateAdded = :now,
               dateModified = :now,
+              password = :password,
               username = :username");
       $stmt->bindParam(':name', $name);
       $stmt->bindParam(':title', $title);
@@ -1767,6 +1769,7 @@ class DbHandler {
       $stmt->bindParam(':mobilephone', $mobilephone);
       $stmt->bindParam(':company', $company['name']);
       $stmt->bindParam(':now', $now);
+      $stmt->bindParam(':password', $password_hash);
       $stmt->bindParam(':username', $username);
       if ($stmt->execute()) {
         $response['success'] = true;
