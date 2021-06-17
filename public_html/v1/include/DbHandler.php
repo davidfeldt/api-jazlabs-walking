@@ -85,6 +85,8 @@ class DbHandler {
     }
   }
 
+
+
   public function getEventName($eventId) {
     $stmt = $this->conn->prepare('SELECT name FROM events WHERE eventId = :eventId');
     $stmt->bindParam(':eventId', $eventId);
@@ -1736,6 +1738,73 @@ class DbHandler {
     return $new_username;
   }
 
+  public function getAdminUsersForOrg($orgId) {
+    $sql = "SELECT adminId, level, name, title, username FROM admins WHERE orgId = :orgId AND level != 'superadmin'";
+    $users = array();
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':orgId', $orgId);
+    $stmt->bindParam(':registrantId', $registrantId);
+    if ($stmt->execute()) {
+      $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    return $users;
+  }
+
+  public function addAdminUserBySuperAdmin($orgId, $data) {
+    date_default_timezone_set($_ENV['TIMEZONE']);
+    $now = date('Y-m-d H:i:s');
+    $response = array();
+
+    $name         = !empty($data['name']) ? ucwords($data['name']) : '';
+    $title        = !empty($data['title']) ? ucwords(trim($data['title'])) : '';
+    $email        = !empty($data['email']) ? strtolower(trim($data['email'])) : '';
+    $mobilephone  = !empty($data['mobilephone']) ? $data['mobilephone'] : '';
+    $level        = !empty($data['level']) ? $data['level'] : 'staff';
+    $username     = $this->generateUniqueAdminUsername($name);
+    $password_hash= password_hash($now, PASSWORD_DEFAULT);
+
+    if (!empty($name)) {
+      $stmt = $this->conn->prepare("INSERT INTO admins SET
+              name = :name,
+              title = :title,
+              orgId = :orgId,
+              email = :email,
+              mobilephone = :mobilephone,
+              level = :level,
+              dateAdded = :now,
+              dateModified = :now,
+              password = :password,
+              username = :username");
+      $stmt->bindParam(':name', $name);
+      $stmt->bindParam(':title', $title);
+      $stmt->bindParam(':orgId', $orgId);
+      $stmt->bindParam(':email', $email);
+      $stmt->bindParam(':mobilephone', $mobilephone);
+      $stmt->bindParam(':level', $level);
+      $stmt->bindParam(':now', $now);
+      $stmt->bindParam(':password', $password_hash);
+      $stmt->bindParam(':username', $username);
+      if ($stmt->execute()) {
+        $response['success'] = true;
+        $response['users']   = $this->getAdminUsersForOrg($orgId);
+        $response['message'] = ' You have successfully added ' . $name;
+
+      } else {
+        $response['success'] = false;
+        $response['error']   = true;
+        $response['users']   = $this->getAdminUsersForOrg($orgId);
+        $response['message'] = 'There was an error adding your user. Try again later!';
+      }
+    } else {
+      $response['success'] = false;
+      $response['error']   = true;
+      $response['users']   = $this->getAdminUsersForOrg($orgId);
+      $response['message'] = 'Enter all data and try again!';
+    }
+
+    return $response;
+  }
+
   public function addAdminUser($data) {
     date_default_timezone_set($_ENV['TIMEZONE']);
     $now = date('Y-m-d H:i:s');
@@ -1943,7 +2012,7 @@ class DbHandler {
   }
 
   public function getAdminProfileByUsername($username) {
-    $stmt = $this->conn->prepare('SELECT orgId, adminId, username, name, title, company, email, phone, mobilephone FROM admins WHERE username = :username');
+    $stmt = $this->conn->prepare('SELECT orgId, adminId, level, username, name, title, company, email, phone, mobilephone FROM admins WHERE username = :username');
     $stmt->bindParam(':username', $username);
     if ($stmt->execute()) {
       $stmt->setFetchMode(PDO::FETCH_ASSOC);
@@ -1952,6 +2021,97 @@ class DbHandler {
     } else {
         return NULL;
     }
+  }
+
+  private function getAdminLevel($username) {
+    $stmt = $this->conn->prepare('SELECT level FROM admins WHERE username = :username');
+    $stmt->bindParam(':username', $username);
+    if ($stmt->execute()) {
+      $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      return $row['level'];
+    } else {
+        return NULL;
+    }
+  }
+
+  private function getAdminOrgId($username) {
+    $stmt = $this->conn->prepare('SELECT orgId FROM admins WHERE username = :username');
+    $stmt->bindParam(':username', $username);
+    if ($stmt->execute()) {
+      $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      return $row['orgId'];
+    } else {
+        return NULL;
+    }
+  }
+
+  public function deleteAdminUser($username, $adminId) {
+    $level = $this->getAdminLevel($username);
+    $orgId = $this->getAdminOrgId($username);
+    if ($level == 'superadmin') {
+      $stmt = $this->conn->prepare("DELETE FROM admins WHERE adminId = :adminId");
+      $stmt->bindParam(':adminId', $adminId);
+      $stmt->execute();
+    }
+    return $this->getAdminUsersForOrg($orgId);
+  }
+
+  public function updateAdminUser($username, $data) {
+    date_default_timezone_set($_ENV['TIMEZONE']);
+    $level = $this->getAdminLevel($username);
+    $orgId = $this->getAdminOrgId($username);
+    if ($level == 'superadmin') {
+      if (!empty($data['name']) && !empty($data['name'])) {
+        $name = ucwords(trim($data['name']));
+        $stmt = $this->conn->prepare('UPDATE admins SET name = :name, dateModified=NOW()  WHERE adminId = :adminId');
+        $stmt->bindParam(':adminId',$data['adminId']);
+        $stmt->bindParam(':name',$name);
+        $stmt->execute();
+      }
+
+      if (!empty($data['email'])) {
+        $email = strtolower($data['email']);
+        $stmt = $this->conn->prepare('UPDATE admins SET email = :email, dateModified=NOW() WHERE adminId = :adminId');
+        $stmt->bindParam(':adminId',$data['adminId']);
+        $stmt->bindParam(':email',$email);
+        $stmt->execute();
+      }
+
+      if (!empty($data['phone'])) {
+        $stmt = $this->conn->prepare('UPDATE admins SET phone = :phone, dateModified=NOW() WHERE adminId = :adminId');
+        $stmt->bindParam(':adminId',$data['adminId']);
+        $stmt->bindParam(':phone',$data['phone']);
+        $stmt->execute();
+      }
+
+      if (!empty($data['mobilephone'])) {
+        $stmt = $this->conn->prepare('UPDATE admins SET mobilephone = :mobilephone, dateModified=NOW() WHERE adminId = :adminId');
+        $stmt->bindParam(':adminId',$data['adminId']);
+        $stmt->bindParam(':mobilephone',$data['mobilephone']);
+        $stmt->execute();
+      }
+
+      if (!empty($data['title'])) {
+        $title = ucwords(trim($data['title']));
+        $stmt = $this->conn->prepare('UPDATE admins SET title = :title, dateModified=NOW() WHERE adminId = :adminId');
+        $stmt->bindParam(':adminId',$data['adminId']);
+        $stmt->bindParam(':title',$title);
+        $stmt->execute();
+      }
+
+      if (!empty($data['level'])) {
+        $stmt = $this->conn->prepare('UPDATE admins SET level = :level, dateModified=NOW() WHERE adminId = :adminId');
+        $stmt->bindParam(':adminId',$data['adminId']);
+        $stmt->bindParam(':company',$company);
+        $stmt->execute();
+      }
+
+    }
+
+    return $this->getAdminUsersForOrg($orgId);
+
   }
 
   public function updateAdminProfile($username, $data) {

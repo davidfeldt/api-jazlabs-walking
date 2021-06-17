@@ -107,6 +107,7 @@ function generateAdminJWT($username) {
 			"username" 		   => $username,
       "orgId"          => $result['orgId'],
       "adminId"        => $result['adminId'],
+      "level"          => $result['level'],
       "name"           => $result['name'],
       "email"          => $result['email'],
       "mobilephone"    => $result['mobilephone']
@@ -267,6 +268,7 @@ $app->post('/admins/auth', function() use($app) {
         "name"            => $profile['name'],
         "company"         => $profile['company'],
         "orgId"           => $profile['orgId'],
+        "level"           => $profile['level'],
         "email"           => $profile['email'],
         "mobilephone"     => $profile['mobilephone']
       );
@@ -1183,6 +1185,97 @@ $app->put('/admins/profiles', 'authenticateAdmin', function() use($app) {
        echoResponse(404, $response);
    }
 
+});
+
+$app->get('/admins/users', 'authenticateAdmin', function() use($app) {
+   $response = array();
+   $db = new DbHandler();
+   $users = $db->getAdminUsersForOrg($app->orgId);
+
+   if ($users) {
+       $response['error']      = false;
+       $response['success']    = true;
+       $response['username']   = $app->username;
+       $response['users']      = $users;
+       $response['message']    = 'Users found successfully!'
+       echoResponse(200, $response);
+   } else {
+       $response['error']   = true;
+       $response['message'] = "There are no additional users besides you!";
+       $response['users']   = array();
+       echoResponse(404, $response);
+   }
+});
+
+$app->post('/admins/users', 'authenticateAdmin', function() use($app) {
+  $json           = $app->request->getBody();
+  $data           = json_decode($json, true);
+
+  $response = array();
+
+  $db = new DbHandler();
+  $results = $db->addAdminUserBySuperAdmin($app->orgId, $data);
+
+  if (empty($results)) {
+      $response['error'] = true;
+      $response['success'] = false;
+      $response['message'] = $data;
+      $response['results'] = $results;
+      echoResponse(200, $response);
+  } else {
+      $response['error'] = false;
+      $response['success'] = true;
+      $response['message'] = 'Added '.$data['name'];
+      $response['results'] = $results;
+      echoResponse(201, $response);
+  }
+
+  $db = NULL;
+
+});
+
+$app->put('/admins/users', 'authenticateAdmin', function() use($app) {
+   $response = array();
+   $db = new DbHandler();
+   $json = $app->request->getBody();
+   $data = json_decode($json, true);
+
+   $users = $db->updateAdminUser($app->username, $data);
+
+   if ($users) {
+       $response['error']    = false;
+       $response['success']  = true;
+       $response['username'] = $app->username;
+       $response['users']    = $users;
+       echoResponse(200, $response);
+   } else {
+       $response['error']   = true;
+       $response['message'] = "The requested resource doesn't exists";
+       $response['users']   = $users;
+       echoResponse(404, $response);
+   }
+
+});
+
+$app->delete('/admins/users/:adminId', 'authenticateAdmin', function($adminId) use($app) {
+    $response = array();
+    $db = new DbHandler();
+
+    $users   = $db->deleteAdminUser($app->username, $adminId);
+
+    if ($users) {
+        $response['success']  = true;
+        $response['username'] = $app->username;
+        $response['users']    = $users;
+    } else {
+        $response['error']    = true;
+        $response['users']    = $users;
+        $response['message']  = 'No user found!';
+    }
+
+    echoResponse(200, $response);
+
+    $db = NULL;
 });
 
 
