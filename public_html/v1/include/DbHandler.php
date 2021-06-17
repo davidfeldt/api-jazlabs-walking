@@ -689,7 +689,7 @@ class DbHandler {
 
     public function testNotificationForEvent($registrantId, $eventId) {
       $event = $this->getEvent($registrantId, $eventId);
-      $email = $this->sendEmailNotification($registrantId, 'you are registered','What a lovely day it is!\nLinetwo',$event);
+      $email = $this->sendEmailNotification($registrantId, 'you are registered','What a lovely day it is!\nLinetwo',$eventId);
       $sms = $this->sendSMSNotification($registrantId, 'you are registered for '.$event['name']);
       $push = $this->sendPushNotificationsToIndividual($registrantId, 'you are registered for '.$event['name']);
       return array (
@@ -767,11 +767,11 @@ class DbHandler {
       return $this->sendSMS($mobilephone, $message);
     }
 
-    public function sendNotification($registrantId, $subject = '', $message = '', $event = array()) {
+    public function sendNotification($registrantId, $subject = '', $message = '', $eventId = 0) {
       $messaging = $this->getMessagingChannelFor($registrantId);
       switch ($messaging) {
         case 'email':
-          $result = $this->sendEmailNotification($registrantId, $subject, $message, $event);
+          $result = $this->sendEmailNotification($registrantId, $subject, $message, $eventId);
           break;
         case 'sms':
           $result = $this->sendSMSNotification($registrantId, $subject);
@@ -828,7 +828,7 @@ class DbHandler {
           }
 
           if ($email) {
-            $emailCount = $this->sendEmailNotification($row['registrantId'], $subject, $message);
+            $emailCount = $this->sendEmailNotification($row['registrantId'], $subject, $message, $eventId);
           }
 
         }
@@ -1329,7 +1329,7 @@ class DbHandler {
              $this->sendSMS($mobilephone, 'Reset code is: '.$reset_code_short);
              return 'mobile';
            } else if ($email) {
-             $this->sendEmail($username, $email, $subject, $message);
+             $this->sendEmailNotification($username, $email, $subject, $message);
              return 'email';
            } else {
              return false;
