@@ -747,7 +747,7 @@ class DbHandler {
           $email->addDynamicTemplateData("event", $event);
         }
         if ($message) {
-          $email->addDynamicTemplateData("message", $message);
+          $email->addDynamicTemplateData("message", nl2br($message));
         }
         $sendgrid = new \SendGrid(getenv('SENDGRID_API_KEY'));
         try {
