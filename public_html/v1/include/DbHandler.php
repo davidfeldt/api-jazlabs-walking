@@ -123,6 +123,30 @@ class DbHandler {
     }
   }
 
+  private function getAdminFullName($adminId) {
+    $stmt = $this->conn->prepare('SELECT name FROM admins WHERE adminId = :adminId');
+    $stmt->bindParam(':adminId', $adminId);
+    if ($stmt->execute()) {
+    $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      return !empty($row['name']) ? $row['name'] : '';
+    } else {
+      return '';
+    }
+  }
+
+  private function getAdminEmail($adminId) {
+    $stmt = $this->conn->prepare('SELECT email FROM admins WHERE adminId = :adminId');
+    $stmt->bindParam(':adminId', $adminId);
+    if ($stmt->execute()) {
+    $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      return !empty($row['email']) ? $row['email'] : '';
+    } else {
+      return '';
+    }
+  }
+
   public function getFullName($registrantId) {
     $stmt = $this->conn->prepare('SELECT fullName FROM registrants WHERE registrantId = :registrantId');
     $stmt->bindParam(':registrantId', $registrantId);
@@ -732,6 +756,28 @@ class DbHandler {
     //     }
     //   }
     // }
+
+    private function sendEmailToAdmin($adminId, $subject, $message) {
+      $to_name = $this->getAdminFullName($adminId);
+      $to_email = $this->getAdminEmail($adminId);
+
+      if (!empty($to_name) && !empty($to_email)) {
+        $email = new \SendGrid\Mail\Mail();
+        $email->setFrom($_ENV['SENDGRID_FROM_EMAIL'], $_ENV['SENDGRID_FROM_NAME']);
+        $email->setSubject($subject);
+        $email->addTo($to_email, $to_name);
+        $email->setTemplateId($_ENV['NOTIFICATION_TEMPLATE_ID']);
+        $email->addDynamicTemplateData("subject", $subject);
+        $email->addDynamicTemplateData("message", nl2br($message));
+        $sendgrid = new \SendGrid(getenv('SENDGRID_API_KEY'));
+        try {
+            $response = $sendgrid->send($email);
+            return $response;
+        } catch (Exception $e) {
+            return 'Caught exception: '. $e->getMessage() ."\n";
+        }
+      }
+    }
 
     private function sendEmailNotification($registrantId, $subject, $message, $eventId = 0) {
       $to_name = $this->getFullName($registrantId);
@@ -1751,12 +1797,14 @@ class DbHandler {
 
   public function addAdminUserBySuperAdmin($orgId, $data) {
     date_default_timezone_set($_ENV['TIMEZONE']);
+    $orgName      = $this->getOrganizationName($orgId);
     $now = date('Y-m-d H:i:s');
     $response = array();
-
+    $notify       = !empty($data['notify']) ? $data['notify'] : false;
     $name         = !empty($data['name']) ? ucwords($data['name']) : '';
     $title        = !empty($data['title']) ? ucwords(trim($data['title'])) : '';
     $email        = !empty($data['email']) ? strtolower(trim($data['email'])) : '';
+    $phone        = !empty($data['phone']) ? $data['phone'] : '';
     $mobilephone  = !empty($data['mobilephone']) ? $data['mobilephone'] : '';
     $level        = !empty($data['level']) ? $data['level'] : 'staff';
     $username     = $this->generateUniqueAdminUsername($name);
@@ -1768,6 +1816,7 @@ class DbHandler {
               title = :title,
               orgId = :orgId,
               email = :email,
+              phone = :phone,
               mobilephone = :mobilephone,
               level = :level,
               dateAdded = :now,
@@ -1778,12 +1827,22 @@ class DbHandler {
       $stmt->bindParam(':title', $title);
       $stmt->bindParam(':orgId', $orgId);
       $stmt->bindParam(':email', $email);
+      $stmt->bindParam(':phone', $phone);
       $stmt->bindParam(':mobilephone', $mobilephone);
       $stmt->bindParam(':level', $level);
       $stmt->bindParam(':now', $now);
       $stmt->bindParam(':password', $password_hash);
       $stmt->bindParam(':username', $username);
       if ($stmt->execute()) {
+        $adminId = $this->conn->lastInsertId();
+        // if notify, send email to new user
+        if ($notify) {
+          $subject = 'You have been added as an admin user for events at '.$orgName;
+          $message = '<p>You are now an admin user!</p><p>If you have not already downloaded the Spectacular Events Admin app, please do so using the links before:</p>
+          <p><a href="#">Apple App Store</a></p><p><a href="#">Google Play Store</a></p>';
+          $this->sendEmailToAdmin($adminId, $subject, $message);
+        }
+
         $response['success'] = true;
         $response['users']   = $this->getAdminUsersForOrg($orgId);
         $response['message'] = ' You have successfully added ' . $name;
