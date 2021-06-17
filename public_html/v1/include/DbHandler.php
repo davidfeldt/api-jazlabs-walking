@@ -2059,9 +2059,9 @@ class DbHandler {
 
   public function updateAdminUser($username, $data) {
     date_default_timezone_set($_ENV['TIMEZONE']);
-    $level = $this->getAdminLevel($username);
+    $adminLevel = $this->getAdminLevel($username);
     $orgId = $this->getAdminOrgId($username);
-    if ($level == 'superadmin') {
+    if ($adminLevel == 'superadmin') {
       if (!empty($data['name']) && !empty($data['name'])) {
         $name = ucwords(trim($data['name']));
         $stmt = $this->conn->prepare('UPDATE admins SET name = :name, dateModified=NOW()  WHERE adminId = :adminId');
@@ -2103,7 +2103,7 @@ class DbHandler {
       if (!empty($data['level'])) {
         $stmt = $this->conn->prepare('UPDATE admins SET level = :level, dateModified=NOW() WHERE adminId = :adminId');
         $stmt->bindParam(':adminId',$data['adminId']);
-        $stmt->bindParam(':company',$company);
+        $stmt->bindParam(':level',$data['level']);
         $stmt->execute();
       }
 
