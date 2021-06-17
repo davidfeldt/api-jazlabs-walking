@@ -1197,7 +1197,7 @@ $app->get('/admins/users', 'authenticateAdmin', function() use($app) {
        $response['success']    = true;
        $response['username']   = $app->username;
        $response['users']      = $users;
-       $response['message']    = 'Users found successfully!'
+       $response['message']    = 'Users found successfully!';
        echoResponse(200, $response);
    } else {
        $response['error']   = true;
