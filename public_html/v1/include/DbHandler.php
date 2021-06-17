@@ -1838,7 +1838,7 @@ class DbHandler {
         // if notify, send email to new user
         if ($notify) {
           $subject = 'You have been added as an admin user for events at '.$orgName;
-          $message = '<p>You are now an admin user! Your username is: <strong>' . $username . '</strong>. For security purposes, please request a new password when you first login to the events admin app.</p><p>If you have not already downloaded the Spectacular Events Admin app, please do so using the links from your mobile device:</p>
+          $message = '<p>You are now an admin user!</p><p>Your username is: <strong>' . $username . '</strong>.<br/>For security purposes, please request a new password when you first login to the events admin app.<br/></p><p>If you have not already downloaded the <strong><i>Spectacular Events Admin</i></strong> app, please do so using the links from your mobile device:</p>
           <p><a href="' . $_ENV['APPLE_APPSTORE_URL_ADMIN_APP']. '">Apple App Store</a></p><p><a href="' . $_ENV['GOOGLEPLAY_URL_ADMIN_APP']. '">Google Play Store</a></p>';
           $this->sendEmailToAdmin($adminId, $subject, $message);
         }
