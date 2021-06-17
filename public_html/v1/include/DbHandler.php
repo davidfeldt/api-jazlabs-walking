@@ -731,7 +731,7 @@ class DbHandler {
     //   }
     // }
 
-    private function sendEmailNotification($registrantId, $subject, $message, $event = array()) {
+    private function sendEmailNotification($registrantId, $subject, $message, $eventId = 0) {
       $to_name = $this->getFullName($registrantId);
       $to_email = $this->getEmail($registrantId);
 
@@ -742,7 +742,8 @@ class DbHandler {
         $email->addTo($to_email, $to_name);
         $email->setTemplateId($_ENV['NOTIFICATION_TEMPLATE_ID']);
         $email->addDynamicTemplateData("subject", $subject);
-        if ($event) {
+        if ($eventId) {
+          $event = $this->getEvent($registrantId, $eventId);
           $email->addDynamicTemplateData("event", $event);
         }
         if ($message) {
@@ -801,6 +802,8 @@ class DbHandler {
 
       if (is_array($data['events']) && !empty($data['events'])) {
 	       $eventId = array_shift($data['events']);
+         $eventName = $this->getEventName($eventId);
+         $subject = $eventName. ': '.$subject;
          $attendees = $this->getAttendeesForEvent($eventId);
 
          foreach ($attendees AS $row) {
@@ -1239,7 +1242,7 @@ class DbHandler {
 
 	public function forgotPassword($username) {
     date_default_timezone_set($_ENV['TIMEZONE']);
-      	$stmt = $this->conn->prepare('SELECT username, email, mobilephone FROM registrants WHERE username = :username');
+      	$stmt = $this->conn->prepare('SELECT username, registrantId, email, mobilephone FROM registrants WHERE username = :username');
 
         $stmt->bindParam(':username', $username);
         $stmt->execute();
@@ -1251,6 +1254,7 @@ class DbHandler {
           	// Generate new reset code
           	$email		         = $row['email'];
           	$mobilephone       = $row['mobilephone'];
+            $registrantId      = $row['registrantId'];
 
             $reset_code_short  = mt_rand(100000,999999);
             $reset_code = sha1(uniqid(rand(), true));
@@ -1269,14 +1273,14 @@ class DbHandler {
             $from_name 	= $this->getSetting('config_name');
             $from_url	= $_ENV['HTTP_CATALOG'];
 	     	    $subject 	= 'Password Reset';
-	     	    $message 	= '<p>Someone just requested that the password be reset for your account at '.$from_name.'.</p><p>If this was a mistake, just ignore this email and nothing will happen.</p><p>To reset your password, click the following link:</p>
-	   <p><a href="'.$from_url.'reset?c='.$reset_code.'">Reset My Password</a></p>';
+	     	    $message 	= '<p>Someone just requested that the password be reset for your account at '.$from_name.'.</p><p>If this was a mistake, just ignore this email and nothing will happen.</p><p>To reset your password, enter the following code on your phone when prompted:</p>
+	   <p>'.$reset_code.'</p>';
 
             if ($mobilephone) {
               $this->sendSMS($mobilephone, 'Reset code is: '.$reset_code_short);
               return 'mobile';
             } else if ($email) {
-              $this->sendEmail($username, $email, $subject, $message, 0);
+              $this->sendEmailNotification($username, $email, $subject, $message);
               return 'email';
             } else {
               return false;
@@ -1325,7 +1329,7 @@ class DbHandler {
              $this->sendSMS($mobilephone, 'Reset code is: '.$reset_code_short);
              return 'mobile';
            } else if ($email) {
-             $this->sendEmail($username, $email, $subject, $message, 0);
+             $this->sendEmail($username, $email, $subject, $message);
              return 'email';
            } else {
              return false;
