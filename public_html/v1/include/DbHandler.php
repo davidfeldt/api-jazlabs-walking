@@ -1739,11 +1739,10 @@ class DbHandler {
   }
 
   public function getAdminUsersForOrg($orgId) {
-    $sql = "SELECT adminId, level, name, title, username FROM admins WHERE orgId = :orgId AND level != 'superadmin'";
+    $sql = "SELECT adminId, level, name, title, username, email, phone, mobilephone FROM admins WHERE orgId = :orgId AND level != 'superadmin'";
     $users = array();
     $stmt = $this->conn->prepare($sql);
     $stmt->bindParam(':orgId', $orgId);
-    $stmt->bindParam(':registrantId', $registrantId);
     if ($stmt->execute()) {
       $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
