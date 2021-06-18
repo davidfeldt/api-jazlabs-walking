@@ -851,6 +851,8 @@ class DbHandler {
          $subject = $eventName. ': '.$subject;
          $attendees = $this->getAttendeesForEvent($eventId);
 
+         $this->addAdminActivity($adminId, 'Sent admin message to ' . count($attendees) .' attendees of event ' . $eventName . ' with subject: ' . $subject . ' and message: ' . $message);
+
          foreach ($attendees AS $row) {
           // insert into announcements mysql_list_table
           $sql = "INSERT INTO announcements SET adminId = :adminId, orgId = :orgId, registrantId = :registrantId, eventId = :eventId, subject = :subject, message = :message, dateAdded = :now";
@@ -918,6 +920,7 @@ class DbHandler {
         $stmt->bindParam(':registrantId', $registrantId);
         if ($stmt->execute()) {
           $this->sendNotification($registrantId, $subject,$message,$event);
+          $this->addActivity($registrantId, ' Registered for event: '.$event['name']);
           return $this->getEvent($registrantId, $eventId);
         } else {
           return false;
@@ -942,6 +945,7 @@ class DbHandler {
         $stmt->bindParam(':meetingId', $meetingId);
         $stmt->bindParam(':registrantId', $registrantId);
         if ($stmt->execute()) {
+          $this->addActivity($registrantId, ' Registered for meetingId: ' . $meetingId . ' for event: '.$eventId);
           return true;
         } else {
           return false;
@@ -1458,6 +1462,8 @@ class DbHandler {
       $stmt->bindParam(':reset_code_short', $verifyCode);
       $stmt->bindParam(':username', $username);
       if ($stmt->execute()) {
+        $user = $this->getProfileByUsername($username);
+        $this->addActivity($user['registrantId'], ' logged into app.');
         return true;
       } else {
         return false;
@@ -1504,6 +1510,8 @@ class DbHandler {
       $stmt->bindParam(':username', $username);
       $stmt->bindParam(':password', $password_hash);
       if ($stmt->execute()) {
+        $adminId = $this->getAdminId($username);
+        $this->addAdminActivity($adminId, 'Reset password successfully.');
         return true;
       } else {
         return false;
@@ -1623,10 +1631,11 @@ class DbHandler {
     }
   }
 
-  public function checkinForEventAdmin($registrantId, $eventId) {
+  public function checkinForEventAdmin($adminId, $registrantId, $eventId) {
     date_default_timezone_set($_ENV['TIMEZONE']);
     $now = date('Y-m-d H:i:s');
     $event = $this->getEvent($registrantId, $eventId);
+    $fullName = $this->getFullName($registrantId);
     $message = 'You are now checked in to the ' . $event['name'] . ' event';
     if ($this->hasCheckedInForEvent($registrantId, $eventId)) {
       $this->sendPushNotificationsToIndividual($registrantId, $message);
@@ -1638,13 +1647,14 @@ class DbHandler {
     $stmt->bindParam(':eventId', $eventId);
     if ($stmt->execute()) {
       $this->sendPushNotificationsToIndividual($registrantId, $message);
+      $this->addAdminActivity($adminId, 'Checked in registrant: ' . $fullName . ' (' . $registrantId . ') to event: ' . $event['name']);
       return true;
     } else {
       return false;
     }
   }
 
-  private function hasCheckedInForMeeting($registrantId, $meetingId) {
+  private function hasCheckedInForMeeting($adminId, $registrantId, $meetingId) {
     $sql = "SELECT COUNT(*) AS total FROM attendees WHERE registrantId = :registrantId AND meetingId = :meetingId AND checkedIn = '1'";
     $stmt = $this->conn->prepare($sql);
     $stmt->bindParam(':registrantId', $registrantId);
@@ -1678,6 +1688,7 @@ class DbHandler {
     date_default_timezone_set($_ENV['TIMEZONE']);
     $now = date('Y-m-d H:i:s');
     $meetingName = $this->getMeetingName($meetingId);
+    $fullName = $this->getFullName($registrantId);
     $message = 'You are not checked in for the ' . $meetingName . ' meeting.';
     if ($this->hasCheckedInForMeeting($registrantId, $meetingId)) {
       $this->sendPushNotificationsToIndividual($registrantId, $message);
@@ -1690,6 +1701,7 @@ class DbHandler {
       $stmt->bindParam(':meetingId', $meetingId);
       if ($stmt->execute()) {
         $this->sendPushNotificationsToIndividual($registrantId, $message);
+        $this->addAdminActivity($adminId, 'Checked in registrant: ' . $fullName . ' (' . $registrantId . ') to meeting: ' . $meetingName);
         return true;
       } else {
         return false;
@@ -1710,6 +1722,7 @@ class DbHandler {
       $stmt->bindParam(':registrantId', $registrantId);
       $stmt->bindParam(':meetingId', $meetingId);
       if ($stmt->execute()) {
+        $this->addAdminActivity($adminId, 'Registered and checked in registrant: ' . $fullName . ' (' . $registrantId . ') to meeting: ' . $meetingName);
         $this->sendPushNotificationsToIndividual($registrantId, $message);
         return true;
       } else {
@@ -1732,27 +1745,64 @@ class DbHandler {
   }
 
   public function checkAdminLogin($username, $password) {
+    $adminId = $this->getAdminId($username);
     $stmt = $this->conn->prepare("SELECT username, password FROM admins WHERE username = :username");
-
     $stmt->bindParam(':username', $username);
     $stmt->execute();
     $stmt->setFetchMode(PDO::FETCH_ASSOC);
     $row = $stmt->fetch();
 
     if (isset($row) && $row) {
-        // Found registrant with the username
+        // Found admin with the username
         // Now verify the password
 
         if (password_verify($password,$row['password'])) {
             // User password is correct
+            $adminId = $this->getAdminId($username);
+            $this->addAdminActivity($adminId, 'Logged into app');
             return 'valid';
         } else {
-            // registrant password is incorrect
+            //  password is incorrect
+            $this->addAdminActivity($adminId, 'Logged into app');
             return 'not_password';
         }
     } else {
-        // registrant not existed with the email
+        // admin not existed with the email
         return 'not_username';
+    }
+  }
+
+  private function addActivity($registrantId, $comment) {
+    date_default_timezone_set($_ENV['TIMEZONE']);
+    $now = date('Y-m-d H:i:s');
+    $ipAddress = $_SERVER['REMOTE_ADDR'];
+    $sql = "INSERT INTO activity_log SET registrantId = :registrantId, comment = :comment, dateAdded = :dateAdded, ipAddress = :ipAddress";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':registrantId', $registrantId);
+    $stmt->bindParam(':comment', $comment);
+    $stmt->bindParam(':dateAdded', $now);
+    $stmt->bindParam(':ipAddress', $ipAddress);
+    if ($stmt->execute()) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  private function addAdminActivity($adminId, $comment) {
+    date_default_timezone_set($_ENV['TIMEZONE']);
+    $now = date('Y-m-d H:i:s');
+    $ipAddress = $_SERVER['REMOTE_ADDR'];
+    $sql = "INSERT INTO activity_log_admin SET adminId = :adminId, comment = :comment, dateAdded = :dateAdded, ipAddress = :ipAddress";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':adminId', $adminId);
+    $stmt->bindParam(':comment', $comment);
+    $stmt->bindParam(':dateAdded', $now);
+    $stmt->bindParam(':ipAddress', $ipAddress);
+    if ($stmt->execute()) {
+      return true;
+    } else {
+      return false;
     }
   }
 
@@ -1795,7 +1845,7 @@ class DbHandler {
     return $users;
   }
 
-  public function addAdminUserBySuperAdmin($orgId, $data) {
+  public function addAdminUserBySuperAdmin($superId, $orgId, $data) {
     date_default_timezone_set($_ENV['TIMEZONE']);
     $orgName      = $this->getOrganizationName($orgId);
     $now = date('Y-m-d H:i:s');
@@ -1835,6 +1885,7 @@ class DbHandler {
       $stmt->bindParam(':username', $username);
       if ($stmt->execute()) {
         $adminId = $this->conn->lastInsertId();
+        $this->addAdminActivity($superId, 'Added admin user ' . $name . ' with username of ' . $username . ' as '.$level);
         // if notify, send email to new user
         if ($notify) {
           $subject = 'You have been added as an admin user for events at '.$orgName;
@@ -2093,6 +2144,18 @@ class DbHandler {
     }
   }
 
+  private function getAdminId($username) {
+    $stmt = $this->conn->prepare('SELECT adminId FROM admins WHERE username = :username');
+    $stmt->bindParam(':username', $username);
+    if ($stmt->execute()) {
+      $stmt->setFetchMode(PDO::FETCH_ASSOC);
+      $row = $stmt->fetch();
+      return $row['adminId'];
+    } else {
+        return NULL;
+    }
+  }
+
   private function getAdminOrgId($username) {
     $stmt = $this->conn->prepare('SELECT orgId FROM admins WHERE username = :username');
     $stmt->bindParam(':username', $username);
@@ -2108,10 +2171,13 @@ class DbHandler {
   public function deleteAdminUser($username, $adminId) {
     $level = $this->getAdminLevel($username);
     $orgId = $this->getAdminOrgId($username);
+    $superId = $this->getAdminId($username);
     if ($level == 'superadmin') {
       $stmt = $this->conn->prepare("DELETE FROM admins WHERE adminId = :adminId");
       $stmt->bindParam(':adminId', $adminId);
       $stmt->execute();
+      // add activity
+      $this->addAdminActivity($superId, 'Deleted admin user with adminId of ' . $adminId);
     }
     return $this->getAdminUsersForOrg($orgId);
   }
@@ -2120,6 +2186,7 @@ class DbHandler {
     date_default_timezone_set($_ENV['TIMEZONE']);
     $adminLevel = $this->getAdminLevel($username);
     $orgId = $this->getAdminOrgId($username);
+    $adminId = $this->getAdminId($username);
     if ($adminLevel == 'superadmin') {
       if (!empty($data['name']) && !empty($data['name'])) {
         $name = ucwords(trim($data['name']));

@@ -575,7 +575,7 @@ $app->put('/admins/checkins', 'authenticateAdmin', function() use($app) {
    if ((!empty($eventId) || !empty($meetingId)) && !empty($registrantId)) {
 
      if (!empty($meetingId)) {
-       $res = $db->checkinForMeetingAdmin($registrantId, $meetingId);
+       $res = $db->checkinForMeetingAdmin($app->adminId, $registrantId, $meetingId);
        $message = 'meeting!';
        $meetingName = $db->getMeetingName($meetingId);
        $fullName = $db->getFullName($registrantId);
@@ -583,7 +583,7 @@ $app->put('/admins/checkins', 'authenticateAdmin', function() use($app) {
      }
 
      if (!empty($eventId)) {
-       $res = $db->checkinForEventAdmin($registrantId, $eventId);
+       $res = $db->checkinForEventAdmin($app->adminId, $registrantId, $eventId);
        $message = 'event!';
        $eventName = $db->getEventName($eventId);
        $fullName = $db->getFullName($registrantId);
@@ -1214,7 +1214,7 @@ $app->post('/admins/users', 'authenticateAdmin', function() use($app) {
   $response = array();
 
   $db = new DbHandler();
-  $results = $db->addAdminUserBySuperAdmin($app->orgId, $data);
+  $results = $db->addAdminUserBySuperAdmin($app->adminId, $app->orgId, $data);
 
   if (empty($results)) {
       $response['error'] = true;
