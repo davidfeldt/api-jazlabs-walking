@@ -851,7 +851,7 @@ class DbHandler {
          $subject = $eventName. ': '.$subject;
          $attendees = $this->getAttendeesForEvent($eventId);
 
-         $this->addAdminActivity($adminId, 'Sent admin message to ' . count($attendees) .' attendees of event ' . $eventName . ' with subject: ' . $subject . ' and message: ' . $message);
+         $this->addAdminActivity($adminId, 'message', 'Sent admin message to ' . count($attendees) .' attendees of event ' . $eventName . ' with subject: ' . $subject . ' and message: ' . $message);
 
          foreach ($attendees AS $row) {
           // insert into announcements mysql_list_table
@@ -920,7 +920,7 @@ class DbHandler {
         $stmt->bindParam(':registrantId', $registrantId);
         if ($stmt->execute()) {
           $this->sendNotification($registrantId, $subject,$message,$event);
-          $this->addActivity($registrantId, ' Registered for event: '.$event['name']);
+          $this->addActivity($registrantId, 'register', ' Registered for event: '.$event['name']);
           return $this->getEvent($registrantId, $eventId);
         } else {
           return false;
@@ -945,7 +945,7 @@ class DbHandler {
         $stmt->bindParam(':meetingId', $meetingId);
         $stmt->bindParam(':registrantId', $registrantId);
         if ($stmt->execute()) {
-          $this->addActivity($registrantId, ' Registered for meetingId: ' . $meetingId . ' for event: '.$eventId);
+          $this->addActivity($registrantId, 'register', ' Registered for meetingId: ' . $meetingId . ' for event: '.$eventId);
           return true;
         } else {
           return false;
@@ -1463,7 +1463,7 @@ class DbHandler {
       $stmt->bindParam(':username', $username);
       if ($stmt->execute()) {
         $user = $this->getProfileByUsername($username);
-        $this->addActivity($user['registrantId'], ' logged into app.');
+        $this->addActivity($user['registrantId'], 'login', ' logged into app.');
         return true;
       } else {
         return false;
@@ -1511,7 +1511,7 @@ class DbHandler {
       $stmt->bindParam(':password', $password_hash);
       if ($stmt->execute()) {
         $adminId = $this->getAdminId($username);
-        $this->addAdminActivity($adminId, 'Reset password successfully.');
+        $this->addAdminActivity($adminId, 'login', 'Reset password successfully.');
         return true;
       } else {
         return false;
@@ -1647,7 +1647,7 @@ class DbHandler {
     $stmt->bindParam(':eventId', $eventId);
     if ($stmt->execute()) {
       $this->sendPushNotificationsToIndividual($registrantId, $message);
-      $this->addAdminActivity($adminId, 'Checked in registrant: ' . $fullName . ' (' . $registrantId . ') to event: ' . $event['name']);
+      $this->addAdminActivity($adminId, 'checkin', 'Checked in registrant: ' . $fullName . ' (' . $registrantId . ') to event: ' . $event['name']);
       return true;
     } else {
       return false;
@@ -1701,7 +1701,7 @@ class DbHandler {
       $stmt->bindParam(':meetingId', $meetingId);
       if ($stmt->execute()) {
         $this->sendPushNotificationsToIndividual($registrantId, $message);
-        $this->addAdminActivity($adminId, 'Checked in registrant: ' . $fullName . ' (' . $registrantId . ') to meeting: ' . $meetingName);
+        $this->addAdminActivity($adminId, 'checkin', 'Checked in registrant: ' . $fullName . ' (' . $registrantId . ') to meeting: ' . $meetingName);
         return true;
       } else {
         return false;
@@ -1722,7 +1722,7 @@ class DbHandler {
       $stmt->bindParam(':registrantId', $registrantId);
       $stmt->bindParam(':meetingId', $meetingId);
       if ($stmt->execute()) {
-        $this->addAdminActivity($adminId, 'Registered and checked in registrant: ' . $fullName . ' (' . $registrantId . ') to meeting: ' . $meetingName);
+        $this->addAdminActivity($adminId, 'checkin', 'Registered and checked in registrant: ' . $fullName . ' (' . $registrantId . ') to meeting: ' . $meetingName);
         $this->sendPushNotificationsToIndividual($registrantId, $message);
         return true;
       } else {
@@ -1759,11 +1759,11 @@ class DbHandler {
         if (password_verify($password,$row['password'])) {
             // User password is correct
             $adminId = $this->getAdminId($username);
-            $this->addAdminActivity($adminId, 'Logged into app');
+            $this->addAdminActivity($adminId, 'login', 'Logged into app');
             return 'valid';
         } else {
             //  password is incorrect
-            $this->addAdminActivity($adminId, 'Logged into app');
+            $this->addAdminActivity($adminId, 'login', 'Entered incorrect password when logging into app');
             return 'not_password';
         }
     } else {
@@ -1772,13 +1772,14 @@ class DbHandler {
     }
   }
 
-  private function addActivity($registrantId, $comment) {
+  private function addActivity($registrantId, $code = '', $comment) {
     date_default_timezone_set($_ENV['TIMEZONE']);
     $now = date('Y-m-d H:i:s');
     $ipAddress = $_SERVER['REMOTE_ADDR'];
-    $sql = "INSERT INTO activity_log SET registrantId = :registrantId, comment = :comment, dateAdded = :dateAdded, ipAddress = :ipAddress";
+    $sql = "INSERT INTO activity_log SET registrantId = :registrantId, code = :code, comment = :comment, dateAdded = :dateAdded, ipAddress = :ipAddress";
     $stmt = $this->conn->prepare($sql);
     $stmt->bindParam(':registrantId', $registrantId);
+    $stmt->bindParam(':code', $code);
     $stmt->bindParam(':comment', $comment);
     $stmt->bindParam(':dateAdded', $now);
     $stmt->bindParam(':ipAddress', $ipAddress);
@@ -1789,13 +1790,14 @@ class DbHandler {
     }
   }
 
-  private function addAdminActivity($adminId, $comment) {
+  private function addAdminActivity($adminId, $code = '', $comment) {
     date_default_timezone_set($_ENV['TIMEZONE']);
     $now = date('Y-m-d H:i:s');
     $ipAddress = $_SERVER['REMOTE_ADDR'];
-    $sql = "INSERT INTO activity_log_admin SET adminId = :adminId, comment = :comment, dateAdded = :dateAdded, ipAddress = :ipAddress";
+    $sql = "INSERT INTO activity_log_admin SET adminId = :adminId, code = :code, comment = :comment, dateAdded = :dateAdded, ipAddress = :ipAddress";
     $stmt = $this->conn->prepare($sql);
     $stmt->bindParam(':adminId', $adminId);
+    $stmt->bindParam(':code', $code);
     $stmt->bindParam(':comment', $comment);
     $stmt->bindParam(':dateAdded', $now);
     $stmt->bindParam(':ipAddress', $ipAddress);
@@ -1885,7 +1887,7 @@ class DbHandler {
       $stmt->bindParam(':username', $username);
       if ($stmt->execute()) {
         $adminId = $this->conn->lastInsertId();
-        $this->addAdminActivity($superId, 'Added admin user ' . $name . ' with username of ' . $username . ' as '.$level);
+        $this->addAdminActivity($superId, 'user', 'Added admin user ' . $name . ' with username of ' . $username . ' as '.$level);
         // if notify, send email to new user
         if ($notify) {
           $subject = 'You have been added as an admin user for events at '.$orgName;
@@ -2177,7 +2179,7 @@ class DbHandler {
       $stmt->bindParam(':adminId', $adminId);
       $stmt->execute();
       // add activity
-      $this->addAdminActivity($superId, 'Deleted admin user with adminId of ' . $adminId);
+      $this->addAdminActivity($superId, 'user', 'Deleted admin user with adminId of ' . $adminId);
     }
     return $this->getAdminUsersForOrg($orgId);
   }
