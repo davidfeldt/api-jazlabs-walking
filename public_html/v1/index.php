@@ -1,4 +1,4 @@
-<?php
+walking.jazlabs.xyz<?php
 
 use \Firebase\JWT\JWT;
 use \Slim\Slim;
@@ -75,8 +75,8 @@ function generateJWT($username) {
 	$result = $db->getProfileByUsername($username);
 
 	$payload= array(
-	    "iss" 			     => "https://spectacularapps.us",
-	    "aud" 			     => "http://spectacularapps.us",
+	    "iss" 			     => "https://walking.jazlabs.xyz",
+	    "aud" 			     => "http://walking.jazlabs.xyz",
 	    "iat" 			     => time(),
 	    "nbf" 			     => time(),
 			"username" 		   => $username,
@@ -100,8 +100,8 @@ function generateAdminJWT($username) {
 	$result = $db->getAdminProfileByUsername($username);
 
 	$payload= array(
-	    "iss" 			     => "https://spectacularapps.us",
-	    "aud" 			     => "http://spectacularapps.us",
+	    "iss" 			     => "https://walking.jazlabs.xyz",
+	    "aud" 			     => "http://walking.jazlabs.xyz",
 	    "iat" 			     => time(),
 	    "nbf" 			     => time(),
 			"username" 		   => $username,
@@ -207,7 +207,7 @@ function formatPhoneNumber($sPhone){
 $app->get('/', function() {
 
 	$response['success'] = true;
-	$response['message'] = 'Spectacular Apps Platform v1';
+	$response['message'] = 'Walking App Platform v1';
 
 	echoResponse(200, $response);
 
