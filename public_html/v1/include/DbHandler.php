@@ -314,8 +314,8 @@ class DbHandler {
         $response  = array (
           'walkId'        => $row['walkId'],
           'registrantId'  => $registrantId,
-          'startDate'     => date('m/d/Y',strtotime($row['startDate'])),
-          'endDate'       => date('m/d/Y',strtotime($row['endDate'])),
+          'startDate'     => $row['startDate'] ? date('m/d/Y h:i a',strtotime($row['startDate'])) : 'N/A',
+          'endDate'       => $row['endDate'] ? date('m/d/Y h:i a',strtotime($row['endDate'])) : 'N/A',
           'locations'     => $this->getLocationsForWalk($row['walkId'], $registrantId),
         );
       }
@@ -353,8 +353,8 @@ class DbHandler {
           $response [] = array (
               'walkId'        => $row['walkId'],
               'registrantId'  => $registrantId,
-              'startDate'     => date('m/d/Y',strtotime($row['startDate'])),
-              'endDate'       => date('m/d/Y',strtotime($row['endDate'])),
+              'startDate'     => $row['startDate'] ? date('m/d/Y h:i a',strtotime($row['startDate'])) : 'N/A',
+              'endDate'       => $row['endDate'] ? date('m/d/Y h:i a',strtotime($row['endDate'])) : 'N/A',
               'locations'     => $this->getLocationsForWalk($row['walkId'], $registrantId),
             );
         }
