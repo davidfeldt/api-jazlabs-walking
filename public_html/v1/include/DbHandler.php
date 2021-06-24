@@ -15,17 +15,13 @@ class DbHandler {
   public function dateTimeDiff($startDate, $endDate) {
     date_default_timezone_set($_ENV['TIMEZONE']);
 
+    $response = '';
+
     $dateEnd = date_create($endDate);
     $dateStart= date_create($startDate);
 
     $diff = date_diff($dateStart, $dateEnd);
 
-    //accessing days
-    $days = $diff->d;
-    //accessing months
-    $months = $diff->m;
-    //accessing years
-    $years = $diff->y;
     //accessing hours
     $hours=$diff->h;
     //accessing minutes
@@ -35,19 +31,29 @@ class DbHandler {
 
     if ($hours) {
       if ($hours > 1) {
-        return $diff->format('%h hours %i mins');
+        $response .= $diff->format('%h hours ');
       } else {
-        return $diff->format('%h hour %i mins');
+        $response .= $diff->format('%h hour ');
       }
-    } elseif ($minutes) {
-      if ($minutes > 1) {
-        return $diff->format('%i mins');
-      } else {
-        return $diff->format('%i min');
-      }
-    } else {
-      return $diff->format('%s secs ago');
     }
+
+    if ($minutes) {
+      if ($minutes > 1) {
+        $response .= $diff->format('%i mins ');
+      } else {
+        $response .= $diff->format('%i min ');
+      }
+    }
+
+    if ($seconds) {
+      if ($seconds > 1) {
+        $response .= $diff->format('%s secs. ');
+      } else {
+        $response .= $diff->format('%s sec. ');
+      }
+    }
+
+    return $response;
 
   }
 
