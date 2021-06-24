@@ -63,11 +63,20 @@ class DbHandler {
     $altitude   = !empty($data['altitude']) ? $data['altitude'] : 0.0;
     $accuracy   = !empty($data['accuracy']) ? $data['accuracy'] : 0.0;
     $speed      = !empty($data['speed']) ? $data['speed'] : 0.0;
-    $time       = !empty($data['time']) ? $data['time'] : 0;
+    $dateAdded  = !empty($data['time']) ? $data['time'] : 0.0;
     $course     = !empty($data['course']) ? $data['course'] : 0;
 
     if ($latitude && $longitude) {
-      $sql = "INSERT INTO locations SET walkId = :walkId, registrantId = :registrantId, latitude = :latitude, longitude = :longitude, altitude = :altitude, accuracy = :accuracy, speed = :speed, `time` = :time, course = :course";
+      $sql = "INSERT INTO locations SET 
+          walkId = :walkId,
+          registrantId = :registrantId,
+          latitude = :latitude,
+          longitude = :longitude,
+          altitude = :altitude,
+          accuracy = :accuracy,
+          speed = :speed,
+          dateAdded = :dateAdded,
+          course = :course";
       $stmt = $this->conn->prepare($sql);
       $stmt->bindParam(':walkId', $walkId);
       $stmt->bindParam(':registrantId', $registrantId);
@@ -76,7 +85,7 @@ class DbHandler {
       $stmt->bindParam(':altitude', $altitude);
       $stmt->bindParam(':accuracy', $accuracy);
       $stmt->bindParam(':speed', $speed);
-      $stmt->bindParam(':time', $time);
+      $stmt->bindParam(':dateAdded', $dateAdded);
       $stmt->bindParam(':course', $course);
 
       if ($stmt->execute()) {
@@ -283,7 +292,7 @@ class DbHandler {
             'altitude'      => $row['altitude'],
             'accuracy'      => $row['accuracy'],
             'speed'         => $row['speed'],
-            'time'          => date('m/d/Y h:i a', $row['time']),
+            'dateAdded'          => date('m/d/Y h:i a', $row['dateAdded']),
             'course'        => $row['course'],
           );
 
