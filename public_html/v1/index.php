@@ -1111,7 +1111,7 @@ $app->post('/walks', 'authenticate', function() use($app) {
 $app->put('/walks/:walkId', 'authenticate', function($walkId) use($app) {
    $response = array();
    date_default_timezone_set($_ENV['TIMEZONE']);
-     
+
    $db = new DbHandler();
 
    $res = $db->endWalk($app->registrantId, $walkId);
@@ -1276,14 +1276,12 @@ $app->delete('/admins/users/:adminId', 'authenticateAdmin', function($adminId) u
  		$response = array();
   	$db = new DbHandler();
     $profile = $db->getProfileByUsername($app->username);
-    $permissions = $db->getPermissions($app->registrantId);
 
     if ($profile != NULL) {
         $response['error']        = false;
         $response['success']      = true;
         $response['username']     = $app->username;
         $response['profile']      = $profile;
-        $response['permissions']  = $permissions;
         echoResponse(200, $response);
     } else {
         $response['error'] = true;
