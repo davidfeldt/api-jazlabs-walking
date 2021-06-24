@@ -57,42 +57,39 @@ class DbHandler {
 
   }
 
-  public function registerLocation($registrantId, $walkId, $data) {
+  public function registerLocation($registrantId, $data) {
     $latitude   = !empty($data['latitude']) ? $data['latitude'] : 0.0;
     $longitude  = !empty($data['longitude']) ? $data['longitude'] : 0.0;
     $altitude   = !empty($data['altitude']) ? $data['altitude'] : 0.0;
     $accuracy   = !empty($data['accuracy']) ? $data['accuracy'] : 0.0;
     $speed      = !empty($data['speed']) ? $data['speed'] : 0.0;
-    $dateAdded  = !empty($data['time']) ? $data['time'] : 0.0;
+    $dateAdded  = !empty($data['dateAdded']) ? $data['dateAdded'] : 0.0;
     $course     = !empty($data['course']) ? $data['course'] : 0;
+    $walkId     = !empty($data['walkId']) ? $data['walkId'] : 0;
 
-    if ($latitude && $longitude) {
-      $sql = "INSERT INTO locations SET 
-          walkId = :walkId,
-          registrantId = :registrantId,
-          latitude = :latitude,
-          longitude = :longitude,
-          altitude = :altitude,
-          accuracy = :accuracy,
-          speed = :speed,
-          dateAdded = :dateAdded,
-          course = :course";
-      $stmt = $this->conn->prepare($sql);
-      $stmt->bindParam(':walkId', $walkId);
-      $stmt->bindParam(':registrantId', $registrantId);
-      $stmt->bindParam(':latitude', $latitude);
-      $stmt->bindParam(':longitude', $longitude);
-      $stmt->bindParam(':altitude', $altitude);
-      $stmt->bindParam(':accuracy', $accuracy);
-      $stmt->bindParam(':speed', $speed);
-      $stmt->bindParam(':dateAdded', $dateAdded);
-      $stmt->bindParam(':course', $course);
+    $sql = "INSERT INTO locations SET
+        walkId = :walkId,
+        registrantId = :registrantId,
+        latitude = :latitude,
+        longitude = :longitude,
+        altitude = :altitude,
+        accuracy = :accuracy,
+        speed = :speed,
+        dateAdded = :dateAdded,
+        course = :course";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':walkId', $walkId);
+    $stmt->bindParam(':registrantId', $registrantId);
+    $stmt->bindParam(':latitude', $latitude);
+    $stmt->bindParam(':longitude', $longitude);
+    $stmt->bindParam(':altitude', $altitude);
+    $stmt->bindParam(':accuracy', $accuracy);
+    $stmt->bindParam(':speed', $speed);
+    $stmt->bindParam(':dateAdded', $dateAdded);
+    $stmt->bindParam(':course', $course);
 
-      if ($stmt->execute()) {
-        return true;
-      } else {
-        return false;
-      }
+    if ($stmt->execute()) {
+      return true;
     } else {
       return false;
     }

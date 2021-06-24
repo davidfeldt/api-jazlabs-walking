@@ -1128,14 +1128,14 @@ $app->put('/walks/:walkId', 'authenticate', function($walkId) use($app) {
 });
 
 // post location data
-$app->post('/locations/:walkId', 'authenticate', function($walkId) use($app) {
+$app->post('/locations', 'authenticate', function() use($app) {
 
      $json = $app->request->getBody();
      $data = json_decode($json, true);
      $registrantId = $app->registrantId;
 
      $db = new DbHandler();
-     $result = $db->registerLocation($registrantId, $walkId, $data);
+     $result = $db->registerLocation($registrantId, $data);
 
      if ($result) {
          $response['error'] 		= false;
@@ -1145,7 +1145,7 @@ $app->post('/locations/:walkId', 'authenticate', function($walkId) use($app) {
          echoResponse(201, $response);
      } else {
          $response['error'] 		= true;
-         $response['result']    = array();
+         $response['success']   = false;
          $response['message'] 	= "An error occurred while registering location for this walk. Try again later!";
          echoResponse(200, $response);
      }
