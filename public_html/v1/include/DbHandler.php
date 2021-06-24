@@ -12,14 +12,13 @@ class DbHandler {
       $this->conn = $db->connect();
   }
 
-  public function dateTimeDiff($dt) {
+  public function dateTimeDiff($startDate, $endDate) {
     date_default_timezone_set($_ENV['TIMEZONE']);
-    $now = date('Y-m-d H:i:s');
 
-    $dateNow = date_create($now);
-    $dateThen= date_create($dt);
+    $dateEnd = date_create($endDate);
+    $dateStart= date_create($startDate);
 
-    $diff = date_diff($dateThen, $dateNow);
+    $diff = date_diff($dateStart, $dateEnd);
 
     //accessing days
     $days = $diff->d;
@@ -34,27 +33,17 @@ class DbHandler {
     //accessing seconds
     $seconds=$diff->s;
 
-    if ($months) {
-      return date('m/d/Y',strtotime($dt));
-    } elseif ($days) {
-      if ($days > 7) {
-        return date('m/d/Y',strtotime($dt));
-      } elseif ($days > 1) {
-        return $diff->format('%d days %h hours ago');
-      } else {
-        return $diff->format('%d day %h hours ago');
-      }
-    } elseif ($hours) {
+    if ($hours) {
       if ($hours > 1) {
-        return $diff->format('%h hours %i mins ago');
+        return $diff->format('%h hours %i mins');
       } else {
-        return $diff->format('%h hour %i mins ago');
+        return $diff->format('%h hour %i mins');
       }
     } elseif ($minutes) {
       if ($minutes > 1) {
-        return $diff->format('%i mins ago');
+        return $diff->format('%i mins');
       } else {
-        return $diff->format('%i min ago');
+        return $diff->format('%i min');
       }
     } else {
       return $diff->format('%s secs ago');
@@ -316,6 +305,7 @@ class DbHandler {
           'registrantId'  => $registrantId,
           'startDate'     => $row['startDate'] ? date('m/d/Y h:i a',strtotime($row['startDate'])) : 'N/A',
           'endDate'       => $row['endDate'] ? date('m/d/Y h:i a',strtotime($row['endDate'])) : 'N/A',
+          'duration'      => $row['startDate'] && $row['endDate'] ? $this->dateTimeDiff($row['startDate'], $row['endDate']) : '',
           'locations'     => $this->getLocationsForWalk($row['walkId'], $registrantId),
         );
       }
@@ -355,6 +345,7 @@ class DbHandler {
               'registrantId'  => $registrantId,
               'startDate'     => $row['startDate'] ? date('m/d/Y h:i a',strtotime($row['startDate'])) : 'N/A',
               'endDate'       => $row['endDate'] ? date('m/d/Y h:i a',strtotime($row['endDate'])) : 'N/A',
+              'duration'      => $row['startDate'] && $row['endDate'] ? $this->dateTimeDiff($row['startDate'], $row['endDate']) : '',
               'locations'     => $this->getLocationsForWalk($row['walkId'], $registrantId),
             );
         }
