@@ -474,7 +474,7 @@ class DbHandler {
       $start = ($page - 1) * $limit;
 
       $stmt = $this->conn->prepare("SELECT * FROM walks WHERE registrantId = :registrantId ORDER BY startDate DESC LIMIT $start, $limit");
-      $stmt->bindParam(':endDate', $now);
+      $stmt->bindParam(':registrantId', $registrantId);
 
       if ($stmt->execute()) {
         $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
