@@ -120,8 +120,8 @@ class DbHandler {
     $stmt = $this->conn->prepare($sql);
     $stmt->bindParam(':registrantId', $registrantId);
     $stmt->bindParam(':walkId', $walkId);
+    $stmt->bindParam(':endDate', $now);
     $stmt->bindParam(':dateModified', $now);
-
     if ($stmt->execute()) {
       $ended = true;
     }
