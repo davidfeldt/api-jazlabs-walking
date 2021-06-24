@@ -62,6 +62,74 @@ class DbHandler {
 
   }
 
+  public function registerLocation($registrantId, $walkId, $data) {
+    $latitude   = !empty($data['latitude']) ? $data['latitude'] : 0.0;
+    $longitude  = !empty($data['longitude']) ? $data['longitude'] : 0.0;
+    $altitude   = !empty($data['altitude']) ? $data['altitude'] : 0.0;
+    $accuracy   = !empty($data['accuracy']) ? $data['accuracy'] : 0.0;
+    $speed      = !empty($data['speed']) ? $data['speed'] : 0.0;
+    $time       = !empty($data['time']) ? $data['time'] : 0;
+    $course     = !empty($data['course']) ? $data['course'] : 0;
+
+    if ($latitude && $longitude) {
+      $sql = "INSERT INTO locations SET walkId = :walkId, registrantId = :registrantId, latitude = :latitude, longitude = :longitude, altitude = :altitude, accuracy = :accuracy, speed = :speed, `time` = :time, course = :course";
+      $stmt = $this->conn->prepare($sql);
+      $stmt->bindParam(':walkId', $walkId);
+      $stmt->bindParam(':registrantId', $registrantId);
+      $stmt->bindParam(':latitude', $latitude);
+      $stmt->bindParam(':longitude', $longitude);
+      $stmt->bindParam(':altitude', $altitude);
+      $stmt->bindParam(':accuracy', $accuracy);
+      $stmt->bindParam(':speed', $speed);
+      $stmt->bindParam(':time', $time);
+      $stmt->bindParam(':course', $course);
+
+      if ($stmt->execute()) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  }
+
+  public function startWalk($registrantId) {
+    date_default_timezone_set($_ENV['TIMEZONE']);
+    $now = date('Y-m-d H:i:s');
+    $walkId = 0;
+    $sql = "INSERT INTO walks SET registrantId = :registrantId, startDate = :startDate, dateAdded = :dateAdded, dateModified = :dateModified";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':registrantId', $registrantId);
+    $stmt->bindParam(':startDate', $now);
+    $stmt->bindParam(':dateAdded', $now);
+    $stmt->bindParam(':dateModified', $now);
+
+    if ($stmt->execute()) {
+      $walkId = $this->conn->lastInsertId();
+    }
+
+    return $walkId;
+  }
+
+  public function endWalk($registrantId, $walkId) {
+    date_default_timezone_set($_ENV['TIMEZONE']);
+    $now = date('Y-m-d H:i:s');
+    $ended = false;
+    $sql = "UPDATE walks SET endDate = :endDate, dateModified = :dateModified WHERE registrantId = :registrantId AND walkId = :walkId";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':registrantId', $registrantId);
+    $stmt->bindParam(':walkId', $walkId);
+    $stmt->bindParam(':dateModified', $now);
+
+    if ($stmt->execute()) {
+      $ended = true;
+    }
+
+    return $ended;
+  }
+
+
   public function getOrganizationFromCode($orgCode) {
     $stmt = $this->conn->prepare('SELECT * FROM organizations WHERE orgCode = :orgCode');
     $stmt->bindParam(':orgCode', $orgCode);

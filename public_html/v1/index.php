@@ -1,4 +1,7 @@
-walking.jazlabs.xyz<?php
+<?php
+
+require '../../vendor/autoload.php';
+require_once 'include/DbHandler.php';
 
 use \Firebase\JWT\JWT;
 use \Slim\Slim;
@@ -6,12 +9,12 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
 use \SendGrid\Mail\Mail;
 use Slim\Views\PhpRenderer;
-require '../../vendor/autoload.php';
-require_once 'include/DbHandler.php';
+use Pusher\Pusher;
 
 $dotenv = new Dotenv\Dotenv('../../');
 $dotenv->load();
 $dotenv->required('DB_USERNAME', 'DB_PASSWORD', 'DB_HOST', 'DB_NAME')->notEmpty();
+$dotenv->required('PUSHER_APP_ID', 'PUSHER_APP_KEY', 'PUSHER_APP_SECRET','PUSHER_APP_CLUSTER')->notEmpty();
 $dotenv->required('JWT_SECRET', 'JWT_LEEWAY')->notEmpty();
 
 $app = new \Slim\Slim();
@@ -201,6 +204,53 @@ function formatPhoneNumber($sPhone){
 	$sPhone = "(".$sArea.") ".$sPrefix."-".$sNumber;
 	return($sPhone);
 }
+
+// pusher auth
+
+$app->post('/pusher/auth', 'authenticate', function() use($app) {
+
+    $pusher = new Pusher( $_ENV['PUSHER_APP_KEY'], $_ENV['PUSHER_APP_SECRET'], $_ENV['PUSHER_APP_ID'], array('cluster' => $_ENV['PUSHER_APP_CLUSTER'], 'useTLS' => true) );
+
+    $json = $app->request->getBody();
+    // pusher sends data in x-www-form-urlencoded so don't use json for the post vars
+    // $data = json_decode($json, true);
+    // $channel_name = $data['channel_name'];
+    // $socket_id = $data['socket_id'];
+    $channel_name = $app->request()->post('channel_name');
+    $socket_id    = $app->request()->post('socket_id');
+
+    if ($app->username) {
+        header('Content-Type: application/json', true, 200);
+        echo $pusher->socket_auth($channel_name, $socket_id);
+    } else {
+        header('', true, 403);
+        echo "Forbidden";
+    }
+
+});
+
+$app->post('/pusher/authPresence', 'authenticate', function() use($app) {
+
+    $pusher = new Pusher( $_ENV['PUSHER_APP_KEY'], $_ENV['PUSHER_APP_SECRET'], $_ENV['PUSHER_APP_ID'], array('cluster' => $_ENV['PUSHER_APP_CLUSTER'], 'useTLS' => true) );
+
+    $json = $app->request->getBody();
+    // pusher sends data in x-www-form-urlencoded so don't use json for the post vars
+    // $data = json_decode($json, true);
+    // $channel_name = $data['channel_name'];
+    // $socket_id = $data['socket_id'];
+    $channel_name = $app->request()->post('channel_name');
+    $socket_id    = $app->request()->post('socket_id');
+
+    if ($app->username) {
+        header('Content-Type: application/json');
+        echo $pusher->presence_auth($channel_name, $socket_id, $app->username);
+    } else {
+        header('', true, 403);
+        echo "Forbidden";
+    }
+
+});
+
 
 // dummy response
 
@@ -1031,138 +1081,81 @@ $app->post('/test/notification/event/:eventId', 'authenticate', function($eventI
      $db = null;
  });
 
+// add new walk
+$app->post('/walks', 'authenticate', function() use($app) {
+  $response = array();
+  date_default_timezone_set($_ENV['TIMEZONE']);
 
-// register for events
-$app->post('/events', 'authenticate', function() use($app) {
+  $db = new DbHandler();
+
+  $res = $db->startWalk($app->registrantId);
+
+  if ($res) {
+    $response['success'] = true;
+    $response['error'] = false;
+    $response['message'] = 'Walk #' . $walkId . ' has started. Get moving!';
+    $response['walkId'] = $res;
+    $response['walkStarted'] = date('Y-m-d H:i:s');
+  } else {
+    $response['success'] = false;
+    $response['error'] = true;
+    $response['message'] = 'Error starting walk. Try again later!';
+    $response['walkId'] = $res;
+  }
+
+  echoResponse(200, $response);
+
+  $db = NULL;
+});
+
+$app->put('/walks/:walkId', 'authenticate', function($walkId) use($app) {
+   $response = array();
+   date_default_timezone_set($_ENV['TIMEZONE']);
+     
+   $db = new DbHandler();
+
+   $res = $db->endWalk($app->registrantId, $walkId);
+
+   if ($res) {
+       $response['error']    = false;
+       $response['success']  = true;
+       $response['message']  = 'Your walk has ended! Congrats!';
+       $response['walkEnded'] = date('Y-m-d H:i:s');
+       echoResponse(200, $response);
+   } else {
+       $response['error']   = true;
+       $response['message'] = "The requested resource doesn't exists";
+       echoResponse(404, $response);
+   }
+
+});
+
+// post location data
+$app->post('/locations/:walkId', 'authenticate', function($walkId) use($app) {
 
      $json = $app->request->getBody();
      $data = json_decode($json, true);
-     $eventId = $data['eventId'];
      $registrantId = $app->registrantId;
 
      $db = new DbHandler();
-     $result = $db->registerForEvent($registrantId, $eventId);
+     $result = $db->registerLocation($registrantId, $walkId, $data);
 
      if ($result) {
          $response['error'] 		= false;
          $response['success'] 	= true;
-         $response['username'] 	= $app->username;
          $response['result']    = $result;
-         $response['message'] 	= "You have registered for the event!";
+         $response['message'] 	= "You have registered walk data!";
          echoResponse(201, $response);
      } else {
          $response['error'] 		= true;
-         $response['username'] 	= $app->username;
          $response['result']    = array();
-         $response['message'] 	= "An error occurred while registering for the event. Try again later!";
+         $response['message'] 	= "An error occurred while registering location for this walk. Try again later!";
          echoResponse(200, $response);
      }
 
      $db = null;
  });
 
- // check in to event
- $app->put('/events', 'authenticate', function() use($app) {
-
-      $json = $app->request->getBody();
-      $data = json_decode($json, true);
-      $eventId = $data['eventId'];
-      $registrantId = $app->registrantId;
-
-      $db = new DbHandler();
-      $res = $db->checkInToEvent($registrantId, $eventId);
-
-      if ($res) {
-          $response['error'] 		= false;
-          $response['success'] 	= true;
-          $response['username'] 	= $app->username;
-          $response['message'] 	= "You have successfully checked in to the event!";
-          echoResponse(201, $response);
-      } else {
-          $response['error'] 		= true;
-          $response['username'] 	= $app->username;
-          $response['message'] 	= "An error occurred while checking in to the event. Try again later!";
-          echoResponse(200, $response);
-      }
-
-      $db = null;
-  });
-
-// register for meetings
- $app->post('/meetings', 'authenticate', function() use($app) {
-
-      $json = $app->request->getBody();
-      $data = json_decode($json, true);
-      $meetingId = $data['meetingId'];
-      $registrantId = $app->registrantId;
-
-      $db = new DbHandler();
-      $res = $db->registerForMeeting($registrantId, $eventId);
-
-      if ($res) {
-          $response['error'] 		= false;
-          $response['success'] 	= true;
-          $response['username'] 	= $app->username;
-          $response['message'] 	= "You have registered for the meeting!";
-          echoResponse(201, $response);
-      } else {
-          $response['error'] 		= true;
-          $response['username'] 	= $app->username;
-          $response['message'] 	= "An error occurred while registering for the event. Try again later!";
-          echoResponse(200, $response);
-      }
-
-      $db = null;
-  });
-
-  // check in to meeting
-  $app->put('/meetings', 'authenticate', function() use($app) {
-
-       $json = $app->request->getBody();
-       $data = json_decode($json, true);
-       $meetingId = $data['meetingId'];
-       $registrantId = $app->registrantId;
-
-       $db = new DbHandler();
-       $res = $db->checkInToMeeting($registrantId, $meetingId);
-
-       if ($res) {
-           $response['error'] 		= false;
-           $response['success'] 	= true;
-           $response['username'] 	= $app->username;
-           $response['message'] 	= "You have successfully checked in to the meeting!";
-           echoResponse(201, $response);
-       } else {
-           $response['error'] 		= true;
-           $response['username'] 	= $app->username;
-           $response['message'] 	= "An error occurred while checking in to the meeting. Try again later!";
-           echoResponse(200, $response);
-       }
-
-       $db = null;
-   });
-
-// preferences
-
-$app->get('/admins/profiles', 'authenticateAdmin', function() use($app) {
-   $response = array();
-   $db = new DbHandler();
-   $profile = $db->getAdminProfileByUsername($app->username);
-
-   if ($profile != NULL) {
-       $response['error']        = false;
-       $response['success']      = true;
-       $response['username']     = $app->username;
-       $response['profile']      = $profile;
-       echoResponse(200, $response);
-   } else {
-       $response['error'] = true;
-       $response['message'] = "The requested resource doesn't exists";
-       $response['profile'] = array();
-       echoResponse(404, $response);
-   }
-
-});
 
 $app->put('/admins/profiles', 'authenticateAdmin', function() use($app) {
    $response = array();
