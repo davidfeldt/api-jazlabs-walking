@@ -2083,12 +2083,6 @@ class DbHandler {
     $stmt->bindParam(':now', $now);
     $stmt->bindParam(':username', $username);
     if ($stmt->execute()) {
-      // set up permissions for sharing profile info with other attendees
-      $registrantId = $this->conn->lastInsertId();
-      $stmt = $this->conn->prepare("INSERT INTO permissions SET registrantId = :registrantId, email = '0', phone = '0', mobilephone = '0', title = '0', company = '0'");
-      $stmt->bindParam(':registrantId', $registrantId);
-      $stmt->execute();
-
       $response['success'] = true;
       $response['username'] = $username;
       $response['message'] = ' You have registered successfully!';
