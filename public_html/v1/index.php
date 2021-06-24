@@ -775,7 +775,7 @@ $app->post('/users/verify-account', function() use($app) {
           'error'           => false,
           'verified'        => $profile['verified'] == '1',
           'username'        => $profile['username'],
-          'token'			      => generateJWT($profile['username']),
+          'token'			      => generateJWT($username),
           "fullName"        => $profile['fullName'],
           "registrantId"    => $profile['registrantId'],
           "email"           => $profile['email'],
@@ -1090,7 +1090,7 @@ $app->post('/walks', 'authenticate', function() use($app) {
   if ($res) {
     $response['success'] = true;
     $response['error'] = false;
-    $response['message'] = 'Walk #' . $walkId . ' has started. Get moving!';
+    $response['message'] = 'Walk #' . $res . ' has started. Get moving!';
     $response['walkId'] = $res;
     $response['walkStarted'] = date('Y-m-d H:i:s');
   } else {
