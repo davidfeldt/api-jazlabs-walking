@@ -906,24 +906,21 @@ $app->get('/people', 'authenticate', function() use($app) {
     $db = NULL;
 });
 
-$app->get('/events', 'authenticate', function() use($app) {
+$app->get('/walks', 'authenticate', function() use($app) {
     $response = array();
     $db = new DbHandler();
 
     $page = $app->request()->get('page');
     if (!isset($page) || $page < 1) { $page = 1;}
 
-    $mine = $app->request()->get('mine');
-    if (!isset($mine)) { $mine = 0;}
-
     $limit = $_ENV['LIMIT'];
     $start = ($page - 1) * $limit;
 
     $lastCount = $start + $limit;
-    $maxCount  = $db->numberOfEvents($app->registrantId, $mine);
+    $maxCount  = $db->numberOfWalks($app->registrantId);
     $nextPage  = ($lastCount < $maxCount) ? $page + 1 : null;
 
-    $results   = $db->getAllEvents($app->registrantId, $page, $mine);
+    $results   = $db->getAllWalks($app->registrantId, $page);
 
     if ($results) {
         $response['success']    = true;

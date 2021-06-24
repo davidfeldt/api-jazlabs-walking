@@ -397,56 +397,65 @@ class DbHandler {
         }
       }
 
-    public function getEvent($registrantId, $eventId) {
+    private function getLocationsForWalk($walkId, $registrantId) {
       date_default_timezone_set($_ENV['TIMEZONE']);
       $now = date('Y-m-d');
       $response = array ();
 
-      $stmt = $this->conn->prepare("SELECT * FROM events WHERE eventId = :eventId");
-      $stmt->bindParam(':eventId', $eventId);
+      $stmt = $this->conn->prepare("SELECT * FROM locations WHERE walkId = :walkId AND registrantId = :registrantId ORDER BY id ASC");
+      $stmt->bindParam(':walkId', $walkId);
+      $stmt->bindParam(':registrantId', $registrantId);
+
+      if ($stmt->execute()) {
+        $locations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($locations AS $row) {
+          $response [] = array (
+            'id'            => $row['id'],
+            'walkId'        => $row['walkId'],
+            'registrantId'  => $registrantId,
+            'latitude'      => $row['latitude'],
+            'longitude'     => $row['longitude'],
+            'altitude'      => $row['altitude'],
+            'accuracy'      => $row['accuracy'],
+            'speed'         => $row['speed'],
+            'time'          => date('m/d/Y h:i a', $row['time']),
+            'course'        => $row['course'],
+          );
+
+        }
+      }
+
+      return $response;
+    }
+
+    public function getWalk($registrantId, $walkId) {
+      date_default_timezone_set($_ENV['TIMEZONE']);
+      $now = date('Y-m-d');
+      $response = array ();
+
+      $stmt = $this->conn->prepare("SELECT * FROM walks WHERE walkId = :walkId AND registrantId = :registrantId");
+      $stmt->bindParam(':walkId', $walkId);
+      $stmt->bindParam(':registrantId', $registrantId);
 
       if ($stmt->execute()) {
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
         $row = $stmt->fetch();
 
         $response  = array (
-            'eventId'       => $row['eventId'],
-            'registrantId'  => $registrantId,
-            'startDate'     => date('m/d/Y',strtotime($row['startDate'])),
-            'endDate'       => date('m/d/Y',strtotime($row['endDate'])),
-            'dates'         => $row['startDate'] == $row['endDate'] ? date('m/d/Y',strtotime($row['startDate'])) : date('m/d/Y',strtotime($row['startDate'])).' - '.date('m/d/Y',strtotime($row['endDate'])),
-            'avatar'        => !empty($row['avatar']) ? 'https://spectacularapps.us/img/organizations/'.$row['avatar'] : 'https://jazlabs.com/img/logo_light.png',
-            'image'         => !empty($row['image']) ? 'https://spectacularapps.us/img/events/'.$row['image'] : '',
-            'location'      => $row['location'],
-            'city'          => $row['city'],
-            'state'         => $row['state'],
-            'zip'           => $row['zip'],
-            'orgId'         => $row['orgId'],
-            'orgName'       => $this->getOrganizationName($row['orgId']),
-            'name'          => $row['name'],
-            'blurb'			    => $row['description'] ? html_entity_decode(strip_tags(substr($row['description'],0,100)).'...', ENT_QUOTES, 'UTF-8') : '',
-            'description'   => $row['description'],
-            'meetings'      => $this->getMeetingsForEvent($row['eventId'], $registrantId),
-            'attendeeTotal' => $this->getAttendeeTotal($row['eventId']),
-            'isRegistered'  => $this->isRegisteredForEvent($row['eventId'], $registrantId),
-            'isCheckedIn'   => $this->isCheckedInForEvent($row['eventId'], $registrantId)
-          );
+          'walkId'        => $row['walkId'],
+          'registrantId'  => $registrantId,
+          'startDate'     => date('m/d/Y',strtotime($row['startDate'])),
+          'endDate'       => date('m/d/Y',strtotime($row['endDate'])),
+          'locations'     => $this->getLocationsForWalk($row['walkId'], $registrantId),
+        );
       }
 
       return $response;
     }
 
-    public function numberOfEvents($registrantId, $mine = 0) {
-      date_default_timezone_set($_ENV['TIMEZONE']);
-      $now = date('Y-m-d');
-      if ($mine != 0) {
-        $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM events e LEFT JOIN attendees a ON e.eventId = a.eventId WHERE e.endDate >= :endDate AND a.registrantId = :registrantId AND a.meetingId = '0'");
-        $stmt->bindParam(':endDate', $now);
-        $stmt->bindParam(':registrantId', $registrantId);
-      } else {
-        $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM events WHERE endDate >= :endDate");
-        $stmt->bindParam(':endDate', $now);
-      }
+    public function numberOfWalks($registrantId) {
+      $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM walks WHERE registrantId >= :registrantId");
+      $stmt->bindParam(':registrantId', $registrantId);
 
       if ($stmt->execute()) {
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
@@ -457,102 +466,26 @@ class DbHandler {
       }
     }
 
-    public function getAllEvents($registrantId, $page = 1, $mine = 0) {
-      date_default_timezone_set($_ENV['TIMEZONE']);
-      $now = date('Y-m-d');
+    public function getAllWalks($registrantId, $page = 1) {
       $response = array ();
 
       $limit = $_ENV['LIMIT'];
       $page = (isset($page)) ? $page : 1;
       $start = ($page - 1) * $limit;
 
-      if ($mine != 0) {
-        $stmt = $this->conn->prepare("SELECT e.* FROM events e LEFT JOIN attendees a ON e.eventId = a.eventId WHERE e.endDate >= :endDate AND a.registrantId = :registrantId AND a.meetingId = '0' ORDER BY e.startDate ASC LIMIT $start, $limit");
-        $stmt->bindParam(':endDate', $now);
-        $stmt->bindParam(':registrantId', $registrantId);
-      } else {
-        $stmt = $this->conn->prepare("SELECT * FROM events WHERE endDate >= :endDate ORDER BY startDate ASC LIMIT $start, $limit");
-        $stmt->bindParam(':endDate', $now);
-      }
+      $stmt = $this->conn->prepare("SELECT * FROM walks WHERE registrantId = :registrantId ORDER BY startDate DESC LIMIT $start, $limit");
+      $stmt->bindParam(':endDate', $now);
 
       if ($stmt->execute()) {
         $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach ($events AS $row) {
 
           $response [] = array (
-              'eventId'       => $row['eventId'],
+              'walkId'        => $row['walkId'],
               'registrantId'  => $registrantId,
               'startDate'     => date('m/d/Y',strtotime($row['startDate'])),
               'endDate'       => date('m/d/Y',strtotime($row['endDate'])),
-              'avatar'        => !empty($row['avatar']) ? 'https://spectacularapps.us/img/organizations/'.$row['avatar'] : 'https://jazlabs.com/img/logo_light.png',
-              'image'         => !empty($row['image']) ? 'https://spectacularapps.us/img/events/'.$row['image'] : '',
-              'location'      => $row['location'],
-              'city'          => $row['city'],
-              'state'         => $row['state'],
-              'zip'           => $row['zip'],
-              'orgId'         => $row['orgId'],
-              'orgName'       => $this->getOrganizationName($row['orgId']),
-              'name'          => $row['name'],
-              'blurb'			    => $row['description'] ? html_entity_decode(strip_tags(substr($row['description'],0,100)).'...', ENT_QUOTES, 'UTF-8') : '',
-              'description'   => $row['description'],
-              'meetings'      => $this->getMeetingsForEvent($row['eventId'], $registrantId),
-              'attendeeTotal' => $this->getAttendeeTotal($row['eventId']),
-              'isRegistered'  => $this->isRegisteredForEvent($row['eventId'], $registrantId),
-              'isCheckedIn'   => $this->isCheckedInForEvent($row['eventId'], $registrantId)
-            );
-        }
-      }
-
-      return $response;
-
-    }
-
-    public function whoIsRegisteredForEvent($eventId) {
-      date_default_timezone_set($_ENV['TIMEZONE']);
-      $response = array();
-      $stmt = $this->conn->prepare("SELECT * FROM attendees WHERE eventId = :eventId AND meetingId = '0'");
-      $stmt->bindParam(':eventId', $eventId);
-
-      if ($stmt->execute()) {
-        $registrants = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($registrants AS $row) {
-
-          $response [] = array (
-              'attendeeId'      => $row['attendeeId'],
-              'fullName'        => $this->getFullName($row['registrantId']),
-              'title'           => $this->getTitle($row['registrantId']),
-              'company'         => $this->getCompany($row['registrantId']),
-              'meetingId'       => $row['meetingId'],
-              'checkedIn'       => $row['checkedIn'] == '1',
-              'checkedInDate'   => $row['checkedInDate'] ? date('m/d/Y h:i a', strtotime($row['checkedInDate'])) : ''
-              // 'meetings'        => $this->getMeetingsForEvent($row['eventId'], $row['registrantId']),
-            );
-        }
-      }
-
-      return $response;
-
-    }
-
-    public function whoIsCheckedInForEvent($eventId) {
-      date_default_timezone_set($_ENV['TIMEZONE']);
-      $response = array();
-      $stmt = $this->conn->prepare("SELECT * FROM attendees WHERE eventId = :eventId AND meetingId = '0' AND checkedIn = '1'");
-      $stmt->bindParam(':eventId', $eventId);
-
-      if ($stmt->execute()) {
-        $registrants = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($registrants AS $row) {
-
-          $response [] = array (
-              'attendeeId'      => $row['attendeeId'],
-              'fullName'        => $this->getFullName($row['registrantId']),
-              'title'           => $this->getTitle($row['registrantId']),
-              'company'         => $this->getCompany($row['registrantId']),
-              'meetingId'       => $row['meetingId'],
-              'checkedIn'       => $row['checkedIn'] == '1',
-              'checkedInDate'   => $row['checkedInDate'] ? date('m/d/Y h:i a', strtotime($row['checkedInDate'])) : ''
-              // 'meetings'        => $this->getMeetingsForEvent($row['eventId'], $row['registrantId']),
+              'locations'     => $this->getLocationsForWalk($row['walkId'], $registrantId),
             );
         }
       }
