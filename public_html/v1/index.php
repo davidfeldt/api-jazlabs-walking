@@ -401,7 +401,7 @@ $app->get('/calendars/marked-dates', 'authenticate', function() use($app) {
 	    $error = false;
 	    $response['error'] = false;
 	    $response['success'] = true;
-	    $response['results'] = $db->getCalendarMarkedDates($defaultStart,$defaultEnd);
+	    $response['results'] = $db->getCalendarMarkedDates($app->registrantId, $defaultStart,$defaultEnd);
 
 	    echoResponse(200, $response);
 
@@ -463,7 +463,7 @@ $app->get('/calendar-items/:date', 'authenticate', function($date) use($app) {
     $error = false;
     $response['error'] = false;
     $response['success'] = true;
-    $response['items'] = $db->getEventsAndMeetingsForCalendar($date);
+    $response['items'] = $db->getWalksForCalendar($app->registrantId, $date);
 
     echoResponse(200, $response);
 

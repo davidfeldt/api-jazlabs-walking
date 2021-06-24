@@ -155,9 +155,9 @@ class DbHandler {
 
 
 
-  public function getEventName($eventId) {
+  public function getEventName($rowId) {
     $stmt = $this->conn->prepare('SELECT name FROM events WHERE eventId = :eventId');
-    $stmt->bindParam(':eventId', $eventId);
+    $stmt->bindParam(':eventId', $rowId);
     if ($stmt->execute()) {
     $stmt->setFetchMode(PDO::FETCH_ASSOC);
       $row = $stmt->fetch();
@@ -167,29 +167,9 @@ class DbHandler {
     }
   }
 
-  public function getMeetingName($meetingId) {
-    $stmt = $this->conn->prepare('SELECT name FROM meetings WHERE meetingId = :meetingId');
-    $stmt->bindParam(':meetingId', $meetingId);
-    if ($stmt->execute()) {
-      $stmt->setFetchMode(PDO::FETCH_ASSOC);
-      $row = $stmt->fetch();
-      return !empty($row['name']) ? $row['name'] : 'N/A';
-    } else {
-      return '';
-    }
-  }
 
-  public function getEventIdForMeeting($meetingId) {
-    $stmt = $this->conn->prepare('SELECT eventId FROM meetings WHERE meetingId = :meetingId');
-    $stmt->bindParam(':meetingId', $meetingId);
-    if ($stmt->execute()) {
-      $stmt->setFetchMode(PDO::FETCH_ASSOC);
-      $row = $stmt->fetch();
-      return !empty($row['eventId']) ? $row['eventId'] : '0';
-    } else {
-      return '0';
-    }
-  }
+
+
 
   private function getAdminFullName($adminId) {
     $stmt = $this->conn->prepare('SELECT name FROM admins WHERE adminId = :adminId');
@@ -287,116 +267,6 @@ class DbHandler {
     }
   }
 
-  public function getMeetingsForEvent($eventId, $registrantId) {
-      $response = array ();
-
-      $stmt = $this->conn->prepare("SELECT * FROM meetings WHERE eventId = :eventId ORDER BY startDate ASC");
-      $stmt->bindParam(':eventId', $eventId);
-
-      if ($stmt->execute()) {
-        $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($events AS $row) {
-
-          $response [] = array (
-              'meetingId'     => $row['meetingId'],
-              'eventId'       => $row['eventId'],
-              'startDate'     => date('m/d g:i a',strtotime($row['startDate'])),
-              'endDate'       => date('m/d g:i a',strtotime($row['endDate'])),
-              'location'      => $row['location'],
-              'eventName'     => $this->getEventName($row['eventId']),
-              'name'          => $row['name'],
-              'capacity'      => $row['capacity'],
-              'isRegistered'  => $this->isRegisteredForMeeting($row['meetingId'], $registrantId),
-              'isCheckedIn'   => $this->isCheckedInForMeeting($row['meetingId'], $registrantId),
-              'checkedInDate' => $this->checkedInDateForMeeting($row['meetingId'], $registrantId),
-              'qrCodeValue'   => '{"registrantId": "'.$registrantId.'", "meetingId": "'.$row['meetingId'].'"}'
-            );
-        }
-      }
-
-      return $response;
-    }
-
-    public function getMeetingsForEventAdmin($eventId) {
-        $response = array ();
-
-        $stmt = $this->conn->prepare("SELECT * FROM meetings WHERE eventId = :eventId ORDER BY startDate ASC");
-        $stmt->bindParam(':eventId', $eventId);
-
-        if ($stmt->execute()) {
-          $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
-          foreach ($events AS $row) {
-
-            $response [] = array (
-                'meetingId'       => $row['meetingId'],
-                'eventId'         => $row['eventId'],
-                'startDate'       => date('m/d g:i a',strtotime($row['startDate'])),
-                'endDate'         => date('m/d g:i a',strtotime($row['endDate'])),
-                'location'        => $row['location'],
-                'eventName'       => $this->getEventName($row['eventId']),
-                'name'            => $row['name'],
-                'capacity'        => $row['capacity'],
-                'totalRegistered' => $this->totalRegisteredForMeeting($row['meetingId']),
-                'totalCheckedIn'  => $this->totalCheckedInForMeeting($row['meetingId']),
-              );
-          }
-        }
-
-        return $response;
-      }
-
-      private function totalRegisteredForMeeting($meetingId) {
-        $stmt = $this->conn->prepare('SELECT COUNT(*) AS total FROM attendees WHERE meetingId = :meetingId');
-        $stmt->bindParam(':meetingId', $meetingId);
-        $post_data = array();
-        if ($stmt->execute()) {
-          $stmt->setFetchMode(PDO::FETCH_ASSOC);
-          $row = $stmt->fetch();
-          return number_format($row['total']);
-        } else {
-          return false;
-        }
-      }
-
-      private function totalRegisteredForEvent($eventId) {
-        $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM attendees WHERE eventId = :eventId AND meetingId = '0'");
-        $stmt->bindParam(':eventId', $eventId);
-        $post_data = array();
-        if ($stmt->execute()) {
-          $stmt->setFetchMode(PDO::FETCH_ASSOC);
-          $row = $stmt->fetch();
-          return number_format($row['total']);
-        } else {
-          return false;
-        }
-      }
-
-      private function totalCheckedInForMeeting($meetingId) {
-        $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM attendees WHERE meetingId = :meetingId AND checkedIn = '1'");
-        $stmt->bindParam(':meetingId', $meetingId);
-        $post_data = array();
-        if ($stmt->execute()) {
-          $stmt->setFetchMode(PDO::FETCH_ASSOC);
-          $row = $stmt->fetch();
-          return number_format($row['total']);
-        } else {
-          return false;
-        }
-      }
-
-      private function totalCheckedInForEvent($eventId) {
-        $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM attendees WHERE eventId = :eventId AND meetingId = '0' AND checkedIn = '1'");
-        $stmt->bindParam(':eventId', $eventId);
-        $post_data = array();
-        if ($stmt->execute()) {
-          $stmt->setFetchMode(PDO::FETCH_ASSOC);
-          $row = $stmt->fetch();
-          return number_format($row['total']);
-        } else {
-          return false;
-        }
-      }
-
     private function getLocationsForWalk($walkId, $registrantId) {
       date_default_timezone_set($_ENV['TIMEZONE']);
       $now = date('Y-m-d');
@@ -477,8 +347,8 @@ class DbHandler {
       $stmt->bindParam(':registrantId', $registrantId);
 
       if ($stmt->execute()) {
-        $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($events AS $row) {
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows AS $row) {
 
           $response [] = array (
               'walkId'        => $row['walkId'],
@@ -494,7 +364,7 @@ class DbHandler {
 
     }
 
-    public function getAllEventsForAdmin($orgId) {
+    public function getAllWalksForAdmin($orgId) {
       date_default_timezone_set($_ENV['TIMEZONE']);
       $now = date('Y-m-d');
       $response = array ();
@@ -503,8 +373,8 @@ class DbHandler {
       $stmt->bindParam(':orgId', $orgId);
 
       if ($stmt->execute()) {
-        $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($events AS $row) {
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows AS $row) {
 
           $response [] = array (
               'eventId'         => $row['eventId'],
@@ -535,172 +405,6 @@ class DbHandler {
 
     }
 
-    public function getAllMyEvents($registrantId) {
-      date_default_timezone_set($_ENV['TIMEZONE']);
-      $now = date('Y-m-d');
-      $response = array ();
-
-      $stmt = $this->conn->prepare("SELECT e.*, a.checkedIn, a.checkedInDate FROM events e LEFT JOIN attendees a ON e.eventId = a.eventId WHERE e.endDate >= :endDate AND a.registrantId = :registrantId AND a.meetingId = '0' ORDER BY e.startDate ASC");
-      $stmt->bindParam(':endDate', $now);
-      $stmt->bindParam(':registrantId', $registrantId);
-
-      if ($stmt->execute()) {
-        $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($events AS $row) {
-
-          $response [] = array (
-              'eventId'       => $row['eventId'],
-              'registrantId'  => $registrantId,
-              'startDate'     => date('m/d/Y',strtotime($row['startDate'])),
-              'endDate'       => date('m/d/Y',strtotime($row['endDate'])),
-              'avatar'        => !empty($row['avatar']) ? 'https://spectacularapps.us/img/organizations/'.$row['avatar'] : 'https://jazlabs.com/img/logo_light.png',
-              'image'         => !empty($row['image']) ? 'https://spectacularapps.us/img/events/'.$row['image'] : '',
-              'location'      => $row['location'],
-              'city'          => $row['city'],
-              'state'         => $row['state'],
-              'zip'           => $row['zip'],
-              'orgId'         => $row['orgId'],
-              'orgName'       => $this->getOrganizationName($row['orgId']),
-              'name'          => $row['name'],
-              'blurb'			    => $row['description'] ? html_entity_decode(strip_tags(substr($row['description'],0,100)).'...', ENT_QUOTES, 'UTF-8') : '',
-              'description'   => $row['description'],
-              'meetings'      => $this->getMeetingsForEvent($row['eventId'], $registrantId),
-              'attendeeTotal' => $this->getAttendeeTotal($row['eventId']),
-              'isCheckedIn'   => $row['checkedIn'] == 1,
-              'checkedInDate' => $row['checkedIn'] == 1 ? date('m/d/Y h:i a', strtotime($row['checkedInDate'])) : ''
-            );
-        }
-      }
-
-      return $response;
-
-    }
-
-    private function isRegisteredForEvent($eventId, $registrantId) {
-      $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM attendees WHERE eventId = :eventId AND registrantId = :registrantId AND meetingId = '0'");
-      $stmt->bindParam(':eventId', $eventId);
-      $stmt->bindParam(':registrantId', $registrantId);
-      $post_data = array();
-      if ($stmt->execute()) {
-        $stmt->setFetchMode(PDO::FETCH_ASSOC);
-        $row = $stmt->fetch();
-        return $row['total'] > 0;
-      } else {
-        return false;
-      }
-    }
-
-    private function isRegisteredForMeeting($meetingId, $registrantId) {
-      $stmt = $this->conn->prepare('SELECT COUNT(*) AS total FROM attendees WHERE meetingId = :meetingId AND registrantId = :registrantId');
-      $stmt->bindParam(':meetingId', $meetingId);
-      $stmt->bindParam(':registrantId', $registrantId);
-      $post_data = array();
-      if ($stmt->execute()) {
-        $stmt->setFetchMode(PDO::FETCH_ASSOC);
-        $row = $stmt->fetch();
-        return $row['total'] > 0;
-      } else {
-        return false;
-      }
-    }
-
-    private function isCheckedInForEvent($eventId, $registrantId) {
-      $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM attendees WHERE eventId = :eventId AND registrantId = :registrantId AND meetingId = '0' AND checkedIn = '1'");
-      $stmt->bindParam(':eventId', $eventId);
-      $stmt->bindParam(':registrantId', $registrantId);
-      $post_data = array();
-      if ($stmt->execute()) {
-        $stmt->setFetchMode(PDO::FETCH_ASSOC);
-        $row = $stmt->fetch();
-        return $row['total'] > 0;
-      } else {
-        return false;
-      }
-    }
-
-    private function isCheckedInForMeeting($meetingId, $registrantId) {
-      $stmt = $this->conn->prepare("SELECT COUNT(*) AS total FROM attendees WHERE meetingId = :meetingId AND registrantId = :registrantId AND checkedIn ='1'");
-      $stmt->bindParam(':meetingId', $meetingId);
-      $stmt->bindParam(':registrantId', $registrantId);
-      $post_data = array();
-      if ($stmt->execute()) {
-        $stmt->setFetchMode(PDO::FETCH_ASSOC);
-        $row = $stmt->fetch();
-        return $row['total'] > 0;
-      } else {
-        return false;
-      }
-    }
-
-    private function checkedInDateForMeeting($meetingId, $registrantId) {
-      $stmt = $this->conn->prepare("SELECT checkedInDate FROM attendees WHERE meetingId = :meetingId AND registrantId = :registrantId AND checkedIn ='1'");
-      $stmt->bindParam(':meetingId', $meetingId);
-      $stmt->bindParam(':registrantId', $registrantId);
-      $post_data = array();
-      if ($stmt->execute()) {
-        $stmt->setFetchMode(PDO::FETCH_ASSOC);
-        $row = $stmt->fetch();
-        if (!empty($row['checkedInDate'])) {
-          return date('m/d/Y h:i a', strtotime($row['checkedInDate']));
-        } else {
-          return '';
-        }
-      } else {
-        return '';
-      }
-    }
-
-    public function checkInToEvent($eventId, $registrantId) {
-      date_default_timezone_set($_ENV['TIMEZONE']);
-      $now = date('Y-m-d H:i:s');
-      if ($this->isRegisteredForEvent($eventId, $registrantId)) {
-        $sql = "UPDATE attendees SET checkedIn = '1', checkedInDate = :checkedInDate, dateModified = :dateModified WHERE eventId = :eventId AND registrantId = :registrantId AND meetingId = '0'";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bindParam(':checkedInDate', $now);
-        $stmt->bindParam(':dateModified', $now);
-        $stmt->bindParam(':eventId', $eventId);
-        $stmt->bindParam(':registrantId', $registrantId);
-        if ($stmt->execute()) {
-          return true;
-        } else {
-          return false;
-        }
-      } else {
-        return false;
-      }
-    }
-
-    public function checkInToMeeting($meetingId, $registrantId) {
-      date_default_timezone_set($_ENV['TIMEZONE']);
-      $now = date('Y-m-d H:i:s');
-      if ($this->isRegisteredForMeeting($meetingId, $registrantId)) {
-        $sql = "UPDATE attendees SET checkedIn = '1', checkedInDate = :checkedInDate, dateModified = :dateModified WHERE meetingId = :meetingId AND registrantId = :registrantId";
-        $stmt = $this->conn->prepare($sql);
-        $stmt->bindParam(':checkedInDate', $now);
-        $stmt->bindParam(':dateModified', $now);
-        $stmt->bindParam(':meetingId', $meetingId);
-        $stmt->bindParam(':registrantId', $registrantId);
-        if ($stmt->execute()) {
-          return true;
-        } else {
-          return false;
-        }
-      } else {
-        return true;
-      }
-    }
-
-    private function getOrgIdForEvent($eventId) {
-      $stmt = $this->conn->prepare('SELECT orgId FROM events WHERE eventId = :eventId');
-      $stmt->bindParam(':eventId', $eventId);
-      if ($stmt->execute()) {
-        $stmt->setFetchMode(PDO::FETCH_ASSOC);
-        $row = $stmt->fetch();
-        return !empty($row['orgId']) ? $row['orgId'] : '0';
-      } else {
-        return '0';
-      }
-    }
 
     private function getMessagingChannelFor($registrantId) {
       $stmt = $this->conn->prepare('SELECT messaging FROM registrants WHERE registrantId = :registrantId');
@@ -714,11 +418,11 @@ class DbHandler {
       }
     }
 
-    public function testNotificationForEvent($registrantId, $eventId) {
-      $event = $this->getEvent($registrantId, $eventId);
-      $email = $this->sendEmailNotification($registrantId, 'you are registered','What a lovely day it is!\nLinetwo',$eventId);
-      $sms = $this->sendSMSNotification($registrantId, 'you are registered for '.$event['name']);
-      $push = $this->sendPushNotificationsToIndividual($registrantId, 'you are registered for '.$event['name']);
+    public function testNotificationForEvent($registrantId, $rowId) {
+      $row = $this->getEvent($registrantId, $rowId);
+      $email = $this->sendEmailNotification($registrantId, 'you are registered','What a lovely day it is!\nLinetwo',$rowId);
+      $sms = $this->sendSMSNotification($registrantId, 'you are registered for '.$row['name']);
+      $push = $this->sendPushNotificationsToIndividual($registrantId, 'you are registered for '.$row['name']);
       return array (
           'emailResult' => $email,
           'smsResult' => $sms,
@@ -726,7 +430,7 @@ class DbHandler {
       );
     }
 
-    // private function sendEmailNotification($registrantId, $subject, $message, $event = array()) {
+    // private function sendEmailNotification($registrantId, $subject, $message, $row = array()) {
     //   $to_name = $this->getFullName($registrantId);
     //   $to_email = $this->getEmail($registrantId);
     //
@@ -735,7 +439,7 @@ class DbHandler {
     //       'cache' => $_ENV['CACHE_FULL_PATH'],
     //       'debug' => true,
     //   ]);
-    //   $html = $twig->render('email_template.html', ['subject' => $subject, 'message' => $message, 'event' => $event]);
+    //   $html = $twig->render('email_template.html', ['subject' => $subject, 'message' => $message, 'event' => $row]);
     //
     //   if (!empty($to_name) && !empty($to_email)) {
     //     $email = new \SendGrid\Mail\Mail();
@@ -780,7 +484,7 @@ class DbHandler {
       }
     }
 
-    private function sendEmailNotification($registrantId, $subject, $message, $eventId = 0) {
+    private function sendEmailNotification($registrantId, $subject, $message, $rowId = 0) {
       $to_name = $this->getFullName($registrantId);
       $to_email = $this->getEmail($registrantId);
 
@@ -791,9 +495,9 @@ class DbHandler {
         $email->addTo($to_email, $to_name);
         $email->setTemplateId($_ENV['NOTIFICATION_TEMPLATE_ID']);
         $email->addDynamicTemplateData("subject", $subject);
-        if ($eventId) {
-          $event = $this->getEvent($registrantId, $eventId);
-          $email->addDynamicTemplateData("event", $event);
+        if ($rowId) {
+          $row = $this->getEvent($registrantId, $rowId);
+          $email->addDynamicTemplateData("event", $row);
         }
         if ($message) {
           $email->addDynamicTemplateData("message", nl2br($message));
@@ -813,11 +517,11 @@ class DbHandler {
       return $this->sendSMS($mobilephone, $message);
     }
 
-    public function sendNotification($registrantId, $subject = '', $message = '', $eventId = 0) {
+    public function sendNotification($registrantId, $subject = '', $message = '', $rowId = 0) {
       $messaging = $this->getMessagingChannelFor($registrantId);
       switch ($messaging) {
         case 'email':
-          $result = $this->sendEmailNotification($registrantId, $subject, $message, $eventId);
+          $result = $this->sendEmailNotification($registrantId, $subject, $message, $rowId);
           break;
         case 'sms':
           $result = $this->sendSMSNotification($registrantId, $subject);
@@ -847,12 +551,12 @@ class DbHandler {
       $message = !empty($data['message']) ? $data['message'] : '';
 
       if (is_array($data['events']) && !empty($data['events'])) {
-	       $eventId = array_shift($data['events']);
-         $eventName = $this->getEventName($eventId);
-         $subject = $eventName. ': '.$subject;
-         $attendees = $this->getAttendeesForEvent($eventId);
+	       $rowId = array_shift($data['events']);
+         $rowName = $this->getEventName($rowId);
+         $subject = $rowName. ': '.$subject;
+         $attendees = $this->getAttendeesForEvent($rowId);
 
-         $this->addAdminActivity($adminId, 'message', 'Sent admin message to ' . count($attendees) .' attendees of event ' . $eventName . ' with subject: ' . $subject . ' and message: ' . $message);
+         $this->addAdminActivity($adminId, 'message', 'Sent admin message to ' . count($attendees) .' attendees of event ' . $rowName . ' with subject: ' . $subject . ' and message: ' . $message);
 
          foreach ($attendees AS $row) {
           // insert into announcements mysql_list_table
@@ -861,7 +565,7 @@ class DbHandler {
           $stmt->bindParam(':adminId', $adminId);
           $stmt->bindParam(':orgId', $orgId);
           $stmt->bindParam(':registrantId', $row['registrantId']);
-          $stmt->bindParam(':eventId', $eventId);
+          $stmt->bindParam(':eventId', $rowId);
           $stmt->bindParam(':subject', $subject);
           $stmt->bindParam(':message', $message);
           $stmt->bindParam(':now', $now);
@@ -876,22 +580,22 @@ class DbHandler {
           }
 
           if ($email) {
-            $emailCount = $this->sendEmailNotification($row['registrantId'], $subject, $message, $eventId);
+            $emailCount = $this->sendEmailNotification($row['registrantId'], $subject, $message, $rowId);
           }
 
         }
 
-        return $this->getAttendeesForEvent($eventId);
+        return $this->getAttendeesForEvent($rowId);
       } else {
         return false;
       }
     }
 
-    private function getAttendeesForEvent($eventId) {
+    private function getAttendeesForEvent($rowId) {
       $peeps = array();
       $sql = "SELECT DISTINCT r.registrantId, r.email, r.mobilephone FROM events e LEFT JOIN attendees a ON e.eventId = a.eventId LEFT JOIN registrants r ON a.registrantId = r.registrantId WHERE a.meetingId = '0' AND a.eventId = :eventId";
       $stmt = $this->conn->prepare($sql);
-      $stmt->bindParam(':eventId', $eventId);
+      $stmt->bindParam(':eventId', $rowId);
       $stmt->execute();
       $people = $stmt->fetchAll(PDO::FETCH_ASSOC);
       foreach ($people AS $row) {
@@ -904,31 +608,31 @@ class DbHandler {
       return $peeps;
     }
 
-    public function registerForEvent($registrantId, $eventId) {
+    public function registerForEvent($registrantId, $rowId) {
       date_default_timezone_set($_ENV['TIMEZONE']);
       $now = date('Y-m-d H:i:s');
-      $event = $this->getEvent($registrantId, $eventId);
-      $subject = 'You are registered for '.$event['name'];
+      $row = $this->getEvent($registrantId, $rowId);
+      $subject = 'You are registered for '.$row['name'];
       $message = '';
-      if (!$this->isRegisteredForEvent($eventId, $registrantId)) {
-        $orgId = $this->getOrgIdForEvent($eventId);
+      if (!$this->isRegisteredForEvent($rowId, $registrantId)) {
+        $orgId = $this->getOrgIdForEvent($rowId);
         $sql = "INSERT INTO attendees SET registrantId = :registrantId, eventId = :eventId, orgId = :orgId, meetingId = '0', checkedIn = '0', dateAdded = :dateAdded, dateModified = :dateModified";
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':dateAdded', $now);
         $stmt->bindParam(':dateModified', $now);
-        $stmt->bindParam(':eventId', $eventId);
+        $stmt->bindParam(':eventId', $rowId);
         $stmt->bindParam(':orgId', $orgId);
         $stmt->bindParam(':registrantId', $registrantId);
         if ($stmt->execute()) {
-          $this->sendNotification($registrantId, $subject,$message,$event);
-          $this->addActivity($registrantId, 'register', ' Registered for event: '.$event['name']);
-          return $this->getEvent($registrantId, $eventId);
+          $this->sendNotification($registrantId, $subject,$message,$row);
+          $this->addActivity($registrantId, 'register', ' Registered for event: '.$row['name']);
+          return $this->getEvent($registrantId, $rowId);
         } else {
           return false;
         }
       } else {
-        $this->sendNotification($registrantId, $subject, $message, $event);
-        return $this->getEvent($registrantId, $eventId);
+        $this->sendNotification($registrantId, $subject, $message, $row);
+        return $this->getEvent($registrantId, $rowId);
       }
     }
 
@@ -936,8 +640,8 @@ class DbHandler {
       date_default_timezone_set($_ENV['TIMEZONE']);
       $now = date('Y-m-d H:i:s');
       if (!$this->isRegisteredForMeeting($meetingId, $registrantId)) {
-        $eventId = $this->getEventIdForMeeting($meetingId);
-        $orgId = $this->getOrgIdForEvent($eventId);
+        $rowId = $this->getEventIdForMeeting($meetingId);
+        $orgId = $this->getOrgIdForEvent($rowId);
         $sql = "INSERT INTO attendees SET orgId = :orgId, registrantId = :registrantId, meetingId = :meetingId, dateAdded = :dateAdded, dateModified = :dateModified";
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':dateAdded', $now);
@@ -946,7 +650,7 @@ class DbHandler {
         $stmt->bindParam(':meetingId', $meetingId);
         $stmt->bindParam(':registrantId', $registrantId);
         if ($stmt->execute()) {
-          $this->addActivity($registrantId, 'register', ' Registered for meetingId: ' . $meetingId . ' for event: '.$eventId);
+          $this->addActivity($registrantId, 'register', ' Registered for meetingId: ' . $meetingId . ' for event: '.$rowId);
           return true;
         } else {
           return false;
@@ -956,9 +660,9 @@ class DbHandler {
       }
     }
 
-    private function getAttendeeTotal($eventId) {
+    private function getAttendeeTotal($rowId) {
       $stmt     = $this->conn->prepare("SELECT COUNT(*) AS total FROM attendees WHERE eventId = :eventId AND meetingId = '0'");
-      $stmt->bindParam(':eventId', $eventId);
+      $stmt->bindParam(':eventId', $rowId);
       $post_data = array();
       if ($stmt->execute()) {
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
@@ -978,8 +682,8 @@ class DbHandler {
       $stmt->bindParam(':registrantId', $registrantId);
 
       if ($stmt->execute()) {
-        $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($events AS $row) {
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows AS $row) {
 
           $response [] = array (
               'eventId'       => $row['eventId'],
@@ -1012,15 +716,15 @@ class DbHandler {
         return 0;
       }
 
-      $events = array();
+      $rows = array();
       $in_params = array();
-      foreach ($myEvents AS $event) {
-        array_push($events, $event['eventId']);
+      foreach ($myEvents AS $row) {
+        array_push($rows, $row['eventId']);
       }
 
       $in = "";
       $i = 0;
-      foreach ($events AS $item) {
+      foreach ($rows AS $item) {
         $key = ":id".$i++;
         $in .= "$key,";
         $in_params[$key] = $item;
@@ -1058,20 +762,20 @@ class DbHandler {
       $page = (isset($page)) ? $page : 1;
       $start = ($page - 1) * $limit;
 
-      foreach ($myEvents AS $event) {
+      foreach ($myEvents AS $row) {
         if ($query) {
           $stmt = $this->conn->prepare("SELECT a.attendeeId, a.registrantId, r.fullName, r.title, r.company, r.email, r.profileVisible
             FROM attendees a LEFT JOIN registrants r ON a.registrantId = r.registrantId
             WHERE a.eventId = :eventId AND a.meetingId = '0' AND a.registrantId != :registrantId
             AND r.profileVisible = '1' AND (LOWER(r.fullName) like :queryString OR LOWER(r.title) like :queryString or LOWER(r.company) like :queryString) ORDER BY r.fullName ASC LIMIT $start, $limit");
           $stmt->bindParam(':registrantId', $registrantId);
-          $stmt->bindParam(':eventId', $event['eventId']);
+          $stmt->bindParam(':eventId', $row['eventId']);
           $stmt->bindParam(':queryString', $queryString);
         } else {
           $stmt = $this->conn->prepare("SELECT a.attendeeId, a.registrantId, r.fullName, r.title, r.company, r.email, r.profileVisible FROM attendees a
             LEFT JOIN registrants r ON a.registrantId = r.registrantId WHERE a.eventId = :eventId AND a.meetingId = '0' AND a.registrantId != :registrantId AND r.profileVisible = '1' ORDER BY r.fullName ASC LIMIT $start, $limit");
           $stmt->bindParam(':registrantId', $registrantId);
-          $stmt->bindParam(':eventId', $event['eventId']);
+          $stmt->bindParam(':eventId', $row['eventId']);
         }
         if ($stmt->execute()) {
           $peeps = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -1617,11 +1321,11 @@ class DbHandler {
     }
   }
 
-  private function hasCheckedInForEvent($registrantId, $eventId) {
+  private function hasCheckedInForEvent($registrantId, $rowId) {
     $sql = "SELECT COUNT(*) AS total FROM attendees WHERE registrantId = :registrantId AND eventId = :eventId AND meetingId = '0' AND checkedIn = '1'";
     $stmt = $this->conn->prepare($sql);
     $stmt->bindParam(':registrantId', $registrantId);
-    $stmt->bindParam(':eventId', $eventId);
+    $stmt->bindParam(':eventId', $rowId);
 
     if ($stmt->execute()) {
       $stmt->setFetchMode(PDO::FETCH_ASSOC);
@@ -1632,23 +1336,23 @@ class DbHandler {
     }
   }
 
-  public function checkinForEventAdmin($adminId, $registrantId, $eventId) {
+  public function checkinForEventAdmin($adminId, $registrantId, $rowId) {
     date_default_timezone_set($_ENV['TIMEZONE']);
     $now = date('Y-m-d H:i:s');
-    $event = $this->getEvent($registrantId, $eventId);
+    $row = $this->getEvent($registrantId, $rowId);
     $fullName = $this->getFullName($registrantId);
-    $message = 'You are now checked in to the ' . $event['name'] . ' event';
-    if ($this->hasCheckedInForEvent($registrantId, $eventId)) {
+    $message = 'You are now checked in to the ' . $row['name'] . ' event';
+    if ($this->hasCheckedInForEvent($registrantId, $rowId)) {
       $this->sendPushNotificationsToIndividual($registrantId, $message);
       return true;
     }
     $stmt = $this->conn->prepare("UPDATE attendees SET checkedIn = '1', checkedInDate = :now, dateModified = :now WHERE registrantId = :registrantId AND eventId = :eventId AND meetingId = '0'");
     $stmt->bindParam(':now', $now);
     $stmt->bindParam(':registrantId', $registrantId);
-    $stmt->bindParam(':eventId', $eventId);
+    $stmt->bindParam(':eventId', $rowId);
     if ($stmt->execute()) {
       $this->sendPushNotificationsToIndividual($registrantId, $message);
-      $this->addAdminActivity($adminId, 'checkin', 'Checked in registrant: ' . $fullName . ' (' . $registrantId . ') to event: ' . $event['name']);
+      $this->addAdminActivity($adminId, 'checkin', 'Checked in registrant: ' . $fullName . ' (' . $registrantId . ') to event: ' . $row['name']);
       return true;
     } else {
       return false;
@@ -1709,13 +1413,13 @@ class DbHandler {
       }
     } else {
       // need to register first before checking in to meeting
-      $eventId = $this->getEventIdForMeeting($meetingId);
-      $orgId = $this->getOrgIdForEvent($eventId);
+      $rowId = $this->getEventIdForMeeting($meetingId);
+      $orgId = $this->getOrgIdForEvent($rowId);
       $stmt = $this->conn->prepare("INSERT INTO attendees SET dateAdded = :now, dateModified = :now, orgId = :orgId, registrantId = :registrantId, eventId = :eventId, meetingId = :meetingId");
       $stmt->bindParam(':now', $now);
       $stmt->bindParam(':orgId', $orgId);
       $stmt->bindParam(':registrantId', $registrantId);
-      $stmt->bindParam(':eventId', $eventId);
+      $stmt->bindParam(':eventId', $rowId);
       $stmt->bindParam(':meetingId', $meetingId);
       $stmt->execute();
       $stmt = $this->conn->prepare("UPDATE attendees SET checkedIn = '1', checkedInDate = :now, dateModified = :now WHERE registrantId = :registrantId AND meetingId = :meetingId");
@@ -2486,7 +2190,7 @@ class DbHandler {
     $endDate = date('Y-m-d', strtotime($endDate));
     $today = date('Y-m-d');
 
-    $stmt = $this->conn->prepare("SELECT startDate, endDate FROM events WHERE DATE(startDate) >= :startDate AND DATE(endDate) <= :endDate ORDER BY startDate ASC");
+    $stmt = $this->conn->prepare("SELECT startDate, endDate FROM walks WHERE DATE(startDate) >= :startDate AND DATE(endDate) <= :endDate ORDER BY startDate ASC");
     $stmt->bindParam(':startDate', $startDate);
     $stmt->bindParam(':endDate', $endDate);
 
@@ -2543,7 +2247,7 @@ class DbHandler {
     $endDate = date('Y-m-d', strtotime($endDate));
     $today = date('Y-m-d');
 
-    $stmt = $this->conn->prepare("SELECT startDate, endDate FROM events WHERE DATE(startDate) >= :startDate AND DATE(endDate) <= :endDate AND orgId = :orgId ORDER BY startDate ASC");
+    $stmt = $this->conn->prepare("SELECT startDate, endDate FROM walks WHERE DATE(startDate) >= :startDate AND DATE(endDate) <= :endDate AND orgId = :orgId ORDER BY startDate ASC");
     $stmt->bindParam(':startDate', $startDate);
     $stmt->bindParam(':endDate', $endDate);
     $stmt->bindParam(':orgId', $orgId);
@@ -2595,9 +2299,9 @@ class DbHandler {
     return $dates_data;
   }
 
-  public function deleteEventForAdmin($orgId, $eventId) {
+  public function deleteEventForAdmin($orgId, $rowId) {
       $stmt = $this->conn->prepare("DELETE FROM events WHERE eventId = :eventId AND orgId = :orgId");
-      $stmt->bindParam(':eventId', $eventId);
+      $stmt->bindParam(':eventId', $rowId);
       $stmt->bindParam(':orgId', $orgId);
       if ($stmt->execute()) {
         return true;
@@ -2615,114 +2319,32 @@ class DbHandler {
       return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
     }
 
-    private function getMeetingsByDay($day, $eventId) {
-      date_default_timezone_set($_ENV['TIMEZONE']);
-      $day = date('Y-m-d', strtotime($day));
-      $meetingData = array();
-      $stmt = $this->conn->prepare("SELECT * FROM meetings WHERE DATE(startDate) <= :day AND DATE(endDate) >= :day AND eventId = :eventId ORDER BY startDate ASC");
-      $stmt->bindParam(':day', $day);
-      $stmt->bindParam(':eventId', $eventId);
-      if ($stmt->execute()) {
-        $meetings = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($meetings AS $meet) {
-          $times = $meet['startDate'] == $meet['endDate'] ? date('m/d',strtotime($meet['startDate'])) : date('m/d',strtotime($meet['startDate']))." - ".date('m/d',strtotime($meet['endDate']));
-          $meetingData[] = array (
-            'name'		    => $meet['name'],
-            'times'		    => $times,
-            'height'	    => 50,
-            'meetingId'		=> $meet['meetingId']
-          );
-        }
-      }
-      return $meetingData;
-    }
 
-    public function getEventsAndMeetingsForCalendar($day) {
+    public function getWalksForCalendar($registrantId, $day) {
    		date_default_timezone_set($_ENV['TIMEZONE']);
       $day = date('Y-m-d', strtotime($day));
-   		$eventData = array();
-   		$stmt = $this->conn->prepare("SELECT * FROM events WHERE DATE(startDate) <= :day AND DATE(endDate) >= :day ORDER BY startDate ASC");
+   		$rowData = array();
+   		$stmt = $this->conn->prepare("SELECT * FROM walks WHERE DATE(startDate) <= :day AND DATE(endDate) >= :day AND registrantId = :registrantId ORDER BY startDate ASC");
   		$stmt->bindParam(':day', $day);
+  		$stmt->bindParam(':registrantId', $registrantId);
   		if ($stmt->execute()) {
-  			$events = $stmt->fetchAll(PDO::FETCH_ASSOC);
-  			foreach ($events AS $event) {
-  				$times = $event['startDate'] == $event['endDate'] ? date('m/d',strtotime($event['startDate'])) : date('m/d',strtotime($event['startDate']))." - ".date('m/d',strtotime($event['endDate']));
-  				$eventData['events'][] = array (
+  			$walks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+  			foreach ($walks AS $row) {
+  				$times = $row['startDate'] == $row['endDate'] ? date('m/d',strtotime($row['startDate'])) : date('m/d',strtotime($row['startDate']))." - ".date('m/d',strtotime($row['endDate']));
+  				$rowData[] = array (
   					'times'		      => $times,
   					'height'	      => 50,
-  					'meetingId'		  => 0,
-            'eventId'       => $event['eventId'],
+            'walkId'        => $row['walkId'],
             'registrantId'  => $registrantId,
-            'startDate'     => date('m/d/Y',strtotime($event['startDate'])),
-            'endDate'       => date('m/d/Y',strtotime($event['endDate'])),
-            'avatar'        => !empty($event['avatar']) ? 'https://spectacularapps.us/img/organizations/'.$event['avatar'] : 'https://jazlabs.com/img/logo_light.png',
-            'image'         => !empty($event['image']) ? 'https://spectacularapps.us/img/events/'.$event['image'] : '',
-            'location'      => $event['location'],
-            'city'          => $event['city'],
-            'state'         => $event['state'],
-            'zip'           => $event['zip'],
-            'orgId'         => $event['orgId'],
-            'orgName'       => $this->getOrganizationName($event['orgId']),
-            'name'          => $event['name'],
-            'blurb'			    => $event['description'] ? html_entity_decode(strip_tags(substr($event['description'],0,100)).'...', ENT_QUOTES, 'UTF-8') : '',
-            'description'   => $event['description'],
-            'meetings'      => $this->getMeetingsForEvent($event['eventId'], $registrantId),
-            'attendeeTotal' => $this->getAttendeeTotal($event['eventId']),
-            'isRegistered'  => $this->isRegisteredForEvent($event['eventId'], $registrantId),
-            'isCheckedIn'   => $this->isCheckedInForEvent($event['eventId'], $registrantId)
+            'startDate'     => date('m/d/Y',strtotime($row['startDate'])),
+            'endDate'       => date('m/d/Y',strtotime($row['endDate'])),
+            'locations'     => $this->getLocationsForWalk($row['walkId'], $registrantId),
   				);
-          $eventData['meetings'] = $this->getMeetingsByDay($day, $event['eventId']);
 
   			}
   		}
 
-  		return $eventData;
-   	}
-
-
-
-    public function getEventsAndMeetingsByDay($day, $orgId) {
-   		date_default_timezone_set($_ENV['TIMEZONE']);
-      $day = date('Y-m-d', strtotime($day));
-   		$eventData = array();
-   		$stmt = $this->conn->prepare("SELECT * FROM events WHERE DATE(startDate) <= :day AND DATE(endDate) >= :day AND orgId = :orgId ORDER BY startDate ASC");
-  		$stmt->bindParam(':day', $day);
-  		$stmt->bindParam(':orgId', $orgId);
-  		if ($stmt->execute()) {
-  			$events = $stmt->fetchAll(PDO::FETCH_ASSOC);
-  			foreach ($events AS $row) {
-  				$times = $row['startDate'] == $row['endDate'] ? date('m/d',strtotime($row['startDate'])) : date('m/d',strtotime($row['startDate']))." - ".date('m/d',strtotime($row['endDate']));
-  				$eventData['events'][] = array (
-  					'times'		        => $times,
-  					'height'	        => 50,
-  					'meetingId'		    => 0,
-            'eventId'         => $row['eventId'],
-            'startDate'       => date('m/d/Y',strtotime($row['startDate'])),
-            'endDate'         => date('m/d/Y',strtotime($row['endDate'])),
-            'avatar'          => !empty($row['avatar']) ? 'https://spectacularapps.us/img/organizations/'.$row['avatar'] : 'https://jazlabs.com/img/logo_light.png',
-            'image'           => !empty($row['image']) ? 'https://spectacularapps.us/img/events/'.$row['image'] : '',
-            'location'        => $row['location'],
-            'city'            => $row['city'],
-            'state'           => $row['state'],
-            'zip'             => $row['zip'],
-            'orgId'           => $row['orgId'],
-            'orgName'         => $this->getOrganizationName($row['orgId']),
-            'name'            => $row['name'],
-            'blurb'			      => $row['description'] ? html_entity_decode(strip_tags(substr($row['description'],0,100)).'...', ENT_QUOTES, 'UTF-8') : '',
-            'description'     => $row['description'],
-            'meetings'        => $this->getMeetingsForEventAdmin($row['eventId']),
-            'attendeeTotal'   => $this->getAttendeeTotal($row['eventId']),
-            'whoIsRegistered' => $this->whoIsRegisteredForEvent($row['eventId']),
-            'whoIsCheckedIn'  => $this->whoIsCheckedInForEvent($row['eventId']),
-            'totalRegistered' => $this->totalRegisteredForEvent($row['eventId']),
-            'totalCheckedIn'  => $this->totalCheckedInForEvent($row['eventId']),
-  				);
-          $eventData['meetings'] = $this->getMeetingsByDay($day, $row['eventId']);
-
-  			}
-  		}
-
-  		return $eventData;
+  		return $rowData;
    	}
 
 
@@ -2739,7 +2361,7 @@ class DbHandler {
       $city = array_key_exists('city', $data) ? trim(ucwords($data['city'])) : '';
       $state = array_key_exists('state', $data) ? trim(ucwords($data['state'])) : '';
       $zip = array_key_exists('zip', $data) ? trim(ucwords($data['zip'])) : '';
-      $eventCode = $this->guidv4();
+      $rowCode = $this->guidv4();
 
       $stmt = $this->conn->prepare("INSERT INTO events SET orgId = :orgId, name = :name, description = :description, startDate = :startDate, endDate = :endDate, location = :location, city = :city, state = :state, zip = :zip, eventCode = :eventCode");
       $stmt->bindParam(':orgId', $orgId);
@@ -2751,7 +2373,7 @@ class DbHandler {
     	$stmt->bindParam(':city', $city);
     	$stmt->bindParam(':state', $state);
     	$stmt->bindParam(':zip', $zip);
-    	$stmt->bindParam(':eventCode', $eventCode);
+    	$stmt->bindParam(':eventCode', $rowCode);
 
     	return $stmt->execute();
 
@@ -2780,7 +2402,7 @@ class DbHandler {
     	$stmt->bindParam(':city', $city);
     	$stmt->bindParam(':state', $state);
     	$stmt->bindParam(':zip', $zip);
-    	$stmt->bindParam(':eventId', $eventId);
+    	$stmt->bindParam(':eventId', $rowId);
 
     	return $stmt->execute();
 
@@ -2788,16 +2410,16 @@ class DbHandler {
 
   public function getEventsForAttendeeForOrgId($orgId, $registrantId) {
     $sql = "SELECT e.* FROM events e LEFT JOIN attendees a ON e.eventId =  a.eventId WHERE e.orgId = :orgId AND a.registrantId = :registrantId AND a.meetingId = '0'";
-    $eventsData = array();
+    $rowsData = array();
     $stmt = $this->conn->prepare($sql);
     $stmt->bindParam(':orgId', $orgId);
     $stmt->bindParam(':registrantId', $registrantId);
     if ($stmt->execute()) {
-      $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
+      $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-      if ($events) {
-        foreach ($events AS $e) {
-          $eventsData[] = array (
+      if ($rows) {
+        foreach ($rows AS $e) {
+          $rowsData[] = array (
             'eventId'	  => $e['eventId'],
             'name'      => $e['name'],
             'startDate' => date('m/d/Y', strtotime($e['startDate'])),
@@ -2811,24 +2433,24 @@ class DbHandler {
       }
     }
 
-    return $eventsData;
+    return $rowsData;
   }
 
   public function getEventNamesForOrganization($orgId) {
     date_default_timezone_set($_ENV['TIMEZONE']);
     $today = date('Y-m-d H:i:s');
-    $eventsData = array();
+    $rowsData = array();
 
     $sql = "SELECT name, eventId FROM events WHERE orgId = :orgId AND endDate >= :today ORDER BY name ASC";
     $stmt = $this->conn->prepare($sql);
     $stmt->bindParam(':orgId', $orgId);
     $stmt->bindParam(':today', $today);
     if ($stmt->execute()) {
-      $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
+      $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-      if ($events) {
-        foreach ($events AS $e) {
-          $eventsData[] = array (
+      if ($rows) {
+        foreach ($rows AS $e) {
+          $rowsData[] = array (
             'value'	    => $e['eventId'],
             'label'      => $e['name'],
           );
@@ -2836,7 +2458,7 @@ class DbHandler {
       }
     }
 
-    return $eventsData;
+    return $rowsData;
   }
 
   public function getPeopleForAdmins($orgId = 1, $string = '') {
