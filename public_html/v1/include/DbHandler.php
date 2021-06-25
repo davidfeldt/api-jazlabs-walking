@@ -84,7 +84,7 @@ class DbHandler {
     $stmt = $this->conn->prepare($sql);
     $stmt->bindParam(':registrantId', $registrantId);
     $stmt->bindParam(':walkId', $walkId);
-    $stmt->bindParam(':coordinates', $coordinates);
+    $stmt->bindParam(':coordinates', json_encode($coordinates));
     $stmt->bindParam(':endDate', $now);
     $stmt->bindParam(':dateModified', $now);
     if ($stmt->execute()) {
