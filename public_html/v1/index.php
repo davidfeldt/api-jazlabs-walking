@@ -566,9 +566,13 @@ $app->put('/walks/:walkId', 'authenticate', function($walkId) use($app) {
    $response = array();
    date_default_timezone_set($_ENV['TIMEZONE']);
 
+   $json = $app->request->getBody();
+   $data = json_decode($json, true);
+   $coordinates = array_key_exists('coordinates', $data) ? $data['coordinates'] : '';
+
    $db = new DbHandler();
 
-   $res = $db->endWalk($app->registrantId, $walkId);
+   $res = $db->endWalk($app->registrantId, $walkId, $coordinates);
 
    if ($res) {
        $response['error']    = false;

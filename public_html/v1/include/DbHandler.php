@@ -76,14 +76,15 @@ class DbHandler {
     return $walkId;
   }
 
-  public function endWalk($registrantId, $walkId) {
+  public function endWalk($registrantId, $walkId, $coordinates = '') {
     date_default_timezone_set($_ENV['TIMEZONE']);
     $now = date('Y-m-d H:i:s');
     $ended = false;
-    $sql = "UPDATE walks SET endDate = :endDate, dateModified = :dateModified WHERE registrantId = :registrantId AND walkId = :walkId";
+    $sql = "UPDATE walks SET endDate = :endDate, coordinates = :coordinates, dateModified = :dateModified WHERE registrantId = :registrantId AND walkId = :walkId";
     $stmt = $this->conn->prepare($sql);
     $stmt->bindParam(':registrantId', $registrantId);
     $stmt->bindParam(':walkId', $walkId);
+    $stmt->bindParam(':coordinates', $coordinates);
     $stmt->bindParam(':endDate', $now);
     $stmt->bindParam(':dateModified', $now);
     if ($stmt->execute()) {
