@@ -545,7 +545,7 @@ $app->post('/walks', 'authenticate', function() use($app) {
   $res = $db->startWalk($app->registrantId);
 
   if ($res) {
-    $walk                  = $db->getWalk($app->$registrantId, $res);
+    $walk                  = $db->getWalk($app->registrantId, $res);
     $response['success']   = true;
     $response['error']     = false;
     $response['message']   = 'Walk #' . $walk['walkId'] . ' has started. Get moving!';
@@ -575,7 +575,7 @@ $app->put('/walks/:walkId', 'authenticate', function($walkId) use($app) {
    $res = $db->endWalk($app->registrantId, $walkId, $coordinates);
 
    if ($res) {
-       $walk                  = $db->getWalk($app->$registrantId, $walkId);
+       $walk                  = $db->getWalk($app->registrantId, $walkId);
        $response['error']     = false;
        $response['success']   = true;
        $response['message']   = 'Your walk has ended! Congrats!';
