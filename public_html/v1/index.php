@@ -564,7 +564,6 @@ $app->post('/walks', 'authenticate', function() use($app) {
 
 $app->put('/walks/:walkId', 'authenticate', function($walkId) use($app) {
    $response = array();
-   date_default_timezone_set($_ENV['TIMEZONE']);
 
    $json = $app->request->getBody();
    $data = json_decode($json, true);
@@ -575,10 +574,12 @@ $app->put('/walks/:walkId', 'authenticate', function($walkId) use($app) {
    $res = $db->endWalk($app->registrantId, $walkId, $coordinates);
 
    if ($res) {
+       $walk = $db->getWalk($walkId);
        $response['error']    = false;
        $response['success']  = true;
        $response['message']  = 'Your walk has ended! Congrats!';
-       $response['walkEnded'] = date('Y-m-d H:i:s');
+       $response['walkEnded'] = $walk['endDate'];
+       $response['duration']  = $db->getWalkDuration($walkId);
        echoResponse(200, $response);
    } else {
        $response['error']   = true;

@@ -76,6 +76,11 @@ class DbHandler {
     return $walkId;
   }
 
+  public function getWalkDuration($walkId) {
+    $walk = $this->getWalk($walkId);
+    return $walk['duration'];
+  }
+
   public function endWalk($registrantId, $walkId, $coordinates = '') {
     date_default_timezone_set($_ENV['TIMEZONE']);
     $coordinates = json_encode($coordinates);
