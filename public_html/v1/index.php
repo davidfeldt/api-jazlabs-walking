@@ -545,16 +545,17 @@ $app->post('/walks', 'authenticate', function() use($app) {
   $res = $db->startWalk($app->registrantId);
 
   if ($res) {
-    $response['success'] = true;
-    $response['error'] = false;
-    $response['message'] = 'Walk #' . $res . ' has started. Get moving!';
-    $response['walkId'] = $res;
-    $response['walkStarted'] = date('Y-m-d H:i:s');
+    $walk                  = $db->getWalk($app->$registrantId, $res);
+    $response['success']   = true;
+    $response['error']     = false;
+    $response['message']   = 'Walk #' . $walk['walkId'] . ' has started. Get moving!';
+    $response['walkId']    = $walk['walkId'];
+    $response['walkStarted'] = $walk['startDate'];
   } else {
-    $response['success'] = false;
-    $response['error'] = true;
-    $response['message'] = 'Error starting walk. Try again later!';
-    $response['walkId'] = $res;
+    $response['success']  = false;
+    $response['error']    = true;
+    $response['message']  = 'Error starting walk. Try again later!';
+    $response['walkId']   = $res;
   }
 
   echoResponse(200, $response);
@@ -574,12 +575,12 @@ $app->put('/walks/:walkId', 'authenticate', function($walkId) use($app) {
    $res = $db->endWalk($app->registrantId, $walkId, $coordinates);
 
    if ($res) {
-       $walk = $db->getWalk($walkId);
-       $response['error']    = false;
-       $response['success']  = true;
-       $response['message']  = 'Your walk has ended! Congrats!';
+       $walk                  = $db->getWalk($app->$registrantId, $walkId);
+       $response['error']     = false;
+       $response['success']   = true;
+       $response['message']   = 'Your walk has ended! Congrats!';
        $response['walkEnded'] = $walk['endDate'];
-       $response['duration']  = $db->getWalkDuration($walkId);
+       $response['duration']  = $walk['duration'];
        echoResponse(200, $response);
    } else {
        $response['error']   = true;
